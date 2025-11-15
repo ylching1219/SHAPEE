@@ -1,0 +1,26 @@
+/* Sidebar Toggle Button Styling */
+#sidebarToggle {
+    width: 2.5rem;
+    height: 2.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s;
+}
+
+#sidebarToggle:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    color: rgba(255, 255, 255, 1);
+}
+
+/* Rotate icon when sidebar is toggled */
+.sidebar.toggled #sidebarToggle i {
+    transform: rotate(180deg);
+}
+
+/* Topbar toggle button */
+#sidebarToggleTop {
+    color: #858796;
+}
+
+#sidebarToggleTop:hover {
+    color: #5a5c69;
+}

@@ -1,0 +1,292 @@
+﻿@{
+    ViewData["Title"] = "Student Dashboard";
+}
+
+@section Styles {
+    <link href="~/css/student-dashboard.css" rel="stylesheet" />
+}
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Student Dashboard</h1>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <!-- Today's Schedule Card -->
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow dashboard-card">
+            <div class="card-body">
+                <h4 class="font-weight-bold mb-3">Today's Schedule</h4>
+                <p class="text-muted small mb-4">24 Nov 2025</p>
+                
+                <!-- Schedule Items -->
+                <div class="schedule-item absent">
+                    <span class="status-badge badge-absent">Absent</span>
+                    <h6 class="font-weight-bold mb-2">BMCS2084 Data Structure and Algorithms</h6>
+                    <p class="text-muted small mb-1">Block K – K103</p>
+                    <p class="text-muted small">8.00 AM – 10.00 AM</p>
+                </div>
+                
+                <div class="schedule-item completed">
+                    <span class="status-badge badge-completed">Completed</span>
+                    <h6 class="font-weight-bold mb-2">BMCS2068 Web Design and Development</h6>
+                    <p class="text-muted small mb-1">DK Buildings – DKABA</p>
+                    <p class="text-muted small">11.00 AM – 1.00 PM</p>
+                </div>
+                
+                <div class="schedule-item inprogress">
+                    <span class="status-badge badge-inprogress">Inprogress</span>
+                    <h6 class="font-weight-bold mb-2">BMCS1024 Discrete Structure</h6>
+                    <p class="text-muted small mb-1">Block B – B001G</p>
+                    <p class="text-muted small">3.30 PM – 5.00 PM</p>
+                </div>
+                
+                <!-- Legend -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="legend-item">
+                        <span class="legend-dot normal"></span>
+                        <span class="small">Normal</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot delay"></span>
+                        <span class="small">Delay</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot cancelled"></span>
+                        <span class="small">Cancelled</span>
+                    </div>
+                </div>
+                
+                <div class="text-right mt-3">
+                    <a href="#" class="small text-primary">View More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Overview Card -->
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow dashboard-card">
+            <div class="card-body">
+                <h4 class="font-weight-bold mb-4">Attendance Overview</h4>
+                
+                <div class="attendance-chart-container">
+                    <!-- Donut Chart -->
+                    <div class="attendance-chart">
+                        <canvas id="attendanceChart" width="200" height="200"></canvas>
+                        <div class="attendance-percentage">83%</div>
+                    </div>
+                    
+                    <!-- Overall Statistics -->
+                    <div class="attendance-stats">
+                        <p class="mb-2"><strong>Present:</strong> 28 days</p>
+                        <p class="mb-2"><strong>Absent:</strong> 4 days</p>
+                        <p class="mb-0"><strong>Leave:</strong> 1 days</p>
+                    </div>
+                </div>
+                
+                <!-- Subject-wise Attendance Breakdown -->
+                <div class="subject-attendance-list">
+                    <div class="subject-attendance-item">
+                        <div class="subject-name">
+                            <div>Data Structure and Algorithms</div>
+                            <span class="subject-code">BMCS2084</span>
+                        </div>
+                        <div>
+                            <div class="subject-percentage excellent">92%</div>
+                            <div class="subject-progress">
+                                <div class="subject-progress-bar excellent" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-attendance-item">
+                        <div class="subject-name">
+                            <div>Web Design and Development</div>
+                            <span class="subject-code">BMCS2068</span>
+                        </div>
+                        <div>
+                            <div class="subject-percentage excellent">88%</div>
+                            <div class="subject-progress">
+                                <div class="subject-progress-bar excellent" style="width: 88%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-attendance-item">
+                        <div class="subject-name">
+                            <div>Discrete Structure</div>
+                            <span class="subject-code">BMCS1024</span>
+                        </div>
+                        <div>
+                            <div class="subject-percentage good">75%</div>
+                            <div class="subject-progress">
+                                <div class="subject-progress-bar good" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-attendance-item">
+                        <div class="subject-name">
+                            <div>Database Systems</div>
+                            <span class="subject-code">BMCS2043</span>
+                        </div>
+                        <div>
+                            <div class="subject-percentage warning">65%</div>
+                            <div class="subject-progress">
+                                <div class="subject-progress-bar warning" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-muted small mb-3 mt-3">Nice work, keep going!</p>
+                
+                <div class="text-right">
+                    <a href="#" class="small text-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <!-- Latest Announcements Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow dashboard-card">
+            <div class="card-body">
+                <h4 class="font-weight-bold mb-4">Latest Announcements</h4>
+                
+                <!-- Announcement Items -->
+                <div class="announcement-item important">
+                    <div class="announcement-header">
+                        <h6 class="announcement-title">
+                            Final Examination Schedule Released
+                            <span class="announcement-badge important">Important</span>
+                        </h6>
+                        <span class="announcement-date">20 Nov 2025</span>
+                    </div>
+                    <p class="announcement-content">
+                        The final examination schedule for Semester 1, 2025/2026 has been released. Please check your student portal for your exam timetable. All exams will be conducted from 2nd to 15th December 2025.
+                    </p>
+                </div>
+                
+                <div class="announcement-item info">
+                    <div class="announcement-header">
+                        <h6 class="announcement-title">
+                            Library Extended Hours
+                            <span class="announcement-badge info">Info</span>
+                        </h6>
+                        <span class="announcement-date">18 Nov 2025</span>
+                    </div>
+                    <p class="announcement-content">
+                        The main library will have extended operating hours during the examination period. The library will be open from 7:00 AM to 11:00 PM from Monday to Sunday, starting from 1st December.
+                    </p>
+                </div>
+                
+                <div class="announcement-item warning">
+                    <div class="announcement-header">
+                        <h6 class="announcement-title">
+                            Fee Payment Reminder
+                            <span class="announcement-badge warning">Reminder</span>
+                        </h6>
+                        <span class="announcement-date">15 Nov 2025</span>
+                    </div>
+                    <p class="announcement-content">
+                        This is a friendly reminder that the deadline for Semester 2 fee payment is 30th November 2025. Please ensure your payment is made before the deadline to avoid late charges.
+                    </p>
+                </div>
+                
+                <div class="announcement-item">
+                    <div class="announcement-header">
+                        <h6 class="announcement-title">Student Portal Maintenance</h6>
+                        <span class="announcement-date">12 Nov 2025</span>
+                    </div>
+                    <p class="announcement-content">
+                        The student portal will undergo scheduled maintenance on 25th November 2025 from 2:00 AM to 6:00 AM. During this time, the portal will be temporarily unavailable. We apologize for any inconvenience caused.
+                    </p>
+                </div>
+                
+                <div class="text-right mt-3">
+                    <a href="#" class="small text-primary">View All Announcements</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow dashboard-card">
+            <div class="card-body">
+                <h4 class="font-weight-bold mb-4">Quick Actions</h4>
+                
+                <div class="quick-actions-container">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <button class="btn btn-primary w-100 quick-action-btn">
+                                <i class="fas fa-dollar-sign"></i>
+                                <span>Pay Fees</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-success w-100 quick-action-btn">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Attendance</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-warning w-100 quick-action-btn">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span>Join Class</span>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-info w-100 quick-action-btn">
+                                <i class="fas fa-book"></i>
+                                <span>View Results</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/chart.js/Chart.min.js"></script>
+    <script>
+        // Attendance Donut Chart - Larger size
+        var ctx = document.getElementById('attendanceChart').getContext('2d');
+        var attendanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [83, 17],
+                    backgroundColor: [
+                        '#28a745',
+                        '#e9ecef'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '75%',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+            }
+        });
+    </script>
+}
+
+

@@ -1,1 +1,48 @@
-﻿<h1>kan ni ma kan</h1>
+@{
+    ViewData["Title"] = "Welcome";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - TARUMT</title>
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-primary">
+    <div class="container">
+        <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+            <div class="col-md-8">
+                <div class="text-center text-white mb-5">
+                    <h1 class="mb-3">TARUMT</h1>
+                    <p class="h4 mb-5">Student Management System</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="@Url.Action("Student", "Dashboard")" class="btn btn-primary btn-lg btn-block py-4">
+                            <i class="fas fa-user-graduate fa-2x mb-2"></i><br>
+                            Student
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="@Url.Action("Teacher", "Dashboard")" class="btn btn-success btn-lg btn-block py-4">
+                            <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i><br>
+                            Teacher
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="@Url.Action("Admin", "Dashboard")" class="btn btn-warning btn-lg btn-block py-4">
+                            <i class="fas fa-user-shield fa-2x mb-2"></i><br>
+                            Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
