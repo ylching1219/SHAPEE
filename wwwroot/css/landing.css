@@ -18,7 +18,7 @@ body {
 /*left side - logo and login*/
 .left-side {
     width: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -58,19 +58,6 @@ body {
 .logo-icon {
     font-size: 5rem;
     margin-bottom: 1.5rem;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-20px);
-    }
 }
 
 .university-name {
@@ -89,7 +76,7 @@ body {
 
 .login-button {
     background: white;
-    color: #667eea;
+    color: #4e73df;
     padding: 1rem 3rem;
     font-size: 1.1rem;
     font-weight: 700;
@@ -108,6 +95,7 @@ body {
     transform: translateY(-3px);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     background: #f8f9fa;
+    color: #224abe;
 }
 
 .login-button:active {
@@ -131,9 +119,7 @@ body {
     max-width: 600px;
     position: relative;
     height: 480px;
-    /* Increased height */
     padding-bottom: 3rem;
-    /* Space for indicators */
 }
 
 .content-slide {
@@ -153,7 +139,7 @@ body {
 
 .slide-icon {
     font-size: 4rem;
-    color: #667eea;
+    color: #4e73df;
     margin-bottom: 2rem;
     text-align: center;
 }
@@ -204,7 +190,7 @@ body {
     font-weight: 900;
     position: absolute;
     left: 0;
-    color: #667eea;
+    color: #4e73df;
 }
 
 /*slide indicators*/
@@ -227,7 +213,7 @@ body {
 }
 
 .indicator.active {
-    background: #667eea;
+    background: #4e73df;
     width: 30px;
     border-radius: 5px;
 }
