@@ -120,11 +120,14 @@
         const slides = document.querySelectorAll('.content-slide');
         const indicators = document.querySelectorAll('.indicator');
         let currentSlide = 0;
-        const slideInterval = 4000; // 4s perslide
+        const slideInterval = 4000; // 4 seconds per slide
 
         function showSlide(index) {
+            // Remove active class from all slides and indicators
             slides.forEach(slide => slide.classList.remove('active'));
             indicators.forEach(indicator => indicator.classList.remove('active'));
+
+            // Add active class to current slide and indicator
             slides[index].classList.add('active');
             indicators[index].classList.add('active');
         }
@@ -134,9 +137,10 @@
             showSlide(currentSlide);
         }
 
+        // Auto-rotate slides
         setInterval(nextSlide, slideInterval);
 
-        //click on indicators to jump to slide
+        // Click on indicators to jump to specific slide
         indicators.forEach((indicator, index) => {
             indicator.addEventListener('click', () => {
                 currentSlide = index;
@@ -144,7 +148,7 @@
             });
         });
 
-        //pause on hover
+        // Pause on hover
         const slider = document.querySelector('.content-slider');
         let intervalId = setInterval(nextSlide, slideInterval);
 
