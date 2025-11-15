@@ -1,0 +1,288 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.landing-container {
+    display: flex;
+    height: 100vh;
+}
+
+/*left side - logo and login*/
+.left-side {
+    width: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.left-side::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+    0% {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(50px, 50px);
+    }
+}
+
+.logo-container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: white;
+}
+
+.logo-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.university-name {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.university-subtitle {
+    font-size: 1.2rem;
+    font-weight: 300;
+    opacity: 0.9;
+    margin-bottom: 3rem;
+}
+
+.login-button {
+    background: white;
+    color: #667eea;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+}
+
+.login-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    background: #f8f9fa;
+}
+
+.login-button:active {
+    transform: translateY(-1px);
+}
+
+/*right side - rotating content*/
+.right-side {
+    width: 50%;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+    position: relative;
+}
+
+.content-slider {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    height: 480px;
+    /* Increased height */
+    padding-bottom: 3rem;
+    /* Space for indicators */
+}
+
+.content-slide {
+    position: absolute;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.content-slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.slide-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.slide-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.slide-description {
+    font-size: 1.2rem;
+    color: #5a6c7d;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.slide-list {
+    list-style: none;
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    transform: translateX(4.5rem);
+}
+
+.slide-list li {
+    font-size: 1.1rem;
+    color: #5a6c7d;
+    padding: 0.8rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    text-align: left;
+    width: 100%;
+    max-width: 400px;
+    display: block;
+    margin-left: 1rem;
+}
+
+.slide-list li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: #667eea;
+}
+
+/*slide indicators*/
+.slide-indicators {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #dee2e6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicator.active {
+    background: #667eea;
+    width: 30px;
+    border-radius: 5px;
+}
+
+/*responsive design*/
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .landing-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .left-side,
+    .right-side {
+        width: 100%;
+        height: auto;
+        min-height: 50vh;
+    }
+
+    .right-side {
+        padding: 2rem 1.5rem;
+    }
+
+    .university-name {
+        font-size: 2.5rem;
+    }
+
+    .slide-title {
+        font-size: 2rem;
+    }
+
+    .content-slider {
+        height: auto;
+        min-height: 300px;
+        padding-bottom: 0;
+    }
+
+    .slide-indicators {
+        display: none;
+    }
+
+    .slide-list {
+        margin-bottom: 1rem;
+        transform: translateX(0);
+    }
+
+    .slide-list li {
+        max-width: 100%;
+        margin-left: 0;
+    }
+}

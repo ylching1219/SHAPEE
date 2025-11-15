@@ -256,34 +256,39 @@
 </div>
 
 @section Scripts {
-    <script src="~/vendor/chart.js/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        // Attendance Donut Chart - Larger size
-        var ctx = document.getElementById('attendanceChart').getContext('2d');
-        var attendanceChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: [83, 17],
-                    backgroundColor: [
-                        '#28a745',
-                        '#e9ecef'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '75%',
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attendance Donut Chart - Larger size
+            var ctx = document.getElementById('attendanceChart');
+            if (ctx) {
+                var attendanceChart = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [83, 17],
+                            backgroundColor: [
+                                '#28a745',
+                                '#e9ecef'
+                            ],
+                            borderWidth: 0
+                        }]
                     },
-                    tooltip: {
-                        enabled: false
+                    options: {
+                        cutout: '75%',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        }
                     }
-                }
+                });
             }
         });
     </script>

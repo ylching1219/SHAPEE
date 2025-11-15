@@ -9,40 +9,156 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - TARUMT</title>
-    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="~/css/landing.css" rel="stylesheet">
 </head>
-<body class="bg-gradient-primary">
-    <div class="container">
-        <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
-            <div class="col-md-8">
-                <div class="text-center text-white mb-5">
-                    <h1 class="mb-3">TARUMT</h1>
-                    <p class="h4 mb-5">Student Management System</p>
+<body>
+    <div class="landing-container">
+        <!-- Left Side -->
+        <div class="left-side">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
                 </div>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <a href="@Url.Action("Student", "Dashboard")" class="btn btn-primary btn-lg btn-block py-4">
-                            <i class="fas fa-user-graduate fa-2x mb-2"></i><br>
-                            Student
-                        </a>
+                <h1 class="university-name">TARUMT</h1>
+                <p class="university-subtitle">University Management System</p>
+                <a href="@Url.Action("Index", "Dashboard")" class="login-button">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Side -->
+        <div class="right-side">
+            <div class="content-slider">
+                <!-- Slide 1: Welcome -->
+                <div class="content-slide active">
+                    <div class="slide-icon">
+                        <i class="fas fa-hand-sparkles"></i>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="@Url.Action("Teacher", "Dashboard")" class="btn btn-success btn-lg btn-block py-4">
-                            <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i><br>
-                            Teacher
-                        </a>
+                    <h2 class="slide-title">Welcome to TARUMT</h2>
+                    <p class="slide-description">
+                        Your comprehensive university management system designed to streamline academic operations, 
+                        enhance student engagement, and simplify administrative tasks.
+                    </p>
+                </div>
+
+                <!-- Slide 2: Features -->
+                <div class="content-slide">
+                    <div class="slide-icon">
+                        <i class="fas fa-star"></i>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="@Url.Action("Admin", "Dashboard")" class="btn btn-warning btn-lg btn-block py-4">
-                            <i class="fas fa-user-shield fa-2x mb-2"></i><br>
-                            Admin
-                        </a>
+                    <h2 class="slide-title">Key Features</h2>
+                    <ul class="slide-list">
+                        <li>Real-time attendance tracking</li>
+                        <li>Class management and scheduling</li>
+                        <li>Comprehensive dashboard analytics</li>
+                        <li>Secure user authentication</li>
+                        <li>Multi-role access control</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 3: For Students -->
+                <div class="content-slide">
+                    <div class="slide-icon">
+                        <i class="fas fa-user-graduate"></i>
                     </div>
+                    <h2 class="slide-title">For Students</h2>
+                    <ul class="slide-list">
+                        <li>Join and manage your classes</li>
+                        <li>View your attendance records</li>
+                        <li>Track attendance history</li>
+                        <li>Access course materials</li>
+                        <li>Monitor your academic progress</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 4: For Teachers -->
+                <div class="content-slide">
+                    <div class="slide-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h2 class="slide-title">For Teachers</h2>
+                    <ul class="slide-list">
+                        <li>Manage multiple classes efficiently</li>
+                        <li>Take and record student attendance</li>
+                        <li>Generate attendance reports</li>
+                        <li>View class analytics and insights</li>
+                        <li>Communicate with students</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 5: Benefits -->
+                <div class="content-slide">
+                    <div class="slide-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h2 class="slide-title">Why Choose Us?</h2>
+                    <ul class="slide-list">
+                        <li>User-friendly interface</li>
+                        <li>Mobile-responsive design</li>
+                        <li>Secure and reliable platform</li>
+                        <li>24/7 system availability</li>
+                        <li>Continuous updates and improvements</li>
+                    </ul>
+                </div>
+
+                <!-- Slide Indicators -->
+                <div class="slide-indicators">
+                    <span class="indicator active" data-slide="0"></span>
+                    <span class="indicator" data-slide="1"></span>
+                    <span class="indicator" data-slide="2"></span>
+                    <span class="indicator" data-slide="3"></span>
+                    <span class="indicator" data-slide="4"></span>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        const slides = document.querySelectorAll('.content-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        let currentSlide = 0;
+        const slideInterval = 4000; // 4 seconds per slide
+
+        function showSlide(index) {
+            // Remove active class from all slides and indicators
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+
+            // Add active class to current slide and indicator
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        // Auto-rotate slides
+        setInterval(nextSlide, slideInterval);
+
+        // Click on indicators to jump to specific slide
+        indicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                currentSlide = index;
+                showSlide(currentSlide);
+            });
+        });
+
+        // Pause on hover
+        const slider = document.querySelector('.content-slider');
+        let intervalId = setInterval(nextSlide, slideInterval);
+
+        slider.addEventListener('mouseenter', () => {
+            clearInterval(intervalId);
+        });
+
+        slider.addEventListener('mouseleave', () => {
+            intervalId = setInterval(nextSlide, slideInterval);
+        });
+    </script>
 </body>
 </html>
