@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="~/css/landing.css" rel="stylesheet">
 </head>
-<<<<<<< HEAD
 <body>
     <div class="landing-container">
         <!-- Left Side -->
@@ -21,15 +20,6 @@
             <div class="logo-container">
                 <div class="logo-icon">
                     <i class="fas fa-graduation-cap"></i>
-=======
-<body class="bg-gradient-primary">
-    <div class="container">
-        <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
-            <div class="col-md-8">
-                <div class="text-center text-white mb-5">
-                    <h1 class="mb-3" style="font-weight: bold">Welcome to TARUMT Portal</h1>
-                    <p class="h4 mb-5">Student Management System</p>
->>>>>>> cb4ec641e09dda0e408b8c508f88f8fd00054001
                 </div>
                 <h1 class="university-name">TARUMT</h1>
                 <p class="university-subtitle">University Management System</p>
@@ -130,14 +120,11 @@
         const slides = document.querySelectorAll('.content-slide');
         const indicators = document.querySelectorAll('.indicator');
         let currentSlide = 0;
-        const slideInterval = 4000; // 4 seconds per slide
+        const slideInterval = 4000; // 4s perslide
 
         function showSlide(index) {
-            // Remove active class from all slides and indicators
             slides.forEach(slide => slide.classList.remove('active'));
             indicators.forEach(indicator => indicator.classList.remove('active'));
-
-            // Add active class to current slide and indicator
             slides[index].classList.add('active');
             indicators[index].classList.add('active');
         }
@@ -147,10 +134,9 @@
             showSlide(currentSlide);
         }
 
-        // Auto-rotate slides
         setInterval(nextSlide, slideInterval);
 
-        // Click on indicators to jump to specific slide
+        //click on indicators to jump to slide
         indicators.forEach((indicator, index) => {
             indicator.addEventListener('click', () => {
                 currentSlide = index;
@@ -158,7 +144,7 @@
             });
         });
 
-        // Pause on hover
+        //pause on hover
         const slider = document.querySelector('.content-slider');
         let intervalId = setInterval(nextSlide, slideInterval);
 
