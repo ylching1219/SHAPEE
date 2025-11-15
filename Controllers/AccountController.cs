@@ -17,4 +17,17 @@ public class AccountController : Controller
         ViewData["Title"] = "Access Denied";
         return View();
     }
+    
+    public IActionResult ForgotPassword()
+    {
+        ViewData["Title"] = "Forgot Password";
+        return View();
+    }
+
+    // GET: Account/ResetPassword
+    public IActionResult ResetPassword()
+    {
+        ViewData["Title"] = "Reset Password";
+        return View();
+    }
 }

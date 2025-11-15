@@ -450,3 +450,57 @@ body {
     color: #764ba2;
     text-decoration: underline;
 }
+
+/* Form Steps */
+.form-step {
+    display: none;
+    width: 100%;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.key-icon-section,
+.success-icon-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.key-icon,
+.success-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+.success-icon {
+    color: #10b981;
+}
+
+.success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-resend {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-resend:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
