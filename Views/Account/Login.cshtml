@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - TARUMT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="~/css/login.css" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Side - Login Form -->
+        <div class="login-left">
+            <div class="login-form-container">
+                <div class="logo-section">
+                    <div class="logo-icon-small">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h1 class="login-title">Login</h1>
+                    <p class="login-subtitle">Welcome back! Please login to your account.</p>
+                </div>
+
+                <form class="login-form" method="post" action="@Url.Action("Login", "Account")">
+                    <!-- ID Input -->
+                    <div class="form-group">
+                        <label for="id">ID <span class="required">*</span></label>
+                        <input type="text" id="id" name="id" class="form-control" placeholder="Enter your ID" required>
+                        <i class="fas fa-id-card input-icon"></i>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="form-group">
+                        <label for="password">Password <span class="required">*</span></label>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                        <i class="fas fa-eye-slash toggle-password" id="togglePassword"></i>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="rememberMe" id="rememberMe">
+                            <span class="checkmark"></span>
+                            Remember me
+                        </label>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-login">
+                        Login
+                    </button>
+
+                </form>
+
+                <!-- Copyright -->
+                <div class="copyright">
+                    <span>&copy; @DateTime.Now.Year TARUMT. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Features Animation -->
+        <div class="login-right">
+            <div class="features-slider">
+                <!-- Feature Slide 1 -->
+                <div class="feature-slide active">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h2 class="feature-title">Track Your Progress</h2>
+                    <p class="feature-description">
+                        Monitor your academic performance with real-time analytics and comprehensive reports.
+                    </p>
+                </div>
+
+                <!-- Feature Slide 2 -->
+                <div class="feature-slide">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h2 class="feature-title">Manage Attendance</h2>
+                    <p class="feature-description">
+                        Keep track of your class attendance and never miss important deadlines.
+                    </p>
+                </div>
+
+                <!-- Feature Slide 3 -->
+                <div class="feature-slide">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h2 class="feature-title">Connect with Classes</h2>
+                    <p class="feature-description">
+                        Join classes, interact with teachers, and collaborate with fellow students.
+                    </p>
+                </div>
+
+                <!-- Feature Slide 4 -->
+                <div class="feature-slide">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h2 class="feature-title">Secure & Reliable</h2>
+                    <p class="feature-description">
+                        Your data is protected with enterprise-grade security and encryption.
+                    </p>
+                </div>
+
+                <!-- Feature Slide 5 -->
+                <div class="feature-slide">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h2 class="feature-title">Access Anywhere</h2>
+                    <p class="feature-description">
+                        Access your dashboard from any device, anywhere, at any time.
+                    </p>
+                </div>
+
+                <!-- Slide Indicators -->
+                <div class="feature-indicators">
+                    <span class="feature-indicator active" data-slide="0"></span>
+                    <span class="feature-indicator" data-slide="1"></span>
+                    <span class="feature-indicator" data-slide="2"></span>
+                    <span class="feature-indicator" data-slide="3"></span>
+                    <span class="feature-indicator" data-slide="4"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/slider.js"></script>
+    <script>
+        // Toggle password visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.classList.toggle('fa-eye');
+                    this.classList.toggle('fa-eye-slash');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

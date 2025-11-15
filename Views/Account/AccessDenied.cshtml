@@ -1,0 +1,50 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - TARUMT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="~/css/access-denied.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body>
+    <div class="error-container">
+        <!-- Left Side - Error Message -->
+        <div class="error-left">
+            <div class="error-content">
+                <div class="error-code">403</div>
+                <h1 class="error-title">Access Forbidden</h1>
+                <p class="error-description">
+                    You've tried to access a page you did not have prior authorization for.
+                </p>
+                <a href="@Url.Action("Index", "Dashboard")" class="btn-dashboard">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Side - Lottie Animation -->
+        <div class="error-right">
+            <div id="lottie-animation" class="lottie-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load Lottie animation
+        const animation = lottie.loadAnimation({
+            container: document.getElementById('lottie-animation'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: '@Url.Content("~/img/Under_Maintenance.json")'
+        });
+    </script>
+</body>
+</html>

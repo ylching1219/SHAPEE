@@ -1,0 +1,162 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    background: #ffffff;
+}
+
+.error-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Left Side - Error Message */
+.error-left {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 4rem;
+    background: #ffffff;
+}
+
+.error-content {
+    max-width: 500px;
+}
+
+.error-code {
+    font-size: 8rem;
+    font-weight: 900;
+    color: #2c3e50;
+    line-height: 1;
+    margin-bottom: 1rem;
+    letter-spacing: -5px;
+}
+
+.error-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.error-description {
+    font-size: 1.1rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+}
+
+.btn-dashboard {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-dashboard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-dashboard i {
+    font-size: 0.875rem;
+}
+
+/* Right Side - Lottie Animation */
+.error-right {
+    width: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.error-right::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+    0% {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(50px, 50px);
+    }
+}
+
+.lottie-container {
+    width: 100%;
+    max-width: 450px;
+    height: 100%;
+    max-height: 450px;
+    position: relative;
+    z-index: 1;
+}
+
+.lottie-container svg {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .error-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .error-left,
+    .error-right {
+        width: 100%;
+        height: auto;
+        min-height: 50vh;
+        padding: 2rem 1.5rem;
+    }
+
+    .error-code {
+        font-size: 5rem;
+    }
+
+    .error-title {
+        font-size: 2rem;
+    }
+
+    .lottie-container {
+        max-width: 100%;
+        max-height: 300px;
+    }
+}

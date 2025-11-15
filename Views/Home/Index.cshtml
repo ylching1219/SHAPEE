@@ -23,7 +23,7 @@
                 </div>
                 <h1 class="university-name">TARUMT</h1>
                 <p class="university-subtitle">University Management System</p>
-                <a href="@Url.Action("Index", "Dashboard")" class="login-button">
+                <a href="@Url.Action("Login", "Account")" class="login-button">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </a>
             </div>
@@ -116,49 +116,6 @@
         </div>
     </div>
 
-    <script>
-        const slides = document.querySelectorAll('.content-slide');
-        const indicators = document.querySelectorAll('.indicator');
-        let currentSlide = 0;
-        const slideInterval = 4000; // 4 seconds per slide
-
-        function showSlide(index) {
-            // Remove active class from all slides and indicators
-            slides.forEach(slide => slide.classList.remove('active'));
-            indicators.forEach(indicator => indicator.classList.remove('active'));
-
-            // Add active class to current slide and indicator
-            slides[index].classList.add('active');
-            indicators[index].classList.add('active');
-        }
-
-        function nextSlide() {
-            currentSlide = (currentSlide + 1) % slides.length;
-            showSlide(currentSlide);
-        }
-
-        // Auto-rotate slides
-        setInterval(nextSlide, slideInterval);
-
-        // Click on indicators to jump to specific slide
-        indicators.forEach((indicator, index) => {
-            indicator.addEventListener('click', () => {
-                currentSlide = index;
-                showSlide(currentSlide);
-            });
-        });
-
-        // Pause on hover
-        const slider = document.querySelector('.content-slider');
-        let intervalId = setInterval(nextSlide, slideInterval);
-
-        slider.addEventListener('mouseenter', () => {
-            clearInterval(intervalId);
-        });
-
-        slider.addEventListener('mouseleave', () => {
-            intervalId = setInterval(nextSlide, slideInterval);
-        });
-    </script>
+    <script src="~/js/slider.js"></script>
 </body>
 </html>
