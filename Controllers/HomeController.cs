@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Demo.Controllers;
+namespace SHAPEE.Controllers;
 
 public class HomeController : Controller
 {

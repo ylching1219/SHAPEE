@@ -1,6 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Demo.Controllers;
+namespace SHAPEE.Controllers;
 
 public class DashboardController : Controller
 {
@@ -11,6 +12,7 @@ public class DashboardController : Controller
     }
 
     // GET: Dashboard/Student
+    [Authorize(Roles = "Student")]
     public IActionResult Student()
     {
         ViewData["Title"] = "Student Dashboard";
@@ -18,6 +20,7 @@ public class DashboardController : Controller
     }
 
     // GET: Dashboard/Teacher
+    [Authorize(Roles = "Teacher")]
     public IActionResult Teacher()
     {
         ViewData["Title"] = "Teacher Dashboard";
@@ -25,6 +28,7 @@ public class DashboardController : Controller
     }
 
     // GET: Dashboard/Admin
+    [Authorize(Roles = "Admin")]
     public IActionResult Admin()
     {
         ViewData["Title"] = "Admin Dashboard";

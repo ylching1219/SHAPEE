@@ -1,5 +1,20 @@
+global using SHAPEE.Models;
+global using SHAPEE;
+
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
+
+
+builder.Services.AddSqlServer<DB>($@"
+    Data Source=(localdb)\MSSQLLocalDB;
+    AttachDbFilename={builder.Environment.ContentRootPath}\DB.mdf;"
+);
+
+builder.Services.AddScoped<Helper>();
+
+builder.Services.AddAuthentication().AddCookie();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 app.UseHttpsRedirection();  

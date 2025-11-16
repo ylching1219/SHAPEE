@@ -1,14 +1,45 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Demo.Controllers;
+namespace SHAPEE.Controllers;
 
-public class AccountController : Controller
+public class AccountController(DB db,Helper hp) : Controller
 {
     // GET: Account/Login
-    public IActionResult Login()
+    public IActionResult Login(LoginVM vm,string? returnURL)
     {
-        ViewData["Title"] = "Login";
-        return View();
+        var u = db.Users.Find(vm.Id);
+
+        if (u == null || !hp.VerifyPassword(u.Hash, vm.Password))
+        {
+            ModelState.AddModelError("",
+                "Login credentials not matched.");
+        }
+
+        if (ModelState.IsValid)
+        {
+            hp.SignIn(u!.id, u.Role, vm.RememberMe);
+
+
+            if (!string.IsNullOrEmpty(returnURL))
+            {
+                return LocalRedirect(returnURL);
+            }
+
+            if(u.Role == "Admin")
+            {
+                return RedirectToAction("Admin", "Dashboard");
+            }
+            else if(u.Role == "Staff")
+            {
+                return RedirectToAction("Teacher", "Dashboard");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+        }
+
+        return View(vm);
     }
 
     // GET: Account/AccessDenied
