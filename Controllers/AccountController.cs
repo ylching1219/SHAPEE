@@ -61,4 +61,12 @@ public class AccountController(DB db,Helper hp) : Controller
         ViewData["Title"] = "Reset Password";
         return View();
     }
+
+    public IActionResult Logout(string? returnURL)
+    {
+
+        hp.SignOut();
+
+        return RedirectToAction("Index", "Home");
+    }
 }
