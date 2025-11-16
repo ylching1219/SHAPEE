@@ -66,7 +66,7 @@ public class AccountController(DB db,Helper hp) : Controller
     {
 
         hp.SignOut();
-
-        return RedirectToAction("Index", "Home");
+        TempData["LogoutSuccess"] = "true";
+        return RedirectToAction("Index", "Home", new { logout = "success" });
     }
 }
