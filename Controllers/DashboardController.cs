@@ -20,8 +20,8 @@ public class DashboardController : Controller
     }
 
     // GET: Dashboard/Teacher
-    [Authorize(Roles = "Teacher")]
-    public IActionResult Teacher()
+    [Authorize(Roles = "Staff")]
+    public IActionResult Staff()
     {
         ViewData["Title"] = "Teacher Dashboard";
         return View("Teacher");
