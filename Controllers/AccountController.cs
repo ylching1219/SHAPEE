@@ -31,7 +31,7 @@ public class AccountController(DB db,Helper hp) : Controller
             }
             else if(u.Role == "Staff")
             {
-                return RedirectToAction("Teacher", "Dashboard");
+                return RedirectToAction("Staff", "Dashboard");
             }
             else
             {

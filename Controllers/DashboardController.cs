@@ -19,12 +19,12 @@ public class DashboardController : Controller
         return View("Index"); 
     }
 
-    // GET: Dashboard/Teacher
+    // GET: Dashboard/Staff
     [Authorize(Roles = "Staff")]
     public IActionResult Staff()
     {
-        ViewData["Title"] = "Teacher Dashboard";
-        return View("Teacher");
+        ViewData["Title"] = "Staff Dashboard";
+        return View("Staff");
     }
 
     // GET: Dashboard/Admin
