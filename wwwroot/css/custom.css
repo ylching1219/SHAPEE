@@ -24,3 +24,133 @@
 #sidebarToggleTop:hover {
     color: #5a5c69;
 }
+
+/* Custom Select Dropdown Styling */
+select.form-control {
+    background-color: #fff;
+    border: 1px solid #d1d3e2;
+    color: #5a5c69;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234e73df' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.5rem;
+}
+
+select.form-control:hover {
+    border-color: #bac8f3;
+    background-color: #f8f9fc;
+}
+
+select.form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    background-color: #fff;
+    outline: 0;
+}
+
+select.form-control option {
+    padding: 0.5rem 0.75rem;
+    background-color: #fff;
+    color: #5a5c69;
+    font-size: 0.875rem;
+}
+
+select.form-control option:hover {
+    background-color: #4e73df;
+    color: #fff;
+}
+
+select.form-control option:checked {
+    background-color: #4e73df;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* For shadow-sm selects */
+select.form-control.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+select.form-control.shadow-sm:focus {
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25) !important;
+}
+
+/* Small select styling */
+select.form-control-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    background-size: 10px;
+    background-position: right 0.5rem center;
+}
+
+/* Enhanced Select Dropdown Styling for Analytics */
+.card-header select.form-control {
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    color: #5a5c69;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%234e73df' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 10px;
+    padding-right: 2.2rem;
+}
+
+.card-header select.form-control:hover {
+    border-color: #4e73df;
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(78, 115, 223, 0.1);
+}
+
+.card-header select.form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    background-color: #fff;
+    outline: 0;
+}
+
+.card-header select.form-control option {
+    padding: 0.75rem;
+    background-color: #fff;
+    color: #5a5c69;
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+.card-header select.form-control option:hover,
+.card-header select.form-control option:focus {
+    background-color: #4e73df;
+    color: #fff;
+}
+
+.card-header select.form-control option:checked {
+    background-color: #4e73df;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Label styling for better integration */
+.card-header label.text-xs {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.card-header label.text-xs i {
+    margin-right: 0.25rem;
+    color: #4e73df;
+}
