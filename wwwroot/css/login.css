@@ -147,6 +147,59 @@ body {
     box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
 }
 
+/* Error States */
+.form-control.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+    transition: all 0.3s ease;
+}
+
+.form-control.error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-control.error+.input-icon {
+    color: #ef4444;
+}
+
+/* Error Message */
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.3s ease;
+}
+
+.error-message i {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.error-message span {
+    flex: 1;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .input-icon {
     position: absolute;
     left: 1rem;

@@ -12,7 +12,7 @@ public class AccountController(DB db,Helper hp) : Controller
         if (u == null || !hp.VerifyPassword(u.Hash, vm.Password))
         {
             ModelState.AddModelError("",
-                "Login credentials not matched.");
+                "Please check your ID or password and try again.");
         }
 
         if (ModelState.IsValid)

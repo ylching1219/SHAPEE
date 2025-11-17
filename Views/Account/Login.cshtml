@@ -27,22 +27,30 @@
                 </div>
  
                 <form class="login-form" method="post" action="@Url.Action("Login", "Account")">
-                    <!-- ID Input -->
+                    <!--id input-->
                     <div class="form-group">
                         <label for="id">ID <span class="required">*</span></label>
-                        <input type="text" id="id" name="id" class="form-control" placeholder="Enter your ID" required>
+                        <input type="text" id="id" name="id" class="form-control @(ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST" ? "error" : "")" placeholder="Enter your ID" required value="@(Model?.Id ?? "")">
                         <i class="fas fa-id-card input-icon"></i>
                     </div>
 
-                    <!-- Password Input -->
+                    <!--password input-->
                     <div class="form-group">
                         <label for="password">Password <span class="required">*</span></label>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                        <input type="password" id="password" name="password" class="form-control @(ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST" ? "error" : "")" placeholder="Enter your password" required>
                         <i class="fas fa-lock input-icon"></i>
                         <i class="fas fa-eye-slash toggle-password" id="togglePassword"></i>
                     </div>
 
-                    <!-- Remember Me & Forgot Password -->
+                    <!--error message-->
+                    @if (ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST")
+                    {
+                        <div class="error-message" id="errorMessage">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>@ViewData.ModelState[""].Errors[0].ErrorMessage</span>
+                        </div>
+                    }
+
                     <div class="form-options">
                         <label class="checkbox-label">
                             <input type="checkbox" name="rememberMe" id="rememberMe">
@@ -52,7 +60,6 @@
                         <a href="@Url.Action("ForgotPassword", "Account")" class="forgot-password">Forgot password?</a>
                     </div>
 
-                    <!-- Submit Button -->
                     <button type="submit" class="btn-login">
                         Login
                     </button>
@@ -130,11 +137,14 @@
     </div>
 
     <script src="~/js/slider.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.3/dist/sweetalert2.all.min.js"></script>
+    <script src="~/js/app.js"></script>
     <script>
-        // Toggle password visibility
+        //password visibility toggle
         document.addEventListener('DOMContentLoaded', function() {
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
+            const idInput = document.getElementById('id');
 
             if (togglePassword && passwordInput) {
                 togglePassword.addEventListener('click', function() {
@@ -142,6 +152,40 @@
                     passwordInput.setAttribute('type', type);
                     this.classList.toggle('fa-eye');
                     this.classList.toggle('fa-eye-slash');
+                });
+            }
+
+            //add error class to inputs if got errror
+            @if (ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST")
+            {
+                <text>
+                if (idInput) {
+                    idInput.classList.add('error');
+                }
+                if (passwordInput) {
+                    passwordInput.classList.add('error');
+                }
+                </text>
+            }
+
+            //remove error class on input
+            if (idInput) {
+                idInput.addEventListener('input', function() {
+                    this.classList.remove('error');
+                    const errorMsg = document.getElementById('errorMessage');
+                    if (errorMsg) {
+                        errorMsg.style.display = 'none';
+                    }
+                });
+            }
+
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function() {
+                    this.classList.remove('error');
+                    const errorMsg = document.getElementById('errorMessage');
+                    if (errorMsg) {
+                        errorMsg.style.display = 'none';
+                    }
                 });
             }
         });
