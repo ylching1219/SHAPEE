@@ -17,7 +17,7 @@ public class AccountController(DB db,Helper hp) : Controller
 
         if (ModelState.IsValid)
         {
-            hp.SignIn(u!.id, u.Role, vm.RememberMe);
+            hp.SignIn(u!.Id, u.Role, vm.RememberMe);
 
 
             if (!string.IsNullOrEmpty(returnURL))
