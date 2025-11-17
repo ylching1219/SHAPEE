@@ -5,13 +5,28 @@ namespace SHAPEE.Controllers;
 
 public class DashboardController : Controller
 {
-
     // GET: Dashboard/Student
     [Authorize(Roles = "Student")]
     public IActionResult Student()
     {
         ViewData["Title"] = "Student Dashboard";
-        return View("Student"); 
+        return View("Student");
+    }
+
+    // GET: Dashboard/ViewAttendance
+    [Authorize(Roles = "Student")]
+    public IActionResult ViewAttendance()
+    {
+        ViewData["Title"] = "View Attendance";
+        return View("ViewAttendance");
+    }
+
+    // GET: Dashboard/AttendanceHistory
+    [Authorize(Roles = "Student")]
+    public IActionResult AttendanceHistory()
+    {
+        ViewData["Title"] = "Attendance History";
+        return View("AttendanceHistory");
     }
 
     // GET: Dashboard/Staff
@@ -30,5 +45,3 @@ public class DashboardController : Controller
         return View("Admin");
     }
 }
-
-

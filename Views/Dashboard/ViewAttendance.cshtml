@@ -1,0 +1,349 @@
+﻿@{
+    ViewData["Title"] = "View Attendance";
+}
+
+@section Styles {
+    <link href="~/css/attendance.css" rel="stylesheet" />
+}
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">View Attendance</h1>
+        <p class="text-muted small mt-2">Track your class attendance and performance</p>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="font-weight-bold">Filter by Subject</label>
+                <select class="form-control" id="subjectFilter">
+                    <option value="all">All Subjects</option>
+                    <option value="BMCS2084">BMCS2084 - Data Structure and Algorithms</option>
+                    <option value="BMCS2068">BMCS2068 - Web Design and Development</option>
+                    <option value="BMCS1024">BMCS1024 - Discrete Structure</option>
+                    <option value="BMCS2043">BMCS2043 - Database Systems</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="font-weight-bold">Filter by Month</label>
+                <select class="form-control" id="monthFilter">
+                    <option value="11">November 2025</option>
+                    <option value="10">October 2025</option>
+                    <option value="09">September 2025</option>
+                    <option value="08">August 2025</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="font-weight-bold">Filter by Status</label>
+                <select class="form-control" id="statusFilter">
+                    <option value="all">All Status</option>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                    <option value="leave">Leave</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">28 Days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Absent</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">4 Days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Leave</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">1 Day</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-times fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overall</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">83%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-pie fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subject-wise Attendance -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Subject-wise Attendance</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Subject Code</th>
+                                <th>Subject Name</th>
+                                <th>Total Classes</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Leave</th>
+                                <th>Percentage</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-secondary">BMCS2084</span></td>
+                                <td>Data Structure and Algorithms</td>
+                                <td>12</td>
+                                <td><span class="text-success font-weight-bold">11</span></td>
+                                <td><span class="text-danger">1</span></td>
+                                <td>0</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 92%" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">92%</div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-success">Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-secondary">BMCS2068</span></td>
+                                <td>Web Design and Development</td>
+                                <td>8</td>
+                                <td><span class="text-success font-weight-bold">7</span></td>
+                                <td><span class="text-danger">1</span></td>
+                                <td>0</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 88%" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100">88%</div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-success">Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-secondary">BMCS1024</span></td>
+                                <td>Discrete Structure</td>
+                                <td>8</td>
+                                <td><span class="text-success font-weight-bold">6</span></td>
+                                <td><span class="text-danger">1</span></td>
+                                <td><span class="text-warning">1</span></td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">75%</div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-info">Good</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-secondary">BMCS2043</span></td>
+                                <td>Database Systems</td>
+                                <td>5</td>
+                                <td><span class="text-success font-weight-bold">4</span></td>
+                                <td><span class="text-danger">1</span></td>
+                                <td>0</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">65%</div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-warning">Warning</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Attendance Records -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Attendance Records</h6>
+            </div>
+            <div class="card-body">
+                <div class="attendance-timeline">
+                    <!-- Attendance Item -->
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">24</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS2084 Data Structure and Algorithms</h6>
+                                    <p class="text-muted small mb-1">Block K – K103 • 8:00 AM – 10:00 AM</p>
+                                </div>
+                                <span class="badge badge-danger">Absent</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">24</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS2068 Web Design and Development</h6>
+                                    <p class="text-muted small mb-1">DK Buildings – DKABA • 11:00 AM – 1:00 PM</p>
+                                </div>
+                                <span class="badge badge-success">Present</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">23</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS1024 Discrete Structure</h6>
+                                    <p class="text-muted small mb-1">Block B – B001G • 3:30 PM – 5:00 PM</p>
+                                </div>
+                                <span class="badge badge-success">Present</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">22</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS2043 Database Systems</h6>
+                                    <p class="text-muted small mb-1">Block C – C205 • 2:00 PM – 4:00 PM</p>
+                                </div>
+                                <span class="badge badge-success">Present</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">21</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS1024 Discrete Structure</h6>
+                                    <p class="text-muted small mb-1">Block B – B001G • 3:30 PM – 5:00 PM</p>
+                                </div>
+                                <span class="badge badge-warning">Leave</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-record">
+                        <div class="attendance-date">
+                            <div class="date-box">
+                                <div class="day">20</div>
+                                <div class="month">NOV</div>
+                            </div>
+                        </div>
+                        <div class="attendance-details">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1">BMCS2084 Data Structure and Algorithms</h6>
+                                    <p class="text-muted small mb-1">Block K – K103 • 8:00 AM – 10:00 AM</p>
+                                </div>
+                                <span class="badge badge-success">Present</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary">Load More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Filter functionality can be added here
+        document.getElementById('subjectFilter').addEventListener('change', function() {
+            // Filter logic
+        });
+
+        document.getElementById('monthFilter').addEventListener('change', function() {
+            // Filter logic
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            // Filter logic
+        });
+    </script>
+}
