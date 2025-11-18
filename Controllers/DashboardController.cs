@@ -5,6 +5,14 @@ namespace SHAPEE.Controllers;
 
 public class DashboardController : Controller
 {
+
+    private readonly DB db;
+
+    public DashboardController(DB context)
+    {
+        db = context;
+    }
+
     // GET: Dashboard/Student
     [Authorize(Roles = "Student")]
     public IActionResult Student()
@@ -43,5 +51,17 @@ public class DashboardController : Controller
     {
         ViewData["Title"] = "Admin Dashboard";
         return View("Admin");
+    }
+
+    // GET: Dashboard/ManageStudents
+    [Authorize(Roles = "Admin")]
+    public IActionResult ManageStudents()
+    {
+        ViewData["Title"] = "Manage Students";
+        var students = db.Students
+            .OrderBy(s => s.Id)
+            .ToList();
+
+        return View(students);
     }
 }
