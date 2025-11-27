@@ -11,7 +11,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251118064124_InitialCreate")]
+    [Migration("20251127141842_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

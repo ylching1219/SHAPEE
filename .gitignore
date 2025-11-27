@@ -374,3 +374,5 @@ FodyWeavers.xsd
 /SHAPEE.csproj
 /Migrations/20251116152619_InitialCreate.cs
 /Migrations/20251116152619_InitialCreate.Designer.cs
+/Migrations/20251118064124_InitialCreate.cs
+/Migrations/20251118064124_InitialCreate.Designer.cs

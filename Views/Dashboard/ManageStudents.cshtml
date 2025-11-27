@@ -1,4 +1,5 @@
 @model IEnumerable<SHAPEE.Models.Student>
+@using System.Text.Json
 @{
     ViewData["Title"] = "Manage Students";
     var students = Model?.ToList() ?? new List<SHAPEE.Models.Student>();
@@ -28,9 +29,14 @@
             <div class="card-header py-3">
                 <div class="d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Students (<span id="studentCount">@studentCount</span>)</h6>
-                    <button class="btn btn-sm btn-primary" id="exportCsvBtn">
-                        <i class="fas fa-file-export mr-1"></i> Export CSV
-                    </button>
+                    <div class="d-flex">
+                        <button class="btn btn-sm btn-primary mr-2" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
+                            <i class="fas fa-user-plus mr-1"></i> Add Student
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" id="exportCsvBtn">
+                            <i class="fas fa-file-export mr-1"></i> Export CSV
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -234,3 +240,141 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog" aria-labelledby="addEditStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addEditStudentModalLabel">Add New Student</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <form id="studentForm" method="post" asp-action="Create">
+                <div class="modal-body">
+                    <input type="hidden" id="studentId" name="Id" value="0" />
+
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="LastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="studentEmail">Email</label>
+                        <input type="email" class="form-control" id="studentEmail" name="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="program">Program</label>
+                        <select class="form-control" id="program" name="Program" required>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Business">Business</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Arts">Arts</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="yearLevel">Year Level</label>
+                        <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
+                    </div>
+                    <div class="form-group" id="statusGroup" style="display:none;">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" name="Status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteStudentModalLabel">Confirm Deletion</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the student **<span id="studentToDeleteName"></span>**?</p>
+                <p class="text-danger small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" asp-action="Delete">
+                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <button class="btn btn-danger" type="submit">Delete Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <script> 
+                document.addEventListener('DOMContentLoaded', function() {
+                    const initialCount = @studentCount;
+                    document.getElementById('totalRecords').innerText = initialCount;
+                    document.getElementById('studentCount').innerText = initialCount;
+
+                    document.getElementById('showingTo').innerText = initialCount > 10 ? 10 : initialCount;
+                    document.getElementById('showingFrom').innerText = initialCount > 0 ? 1 : 0;
+
+                    const modalTitle = document.getElementById('addEditStudentModalLabel');
+                    const form = document.getElementById('studentForm');
+                    const statusGroup = document.getElementById('statusGroup');
+    
+                    // --- CREATE (Add) ---
+                    window.prepareAddModal = function() {
+                        modalTitle.innerText = 'Add New Student'; 
+                        form.setAttribute('action', '/Admin/Create');
+                        document.getElementById('studentId').value = 0;
+                        form.reset();
+
+                        statusGroup.style.display = 'none';
+
+                        document.getElementById('program').value = 'Computer Science';
+                        document.getElementById('yearLevel').value = 1;
+                    };
+    
+                    // --- UPDATE (Edit) ---
+                    window.prepareEditModal = function(element) {
+                        const row = element.closest('tr');
+                        const studentData = JSON.parse(row.getAttribute('data-student'));
+        
+                        modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
+                        form.setAttribute('action', '/Admin/Edit');
+
+                        document.getElementById('studentId').value = studentData.Id;
+                        document.getElementById('firstName').value = studentData.FirstName;
+                        document.getElementById('lastName').value = studentData.LastName;
+                        document.getElementById('studentEmail').value = studentData.Email;
+                        document.getElementById('program').value = studentData.Program;
+                        document.getElementById('yearLevel').value = studentData.YearLevel;
+                        document.getElementById('status').value = studentData.Status.trim();
+
+                        statusGroup.style.display = 'block';
+                    };
+
+                    // --- DELETE ---
+                    window.prepareDeleteModal = function(element) {
+                        const row = element.closest('tr');
+                        const studentName = row.getAttribute('data-student-name');
+                        const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                        document.getElementById('studentToDeleteName').innerText = studentName;
+                        document.getElementById('deleteStudentId').value = studentData.Id;
+                        document.getElementById('deleteForm').setAttribute('action', '/Admin/Delete'); // Set the action for the Delete endpoint
+                    };
+                });
+            </script>
