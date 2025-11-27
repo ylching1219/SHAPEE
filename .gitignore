@@ -361,3 +361,16 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Program.cs
+/Migrations/20251117042403_InitialCreate.cs
+/Migrations/20251117042403_InitialCreate.Designer.cs
+/Program.cs
+/SHAPEE.csproj
+/Migrations/20251116152619_InitialCreate.cs
+/Migrations/20251116152619_InitialCreate.Designer.cs
+/.gitignore
+/.gitignore
+/Program.cs
+/SHAPEE.csproj
+/Migrations/20251116152619_InitialCreate.cs
+/Migrations/20251116152619_InitialCreate.Designer.cs
