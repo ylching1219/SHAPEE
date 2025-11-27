@@ -1,0 +1,236 @@
+@model IEnumerable<SHAPEE.Models.Student>
+@{
+    ViewData["Title"] = "Manage Students";
+    var students = Model?.ToList() ?? new List<SHAPEE.Models.Student>();
+    var studentCount = students.Count;
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+</div>
+
+<!--three nav tab-->
+<ul class="nav nav-tabs mb-4" id="userManagementTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="students-tab" data-toggle="tab" href="#students" role="tab" aria-controls="students" aria-selected="true">Students</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab1-tab" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="false">Tab1</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab2-tab" data-toggle="tab" href="#tab2" role="tab" aria-controls="tab2" aria-selected="false">Tab2</a>
+    </li>
+</ul>
+
+<div class="tab-content" id="userManagementTabContent">
+    <div class="tab-pane fade show active" id="students" role="tabpanel" aria-labelledby="students-tab">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div class="d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Students (<span id="studentCount">@studentCount</span>)</h6>
+                    <button class="btn btn-sm btn-primary" id="exportCsvBtn">
+                        <i class="fas fa-file-export mr-1"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-2">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search students by name, ID, or email...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Suspended">Suspended</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="programFilter">
+                                    <option value="">All Programs</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Arts">Arts</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="yearFilter">
+                                    <option value="">All Years</option>
+                                    <option value="1">Year 1</option>
+                                    <option value="2">Year 2</option>
+                                    <option value="3">Year 3</option>
+                                    <option value="4">Year 4</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--student list table-->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="studentsTable" width="100%" cellspacing="0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 40px;" class="text-center align-middle">
+                                    <div class="form-check mb-0 d-inline-flex justify-content-center align-items-center">
+                                        <input type="checkbox" id="selectAll" class="form-check-input position-static">
+                                    </div>
+                                </th>
+                                <th>
+                                    <a href="#" class="text-dark text-decoration-none sortable" data-sort="name">
+                                        Name <i class="fas fa-sort ml-1"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="#" class="text-dark text-decoration-none sortable" data-sort="studentId">
+                                        Student ID <i class="fas fa-sort ml-1"></i>
+                                    </a>
+                                </th>
+                                <th>Email</th>
+                                <th>Contact Number</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>
+                                    <a href="#" class="text-dark text-decoration-none sortable" data-sort="dateJoined">
+                                        Date Joined <i class="fas fa-sort ml-1"></i>
+                                    </a>
+                                </th>
+                                <th>Status</th>
+                                <th style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            @if (studentCount == 0)
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">
+                                        <i class="fas fa-user-graduate fa-2x mb-2"></i>
+                                        <p>No students found.</p>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var student in students)
+                                {
+                                    var statusRaw = student.Status ?? "Unknown";
+                                    var status = statusRaw.Trim();
+                                    var statusClass = status.ToLowerInvariant() switch
+                                    {
+                                        "active" => "badge-success",
+                                        "inactive" => "badge-secondary",
+                                        "suspended" => "badge-warning",
+                                        _ => "badge-light"
+                                    };
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            <div class="form-check mb-0 d-inline-flex justify-content-center align-items-center">
+                                                <input type="checkbox" class="form-check-input row-checkbox position-static">
+                                            </div>
+                                        </td>
+                                        <td>Demo Name</td>
+                                        <td>@student.Id</td>
+                                        <td>demo@student.tarumt.edu.my</td>
+                                        <td>+60 12-345-6789</td>
+                                        <td>Computer Science</td>
+                                        <td><span class="badge badge-info">Year 2</span></td>
+                                        <td>15/01/2025</td>
+                                        <td>
+                                            <span class="badge @statusClass">@statusRaw</span>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <div class="dropdown dropup">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                                                        type="button"
+                                                        id="actions-@student.Id"
+                                                        data-toggle="dropdown"
+                                                        aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                    <span class="sr-only">Toggle actions</span>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="actions-@student.Id">
+                                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                                        <i class="fas fa-eye mr-2 text-gray-500"></i> View Details
+                                                    </a>
+                                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                                        <i class="fas fa-edit mr-2 text-gray-500"></i> Edit
+                                                    </a>
+                                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                                        <i class="fas fa-user-lock mr-2 text-gray-500"></i> Suspend
+                                                    </a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <a class="dropdown-item d-flex align-items-center text-danger" href="#">
+                                                        <i class="fas fa-trash mr-2"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!--pagination(not yet implemented)-->
+                <div class="d-flex flex-row align-items-center justify-content-between mt-3">
+                    <div class="text-muted small">
+                        Showing <span id="showingFrom">1</span> to <span id="showingTo">10</span> of <span id="totalRecords">120</span> entries
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0" id="pagination">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link" href="#">4</a></li>
+                            <li class="page-item"><a class="page-link" href="#">5</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--extra tabs can be added here-->
+    <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-envelope mr-2"></i> Tab1
+                </h6>
+            </div>
+            <div class="card-body">
+                <p>Tab1 content</p>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cog mr-2"></i> Tab2
+                </h6>
+            </div>
+            <div class="card-body">
+                <p>Tab2 content</p>
+            </div>
+        </div>
+    </div>
+</div>

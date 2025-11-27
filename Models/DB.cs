@@ -18,10 +18,13 @@ namespace SHAPEE.Models
     {
 
         [Key,MaxLength(50)]
-        public string id { get; set; }
+        public string Id { get; set; } 
         [MaxLength(100)]
         public string Hash { get; set; }
         public string Role => GetType().Name;
+        public int LoginAttempts { get; set; }
+        [MaxLength(20)]
+        public string Status { get; set; } 
     }
 
     public class Admin:User
