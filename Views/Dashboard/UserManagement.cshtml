@@ -1,0 +1,436 @@
+﻿@model IEnumerable<SHAPEE.Models.Student>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "User Management";
+    var students = Model?.ToList() ?? new List<SHAPEE.Models.Student>();
+    var studentCount = students.Count;
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" id="userManagementTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="students-tab" data-toggle="tab" href="#students" role="tab">Students</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="staff-tab" data-toggle="tab" href="#staff" role="tab">Staff</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="admins-tab" data-toggle="tab" href="#admins" role="tab">Admins</a>
+    </li>
+</ul>
+
+<div class="tab-content" id="userManagementTabContent">
+    <!-- Students Tab -->
+    <div class="tab-pane fade show active" id="students" role="tabpanel">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div class="d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Students (<span id="studentCount">@studentCount</span>)</h6>
+                    <div class="d-flex">
+                        <button class="btn btn-sm btn-primary mr-2" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
+                            <i class="fas fa-user-plus mr-1"></i> Add Student
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" id="exportCsvBtn">
+                            <i class="fas fa-file-export mr-1"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Search and Filters -->
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-2">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search students by name, ID, or email...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Suspended">Suspended</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="programFilter">
+                                    <option value="">All Programs</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Arts">Arts</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <select class="form-control form-control-sm" id="yearFilter">
+                                    <option value="">All Years</option>
+                                    <option value="1">Year 1</option>
+                                    <option value="2">Year 2</option>
+                                    <option value="3">Year 3</option>
+                                    <option value="4">Year 4</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="studentsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Student ID</th>
+                                <th>Email</th>
+                                <th>Contact Number</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>Date Joined</th>
+                                <th>Status</th>
+                                <th style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            @if (studentCount == 0)
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">
+                                        <i class="fas fa-user-graduate fa-2x mb-2"></i>
+                                        <p>No students found.</p>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var student in students)
+                                {
+                                    var statusRaw = student.Status ?? "Unknown";
+                                    var status = statusRaw.Trim();
+                                    var statusClass = status.ToLowerInvariant() switch
+                                    {
+                                        "active" => "badge-success",
+                                        "inactive" => "badge-secondary",
+                                        "suspended" => "badge-warning",
+                                        _ => "badge-light"
+                                    };
+                                    var studentJson = JsonSerializer.Serialize(new
+                                    {
+                                        student.Id,
+                                        student.FirstName,
+                                        student.LastName,
+                                        student.Email,
+                                        student.ContactNumber,
+                                        student.Program,
+                                        student.YearLevel,
+                                        student.Status
+                                    });
+                                    <tr data-student='@studentJson' data-student-name="@student.FullName">
+                                        <td>@student.FullName</td>
+                                        <td>@student.Id</td>
+                                        <td>@student.Email</td>
+                                        <td>@(student.ContactNumber ?? "N/A")</td>
+                                        <td>@(student.Program ?? "N/A")</td>
+                                        <td><span class="badge badge-info">Year @(student.YearLevel ?? 0)</span></td>
+                                        <td>@student.DateJoined.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <span class="badge @statusClass">@statusRaw</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown dropup">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+                                                    <span class="sr-only">Toggle actions</span>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right shadow">
+                                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                                        <i class="fas fa-edit mr-2"></i> Edit
+                                                    </a>
+                                                    <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
+                                                        <i class="fas fa-user-lock mr-2"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                                    </a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                                        <i class="fas fa-trash mr-2"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Tab (Placeholder) -->
+    <div class="tab-pane fade" id="staff" role="tabpanel">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Staff Management</h6>
+            </div>
+            <div class="card-body">
+                <p>Staff management coming soon...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admins Tab (Placeholder) -->
+    <div class="tab-pane fade" id="admins" role="tabpanel">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Admin Management</h6>
+            </div>
+            <div class="card-body">
+                <p>Admin management coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Student Modal -->
+<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addEditStudentModalLabel">Add New Student</h5>
+                <button class="close text-white" type="button" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="studentForm" method="post" asp-controller="Admin" asp-action="Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" id="studentId" name="Id" value="" />
+                    <input type="hidden" name="Discriminator" value="Student" />
+
+                    <div class="form-group">
+                        <label for="firstName">First Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="lastName" name="LastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="studentEmail">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="studentEmail" name="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactNumber">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" name="ContactNumber" placeholder="+60 12-345-6789">
+                    </div>
+                    <div class="form-group">
+                        <label for="program">Program <span class="text-danger">*</span></label>
+                        <select class="form-control" id="program" name="Program" required>
+                            <option value="">Select Program</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Business">Business</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Arts">Arts</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="yearLevel">Year Level <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
+                    </div>
+                    <div class="form-group" id="statusGroup" style="display:none;">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" name="Status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong><span id="studentToDeleteName"></span></strong>?</p>
+                <p class="text-danger small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalTitle = document.getElementById('addEditStudentModalLabel');
+            const form = document.getElementById('studentForm');
+            const statusGroup = document.getElementById('statusGroup');
+
+            // Add Student
+            window.prepareAddModal = function() {
+                modalTitle.innerText = 'Add New Student';
+                form.setAttribute('action', '@Url.Action("Create", "Admin")');
+                form.reset();
+                document.getElementById('studentId').value = '';
+                statusGroup.style.display = 'none';
+            };
+
+            // Edit Student
+            window.prepareEditModal = function(element) {
+                const row = element.closest('tr');
+                const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
+                form.setAttribute('action', '@Url.Action("Edit", "Admin")');
+
+                document.getElementById('studentId').value = studentData.Id;
+                document.getElementById('firstName').value = studentData.FirstName;
+                document.getElementById('lastName').value = studentData.LastName;
+                document.getElementById('studentEmail').value = studentData.Email;
+                document.getElementById('contactNumber').value = studentData.ContactNumber || '';
+                document.getElementById('program').value = studentData.Program;
+                document.getElementById('yearLevel').value = studentData.YearLevel;
+                document.getElementById('status').value = studentData.Status.trim();
+
+                statusGroup.style.display = 'block';
+            };
+
+            // Delete Student
+            window.prepareDeleteModal = function(element) {
+                const row = element.closest('tr');
+                const studentName = row.getAttribute('data-student-name');
+                const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                document.getElementById('studentToDeleteName').innerText = studentName;
+                document.getElementById('deleteStudentId').value = studentData.Id;
+            };
+
+            // Suspend/Activate Student
+            window.toggleSuspend = function(studentId, element) {
+                if (confirm('Are you sure you want to change this student\'s status?')) {
+                    const formData = new FormData();
+                    formData.append('id', studentId);
+                    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                    fetch('@Url.Action("Suspend", "Admin")', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            };
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('keyup', filterTable);
+            document.getElementById('statusFilter').addEventListener('change', filterTable);
+            document.getElementById('programFilter').addEventListener('change', filterTable);
+            document.getElementById('yearFilter').addEventListener('change', filterTable);
+
+            function filterTable() {
+                const searchValue = document.getElementById('searchInput').value.toLowerCase();
+                const statusValue = document.getElementById('statusFilter').value.toLowerCase();
+                const programValue = document.getElementById('programFilter').value.toLowerCase();
+                const yearValue = document.getElementById('yearFilter').value;
+
+                const rows = document.querySelectorAll('#studentsTableBody tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    if (row.cells.length === 1) return; // Skip "no students" row
+
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const id = row.cells[1].textContent.toLowerCase();
+                    const email = row.cells[2].textContent.toLowerCase();
+                    const program = row.cells[4].textContent.toLowerCase();
+                    const year = row.cells[5].textContent;
+                    const status = row.cells[7].textContent.toLowerCase();
+
+                    const matchesSearch = name.includes(searchValue) || id.includes(searchValue) || email.includes(searchValue);
+                    const matchesStatus = !statusValue || status.includes(statusValue);
+                    const matchesProgram = !programValue || program.includes(programValue);
+                    const matchesYear = !yearValue || year.includes('year ' + yearValue);
+
+                    if (matchesSearch && matchesStatus && matchesProgram && matchesYear) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                document.getElementById('studentCount').textContent = visibleCount;
+            }
+
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+}
