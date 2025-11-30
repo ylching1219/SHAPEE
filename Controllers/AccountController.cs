@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using SHAPEE.ViewModels;
+using SHAPEE.Models;
 
 namespace SHAPEE.Controllers;
 
@@ -91,85 +92,85 @@ public class AccountController(DB db, Helper hp) : Controller
         return View();
     }
 
-    // POST: Account/ForgotPassword - Handles token generation and email sending (A3)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ForgotPassword(ForgotPasswordVM vm)
-    {
-        // Use Find() or FirstOrDefault() for database lookup
-        var u = db.Users.Find(vm.Id);
+    //// POST: Account/ForgotPassword - Handles token generation and email sending (A3)
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public IActionResult ForgotPassword(ForgotPasswordVM vm)
+    //{
+    //    // Use Find() or FirstOrDefault() for database lookup
+    //    var u = db.Users.Find(vm.Id);
 
-        // A3 Logic: Generate Token and Send Email
-        if (u != null)
-        {
-            string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
+    //    // A3 Logic: Generate Token and Send Email
+    //    if (u != null)
+    //    {
+    //        string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
 
-            u.ResetToken = token;
-            u.TokenExpiry = DateTime.UtcNow.AddHours(1);
-            db.SaveChanges();
+    //        u.ResetToken = token;
+    //        u.TokenExpiry = DateTime.UtcNow.AddHours(1);
+    //        db.SaveChanges();
 
-            string resetLink = Url.Action("ResetPassword", "Account",
-                new { token = token, userId = u.Id }, Request.Scheme);
+    //        string resetLink = Url.Action("ResetPassword", "Account",
+    //            new { token = token, userId = u.Id }, Request.Scheme);
 
-            TempData["DevResetLink"] = resetLink;
-        }
+    //        TempData["DevResetLink"] = resetLink;
+    //    }
 
-        ViewData["Title"] = "Password Reset Request Sent";
-        return View("ForgotPasswordConfirmation");
-    }
+    //    ViewData["Title"] = "Password Reset Request Sent";
+    //    return View("ForgotPasswordConfirmation");
+    //}
 
-    // GET: Account/ResetPassword - Validates token and displays the reset form (A3)
-    [HttpGet]
-    public IActionResult ResetPassword(string token, string userId)
-    {
-        // 1. Basic validation check
-        var u = db.Users.Find(userId);
+    //// GET: Account/ResetPassword - Validates token and displays the reset form (A3)
+    //[HttpGet]
+    //public IActionResult ResetPassword(string token, string userId)
+    //{
+    //    // 1. Basic validation check
+    //    var u = db.Users.Find(userId);
 
-        if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
-        {
-            ViewData["Title"] = "Invalid Link";
-            ViewData["Message"] = "The password reset link is invalid or has expired. Please request a new one.";
-            return View("Error");
-        }
+    //    if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
+    //    {
+    //        ViewData["Title"] = "Invalid Link";
+    //        ViewData["Message"] = "The password reset link is invalid or has expired. Please request a new one.";
+    //        return View("Error");
+    //    }
 
-        ViewData["Title"] = "Reset Password";
-        // Pass necessary data to the view to be posted back
-        return View(new ResetPasswordVM { Token = token, UserId = userId });
-    }
+    //    ViewData["Title"] = "Reset Password";
+    //    // Pass necessary data to the view to be posted back
+    //    return View(new ResetPasswordVM { Token = token, UserId = userId });
+    //}
 
-    // POST: Account/ResetPassword - Handles form submission for new password (A3)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ResetPassword(ResetPasswordVM vm)
-    {
-        if (!ModelState.IsValid)
-        {
-            ViewData["Title"] = "Reset Password";
-            return View(vm);
-        }
+    //// POST: Account/ResetPassword - Handles form submission for new password (A3)
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public IActionResult ResetPassword(ResetPasswordVM vm)
+    //{
+    //    if (!ModelState.IsValid)
+    //    {
+    //        ViewData["Title"] = "Reset Password";
+    //        return View(vm);
+    //    }
 
-        var u = db.Users.FirstOrDefault(
-            x => x.Id == vm.UserId && x.ResetToken == vm.Token);
+    //    var u = db.Users.FirstOrDefault(
+    //        x => x.Id == vm.UserId && x.ResetToken == vm.Token);
 
-        if (u == null || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
-        {
-            ModelState.AddModelError("", "The reset operation failed. Please request a new link.");
-            ViewData["Title"] = "Reset Password Failed";
-            return View(vm);
-        }
+    //    if (u == null || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
+    //    {
+    //        ModelState.AddModelError("", "The reset operation failed. Please request a new link.");
+    //        ViewData["Title"] = "Reset Password Failed";
+    //        return View(vm);
+    //    }
 
-        u.Hash = hp.HashPassword(vm.NewPassword);
+    //    u.Hash = hp.HashPassword(vm.NewPassword);
 
-        u.ResetToken = null;
-        u.TokenExpiry = null;
-        u.LoginAttempts = 0;
-        u.Status = "Active"; // Unlock the account
+    //    u.ResetToken = null;
+    //    u.TokenExpiry = null;
+    //    u.LoginAttempts = 0;
+    //    u.Status = "Active"; // Unlock the account
 
-        db.SaveChanges();
+    //    db.SaveChanges();
 
-        TempData["ResetSuccess"] = "Your password has been reset successfully. You can now log in.";
-        return RedirectToAction("Login");
-    }
+    //    TempData["ResetSuccess"] = "Your password has been reset successfully. You can now log in.";
+    //    return RedirectToAction("Login");
+    //}
 
     // GET: Account/AccessDenied
     public IActionResult AccessDenied()

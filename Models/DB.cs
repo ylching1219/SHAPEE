@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 #nullable disable warnings
 
 namespace SHAPEE.Models;
@@ -22,7 +23,10 @@ public class User
     public string Id { get; set; }
 
     [MaxLength(100)]
-    public string Name { get; set; }
+    public string? FirstName { get; set; }
+
+    [MaxLength(100)]
+    public string? LastName { get; set; }
 
     [MaxLength(100)]
     public string Email { get; set; }
@@ -31,14 +35,17 @@ public class User
     public string Hash { get; set; }
 
     [MaxLength(100)]
-    public string Contact { get; set; }
+    public string? Contact { get; set; }
 
     public string Role => GetType().Name;
 
-    public int LoginAttempts { get; set; }
+    public int LoginAttempts { get; set; } = 0;
 
     [MaxLength(20)]
-    public string Status { get; set; }
+    public string Status { get; set; } = "Active"; //Active, Locked
+
+    [NotMapped]
+    public string FullName => $"{LastName} {FirstName} ";
 }
 
 public class Admin : User
@@ -47,6 +54,7 @@ public class Admin : User
 
 public class Staff : User
 {
+    public DateOnly DateJoin { get; set; } = DateOnly.FromDateTime(DateTime.Now);
     [MaxLength(10)]
     public string Gender { get; set; }
 
@@ -60,8 +68,9 @@ public class Staff : User
 
 public class Student : User
 {
-
+    public DateOnly DateJoin { get; set; } = DateOnly.FromDateTime(DateTime.Now);
     public int YearLevel { get; set; }
+    public int sem { get; set; }
 
     [MaxLength(10)]
     public string Gender { get; set; }
