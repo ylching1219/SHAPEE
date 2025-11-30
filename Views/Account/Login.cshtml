@@ -15,7 +15,6 @@
 </head>
 <body>
     <div class="login-container">
-        <!-- Left Side - Login Form -->
         <div class="login-left">
             <div class="login-form-container">
                 <div class="logo-section">
@@ -25,16 +24,25 @@
                     <h1 class="login-title">Login</h1>
                     <p class="login-subtitle">Welcome back! Please login to your account.</p>
                 </div>
- 
-                <form class="login-form" method="post" >
-                    <!--id input-->
+
+                @if (TempData["ResetSuccess"] != null)
+                {
+                    <div class="success-message" style="background-color: #d4edda; color: #155724; border-color: #c3e6cb; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                        <i class="fas fa-check-circle"></i>
+                        <span>@TempData["ResetSuccess"]</span>
+                    </div>
+                }
+
+                <form class="login-form" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnURL" value="@ViewData["ReturnUrl"]" />
+
                     <div class="form-group">
                         <label for="id">ID <span class="required">*</span></label>
                         <input type="text" id="id" name="id" class="form-control @(ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST" ? "error" : "")" placeholder="Enter your ID" required value="@(Model?.Id ?? "")">
                         <i class="fas fa-id-card input-icon"></i>
                     </div>
 
-                    <!--password input-->
                     <div class="form-group">
                         <label for="password">Password <span class="required">*</span></label>
                         <input type="password" id="password" name="password" class="form-control @(ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST" ? "error" : "")" placeholder="Enter your password" required>
@@ -42,16 +50,11 @@
                         <i class="fas fa-eye-slash toggle-password" id="togglePassword"></i>
                     </div>
 
-                    <!--error message-->
                     @if (ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST")
                     {
                         <div class="error-message" id="errorMessage">
                             <i class="fas fa-exclamation-circle"></i>
                             <span>@ViewData.ModelState[""].Errors[0].ErrorMessage</span>
-                        </div>
-                        <div class="error-message" id="errorMessage">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>@TempData["LoginAttempts"] attempts remaining.</span>
                         </div>
                     }
 
@@ -76,7 +79,6 @@
             </div>
         </div>
 
-        <!--right-->
         <div class="login-right">
             <div class="features-slider">
                 <div class="feature-slide active">
@@ -162,14 +164,14 @@
             //add error class to inputs if got errror
             @if (ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST")
             {
-                <text>
-                if (idInput) {
-                    idInput.classList.add('error');
-                }
-                if (passwordInput) {
-                    passwordInput.classList.add('error');
-                }
-                </text>
+                    <text>
+                    if (idInput) {
+                        idInput.classList.add('error');
+                    }
+                    if (passwordInput) {
+                        passwordInput.classList.add('error');
+                    }
+                    </text>
             }
 
             //remove error class on input

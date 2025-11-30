@@ -1,10 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SHAPEE.Models; // ? ADD THIS LINE
 
 namespace SHAPEE.Controllers;
 
 public class DashboardController : Controller
 {
+    private readonly DB db;
+
+    public DashboardController(DB context)
+    {
+        db = context;
+    }
+
     // GET: Dashboard/Student
     [Authorize(Roles = "Student")]
     public IActionResult Student()
@@ -43,5 +51,16 @@ public class DashboardController : Controller
     {
         ViewData["Title"] = "Admin Dashboard";
         return View("Admin");
+    }
+
+    // GET: Dashboard/UserManagement
+    [Authorize(Roles = "Admin")]
+    public IActionResult UserManagement()
+    {
+        ViewData["Title"] = "User Management";
+        var students = db.Students
+            .OrderBy(s => s.Id)
+            .ToList();
+        return View(students);
     }
 }

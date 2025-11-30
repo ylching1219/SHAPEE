@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-
 #nullable disable warnings
 
 namespace SHAPEE.Models;
