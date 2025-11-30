@@ -410,7 +410,7 @@
                     const matchesSearch = name.includes(searchValue) || id.includes(searchValue) || email.includes(searchValue);
                     const matchesStatus = !statusValue || status.includes(statusValue);
                     const matchesProgram = !programValue || program.includes(programValue);
-                    const matchesYear = !yearValue || year.includes('year ' + yearValue);
+                    const matchesYear = !yearValue || year.includes('Year ' + yearValue);
 
                     if (matchesSearch && matchesStatus && matchesProgram && matchesYear) {
                         row.style.display = '';

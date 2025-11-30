@@ -23,19 +23,16 @@ public class AccountController(DB db, Helper hp) : Controller
     {
         var u = db.Users.Find(vm.Id);
 
-        // A2: Initial Check - Is the account already locked?
         if (u != null && u.Status == "Locked")
         {
-            ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please use 'Forgot Password'.");
+            ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration.");
             return View(vm);
         }
 
-        // 1. Check for invalid credentials
         if (u == null || !hp.VerifyPassword(u.Hash, vm.Password))
         {
             if (u != null)
             {
-                // A2: Handle Failed Attempt
                 u.LoginAttempts++;
 
                 if (u.LoginAttempts >= 3) // Lock after 3 failed attempts
@@ -96,10 +93,8 @@ public class AccountController(DB db, Helper hp) : Controller
     [ValidateAntiForgeryToken]
     public IActionResult ForgotPassword(ForgotPasswordVM vm)
     {
-        // Use Find() or FirstOrDefault() for database lookup
         var u = db.Users.Find(vm.Id);
 
-        // A3 Logic: Generate Token and Send Email
         if (u != null)
         {
             string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
@@ -122,7 +117,6 @@ public class AccountController(DB db, Helper hp) : Controller
     [HttpGet]
     public IActionResult ResetPassword(string token, string userId)
     {
-        // 1. Basic validation check
         var u = db.Users.Find(userId);
 
         if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
@@ -133,7 +127,6 @@ public class AccountController(DB db, Helper hp) : Controller
         }
 
         ViewData["Title"] = "Reset Password";
-        // Pass necessary data to the view to be posted back
         return View(new ResetPasswordVM { Token = token, UserId = userId });
     }
 

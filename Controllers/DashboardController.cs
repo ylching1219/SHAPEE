@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SHAPEE.Models; // ? ADD THIS LINE
+using SHAPEE.Models;
 
 namespace SHAPEE.Controllers;
 
@@ -59,7 +59,7 @@ public class DashboardController : Controller
     {
         ViewData["Title"] = "User Management";
         var students = db.Students
-            .OrderBy(s => s.Id)
+          .OrderBy(s => s.Id)
             .ToList();
         return View(students);
     }
