@@ -96,36 +96,36 @@ public class AccountController(DB db, Helper hp) : Controller
     {
         var u = db.Users.Find(vm.Id);
 
-        if (u != null)
-        {
-            string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
+        //if (u != null)
+        //{
+        //    string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
 
-    //        u.ResetToken = token;
-    //        u.TokenExpiry = DateTime.UtcNow.AddHours(1);
-    //        db.SaveChanges();
+        //            u.ResetToken = token;
+        //            u.TokenExpiry = DateTime.UtcNow.AddHours(1);
+        //            db.SaveChanges();
 
-    //        string resetLink = Url.Action("ResetPassword", "Account",
-    //            new { token = token, userId = u.Id }, Request.Scheme);
+        //            string resetLink = Url.Action("ResetPassword", "Account",
+        //                new { token = token, userId = u.Id }, Request.Scheme);
 
-    //        TempData["DevResetLink"] = resetLink;
-    //    }
+        //            TempData["DevResetLink"] = resetLink;
+        //        }
 
-    //    ViewData["Title"] = "Password Reset Request Sent";
-    //    return View("ForgotPasswordConfirmation");
-    //}
-
+        ViewData["Title"] = "Password Reset Request Sent";
+        return View("ForgotPasswordConfirmation");
+    }
+    
     // GET: Account/ResetPassword - Validates token and displays the reset form (A3)
     [HttpGet]
     public IActionResult ResetPassword(string token, string userId)
     {
         var u = db.Users.Find(userId);
 
-    //    if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
-    //    {
-    //        ViewData["Title"] = "Invalid Link";
-    //        ViewData["Message"] = "The password reset link is invalid or has expired. Please request a new one.";
-    //        return View("Error");
-    //    }
+        //    if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
+        //    {
+        //        ViewData["Title"] = "Invalid Link";
+        //        ViewData["Message"] = "The password reset link is invalid or has expired. Please request a new one.";
+        //        return View("Error");
+        //    }
 
         ViewData["Title"] = "Reset Password";
         return View(new ResetPasswordVM { Token = token, UserId = userId });

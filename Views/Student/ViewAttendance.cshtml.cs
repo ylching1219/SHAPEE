@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace SHAPEE.Views.Dashboard
+namespace SHAPEE.Views.Student
 {
     public class ViewAttendanceModel : PageModel
     {
