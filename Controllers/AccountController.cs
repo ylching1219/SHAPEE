@@ -110,9 +110,9 @@ public class AccountController(DB db, Helper hp) : Controller
         //            TempData["DevResetLink"] = resetLink;
         //        }
 
-        ViewData["Title"] = "Password Reset Request Sent";
-        return View("ForgotPasswordConfirmation");
-    }
+    //    ViewData["Title"] = "Password Reset Request Sent";
+    //    return View("ForgotPasswordConfirmation");
+    //}
     
     // GET: Account/ResetPassword - Validates token and displays the reset form (A3)
     [HttpGet]
