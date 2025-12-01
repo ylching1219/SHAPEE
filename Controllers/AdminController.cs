@@ -46,8 +46,7 @@ namespace SHAPEE.Controllers
                     // Set default values
                     model.Status = "Active";
                     model.LoginAttempts = 0;
-                    model.DateJoined = DateTime.Now;
-                    model.Discriminator = "Student";
+                    model.DateJoin = DateOnly.FromDateTime(DateTime.Now);
 
                     _db.Students.Add(model);
                     await _db.SaveChangesAsync();
@@ -97,7 +96,7 @@ namespace SHAPEE.Controllers
                     existingStudent.FirstName = model.FirstName;
                     existingStudent.LastName = model.LastName;
                     existingStudent.Email = model.Email;
-                    existingStudent.ContactNumber = model.ContactNumber;
+                    existingStudent.Contact = model.Contact;
                     existingStudent.Program = model.Program;
                     existingStudent.YearLevel = model.YearLevel;
                     existingStudent.Status = model.Status;

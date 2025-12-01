@@ -90,15 +90,15 @@ public class AccountController(DB db, Helper hp) : Controller
     }
 
     // POST: Account/ForgotPassword - Handles token generation and email sending (A3)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ForgotPassword(ForgotPasswordVM vm)
-    {
-        var u = db.Users.Find(vm.Id);
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public IActionResult ForgotPassword(ForgotPasswordVM vm)
+    //{
+    //    var u = db.Users.Find(vm.Id);
 
-        if (u != null)
-        {
-            string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
+    //    if (u != null)
+    //    {
+    //        string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
 
     //        u.ResetToken = token;
     //        u.TokenExpiry = DateTime.UtcNow.AddHours(1);
