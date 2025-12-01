@@ -44,9 +44,9 @@
 //                    model.Hash = HashPassword("Password123");
 
                     // Set default values
-                    model.Status = "Active";
-                    model.LoginAttempts = 0;
-                    model.DateJoin = DateOnly.FromDateTime(DateTime.Now);
+                    //model.Status = "Active";
+                    //model.LoginAttempts = 0;
+                    //model.DateJoin = DateOnly.FromDateTime(DateTime.Now);
 
 //                    _db.Students.Add(model);
 //                    await _db.SaveChangesAsync();
@@ -93,13 +93,13 @@
 //                    }
 
                     // Update fields
-                    existingStudent.FirstName = model.FirstName;
-                    existingStudent.LastName = model.LastName;
-                    existingStudent.Email = model.Email;
-                    existingStudent.Contact = model.Contact;
-                    existingStudent.Program = model.Program;
-                    existingStudent.YearLevel = model.YearLevel;
-                    existingStudent.Status = model.Status;
+                    //existingStudent.FirstName = model.FirstName;
+                    //existingStudent.LastName = model.LastName;
+                    //existingStudent.Email = model.Email;
+                    //existingStudent.Contact = model.Contact;
+                    //existingStudent.Program = model.Program;
+                    //existingStudent.YearLevel = model.YearLevel;
+                    //existingStudent.Status = model.Status;
 
 //                    _db.Students.Update(existingStudent);
 //                    await _db.SaveChangesAsync();
