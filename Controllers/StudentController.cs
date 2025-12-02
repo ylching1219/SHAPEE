@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Student")]
-    public class StudentController : Controller
+    public class StudentController(DB db) : Controller
     {
+        
         // GET: /Student
         public IActionResult Index()
         {
@@ -25,4 +26,6 @@ namespace SHAPEE.Controllers
             return View("AttendanceHistory");
         }
     }
+
+
 }

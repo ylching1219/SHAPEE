@@ -64,7 +64,7 @@ public class AccountController(DB db, Helper hp) : Controller
         u.Status = "Active";
         db.SaveChanges();
 
-        hp.SignIn(u.Id, u.Role, vm.RememberMe);
+        hp.SignIn(u.Id,u.FullName, u.Role, vm.RememberMe);
 
         // Redirection based on role
         if (!string.IsNullOrEmpty(returnURL))

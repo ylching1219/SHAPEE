@@ -21,10 +21,11 @@ namespace SHAPEE
                 == PasswordVerificationResult.Success;
         }
 
-        public void SignIn(string id, string role, bool rememberMe) { 
+        public void SignIn(string id,string fullName, string role, bool rememberMe) { 
             List<Claim> claims = new()
             {
-                new Claim(ClaimTypes.Name, id),
+                new Claim(ClaimTypes.NameIdentifier, id),
+                new Claim(ClaimTypes.Name,fullName),
                 new Claim(ClaimTypes.Role, role)
             };
 
@@ -47,5 +48,6 @@ namespace SHAPEE
         {
             ct.HttpContext!.SignOutAsync();
         }
+
     }
 }

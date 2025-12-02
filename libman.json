@@ -1,25 +1,30 @@
 {
   "version": "3.0",
   "defaultProvider": "cdnjs",
+  "defaultDestination": "wwwroot/js/",
   "libraries": [
     {
       "library": "jquery@3.7.1",
-      "destination": "wwwroot/js/",
       "files": [
         "jquery.min.js"
       ]
     },
     {
-      "provider": "cdnjs",
-      "library": "jquery-validation-unobtrusive@4.0.0",
-      "destination": "wwwroot/js/"
+      "library": "jquery-ajax-unobtrusive@3.2.6",
+      "files": [
+        "jquery.unobtrusive-ajax.min.js"
+      ]
     },
     {
-      "provider": "cdnjs",
       "library": "jquery-validate@1.21.0",
-      "destination": "wwwroot/js/",
       "files": [
         "jquery.validate.min.js"
+      ]
+    },
+    {
+      "library": "jquery-validation-unobtrusive@4.0.0",
+      "files": [
+        "jquery.validate.unobtrusive.min.js"
       ]
     }
   ]
