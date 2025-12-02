@@ -8,10 +8,10 @@ namespace SHAPEE.Controllers
     {
         
         // GET: /Student
-        public IActionResult Index()
+        public IActionResult Dashboard()
         {
             ViewData["Title"] = "Student Dashboard";
-            return View("Student");
+            return View();
         }
 
         public IActionResult ViewAttendance()

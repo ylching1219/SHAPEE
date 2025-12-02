@@ -7,10 +7,10 @@ namespace SHAPEE.Controllers
     public class StaffController : Controller
     {
         // GET: /Staff
-        public IActionResult Index()
+        public IActionResult Dashboard()
         {
             ViewData["Title"] = "Staff Dashboard";
-            return View("Staff");        
+            return View();    
         }
     }
 }
