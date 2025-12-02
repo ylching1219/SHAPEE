@@ -34,7 +34,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("TasksTaskId");
 
-                    b.ToTable("CourseTaskMaterial");
+                    b.ToTable("CourseTaskMaterial", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Announcement", b =>
@@ -66,7 +66,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("AnnouncementId");
 
-                    b.ToTable("Announcements");
+                    b.ToTable("Announcements", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Attendance", b =>
@@ -106,7 +106,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Attendances");
+                    b.ToTable("Attendances", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+CalendarEvent", b =>
@@ -138,7 +138,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("EventId");
 
-                    b.ToTable("CalendarEvents");
+                    b.ToTable("CalendarEvents", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+ChatMessage", b =>
@@ -170,7 +170,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+ClassSection", b =>
@@ -240,7 +240,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("TutorialGroupId");
 
-                    b.ToTable("ClassSections");
+                    b.ToTable("ClassSections", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Course", b =>
@@ -259,7 +259,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("CourseCode");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Courses", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+CourseTask", b =>
@@ -292,7 +292,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("ClassSectionSectionId");
 
-                    b.ToTable("CourseTasks");
+                    b.ToTable("CourseTasks", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Enrollment", b =>
@@ -337,7 +337,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Enrollments");
+                    b.ToTable("Enrollments", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Faculty", b =>
@@ -357,7 +357,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Faculties");
+                    b.ToTable("Faculties", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Invoice", b =>
@@ -392,7 +392,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+LeaveApplication", b =>
@@ -443,7 +443,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LeaveApplications");
+                    b.ToTable("LeaveApplications", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Material", b =>
@@ -475,7 +475,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("CourseCode");
 
-                    b.ToTable("Materials");
+                    b.ToTable("Materials", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+PaymentTransaction", b =>
@@ -509,7 +509,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("PaymentTransactions");
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Program", b =>
@@ -531,7 +531,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("FacultyId");
 
-                    b.ToTable("Programs");
+                    b.ToTable("Programs", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+ProgramCourse", b =>
@@ -562,7 +562,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("ProgramId");
 
-                    b.ToTable("ProgramCourses");
+                    b.ToTable("ProgramCourses", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+ResetPassToken", b =>
@@ -588,7 +588,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ResetPassTokens");
+                    b.ToTable("ResetPassTokens", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Room", b =>
@@ -617,7 +617,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("RoomId");
 
-                    b.ToTable("Rooms");
+                    b.ToTable("Rooms", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Semester", b =>
@@ -637,7 +637,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("SemesterId");
 
-                    b.ToTable("Semesters");
+                    b.ToTable("Semesters", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+Submission", b =>
@@ -678,7 +678,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Submissions");
+                    b.ToTable("Submissions", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+SupportTicket", b =>
@@ -720,7 +720,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SupportTickets");
+                    b.ToTable("SupportTickets", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+TicketMessage", b =>
@@ -753,7 +753,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("SupportTicketTicketId");
 
-                    b.ToTable("TicketMessages");
+                    b.ToTable("TicketMessages", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+TutorialGroup", b =>
@@ -779,7 +779,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("ProgramId");
 
-                    b.ToTable("TutorialGroups");
+                    b.ToTable("TutorialGroups", (string)null);
                 });
 
             modelBuilder.Entity("SHAPEE.Models.DB+User", b =>
@@ -825,7 +825,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasDiscriminator().HasValue("User");
 
@@ -861,7 +861,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("FacultyId");
 
-                    b.ToTable("Users", t =>
+                    b.ToTable("Users", null, t =>
                         {
                             t.Property("DateJoin")
                                 .HasColumnName("Staff_DateJoin");

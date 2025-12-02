@@ -15,6 +15,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
+@{
+    var roles =
+        User.Identity!.IsAuthenticated && User.IsInRole("Admin")   ? "Admin" :
+        User.Identity!.IsAuthenticated && User.IsInRole("Staff")   ? "Staff" :
+        User.Identity!.IsAuthenticated && User.IsInRole("Student") ? "Student" :
+        null;
+}
     <div class="error-container">
         <!-- Left Side - Error Message -->
         <div class="error-left">
@@ -24,7 +31,7 @@
                 <p class="error-description">
                     You've tried to access a page you did not have prior authorization for.
                 </p>
-                <a href="@Url.Action("Index", "Dashboard")" class="btn-dashboard">
+                <a href="@Url.Action("Index", roles)" class="btn-dashboard">
                     <i class="fas fa-arrow-left"></i> Back to Dashboard
                 </a>
             </div>
