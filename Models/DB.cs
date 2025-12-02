@@ -85,7 +85,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string ProfilePictureUrl { get; set; }
 
         //FK to faculty -- 1 staff belong to 1 faculty
-        public string FacultyId { get; set; }
+        public string? FacultyId { get; set; }
         public Faculty Faculty { get; set; }
     }
 
@@ -102,12 +102,12 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string ProfilePictureUrl { get; set; }
 
         //FK to Program -- 1 user belong to 1 program
-        public string ProgramId { get; set; }
+        public string? ProgramId { get; set; }
 
         public Program Program { get; set; }
 
         //FK to TutorialGroup -- 1 student belong to 1 tutorial group
-        public string TutorialGroupId { get; set; }
+        public string? TutorialGroupId { get; set; }
         public TutorialGroup TutorialGroup { get; set; }
 
         //1 student have many enrollments
@@ -196,12 +196,15 @@ public class DB(DbContextOptions options) : DbContext(options)
 
     public class ProgramCourse //Define the program have what course in each year and semester
     {
+        [Key]
+        public int Id { get; set; }
         //FK to Program
         public string ProgramId { get; set; }
         public Program Program { get; set; }
 
         //FK to Course
         public string CourseCode { get; set; }
+        [ForeignKey("CourseCode")]
         public Course Course { get; set; }
 
         public int YearLevel { get; set; }
@@ -215,11 +218,12 @@ public class DB(DbContextOptions options) : DbContext(options)
 
         //FK to Course -- 1 class section belong to 1 course
         public string CourseCode { get; set; }
+        [ForeignKey("CourseCode")]
         public Course Course { get; set; }
 
         //FK to Staff -- 1 class section belong to 1 staff
         public string StaffId { get; set; }
-        public User Staff { get; set; }
+        public Staff Staff { get; set; }
 
         //FK to Semester -- 1 class section belong to 1 semester
         public string SemesterId { get; set; } //202501 /202505 / 202509
@@ -287,7 +291,7 @@ public class DB(DbContextOptions options) : DbContext(options)
 
         //FK to Student--1 enrollment belong to 1 student
         public string StudentId { get; set; }
-        public User Student { get; set; }
+        public Student Student { get; set; }
 
         //FK to ClassSection --1 enrollment belong to 1 class section
         public string SectionId { get; set; }
@@ -348,7 +352,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public int LeaveId { get; set; }
 
         //FK to User -- 1 leave application belong to 1 user (staff or student)
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public User User { get; set; }
 
         public DateOnly StartDate { get; set; }
@@ -398,8 +402,8 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string InvoiceId { get; set; }
 
         //FK to Student -- 1 invoice belong to 1 student
-        public string StudentId { get; set; }
-        public User Student { get; set; }
+        public string? StudentId { get; set; }
+        public Student Student { get; set; }
 
         //FK to Semester -- 1 invoice belong to 1 semester
         public string SemesterId { get; set; }
@@ -448,8 +452,8 @@ public class DB(DbContextOptions options) : DbContext(options)
         public ClassSection ClassSection { get; set; }
 
         //FK to Student -- 1 attendance record belong to 1 student
-        public string StudentId { get; set; }
-        public User Student { get; set; }
+        public string? StudentId { get; set; }
+        public Student Student { get; set; }
 
         public DateOnly Date { get; set; }
 
@@ -489,6 +493,7 @@ public class DB(DbContextOptions options) : DbContext(options)
 
         //FK to Course -- 1 material belong to 1 course
         public string CourseCode { get; set; }
+        [ForeignKey("CourseCode")]
         public Course Course { get; set; }
 
         [MaxLength(100)]
@@ -536,10 +541,10 @@ public class DB(DbContextOptions options) : DbContext(options)
 
         //FK to Task -- 1 submission belong to 1 task
         public string TaskId { get; set; }
-        public Task Task { get; set; }
+        public CourseTask CourseTask { get; set; } 
 
         //FK to Student -- 1 submission belong to 1 student
-        public string StudentId { get; set; }
+        public string? StudentId { get; set; }
         public Student Student { get; set; }
 
         [MaxLength(200)]
@@ -559,11 +564,11 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string MessageId { get; set; }
 
         //FK to User -- 1 message belong to 1 user (sender)
-        public string SenderId { get; set; }
+        public string? SenderId { get; set; }
         public User Sender { get; set; }
 
         //FK to User -- 1 message belong to 1 user (receiver)
-        public string ReceiverId { get; set; }
+        public string? ReceiverId { get; set; }
         public User Receiver { get; set; }
 
         [MaxLength(1000)]
@@ -580,7 +585,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string TicketId { get; set; }
 
         //FK to User -- 1 ticket belong to 1 user
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public User User { get; set; }
 
         [MaxLength(200)]
@@ -612,7 +617,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public SupportTicket SupportTicket { get; set; }
 
         //FK to User -- 1 message belong to 1 user (sender)
-        public string SenderId { get; set; }
+        public string? SenderId { get; set; }
         public User Sender { get; set; }
 
         [MaxLength(1000)]
