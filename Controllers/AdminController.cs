@@ -43,11 +43,10 @@
 //                    // Hash the default password (you should change this logic)
 //                    model.Hash = HashPassword("Password123");
 
-//                    // Set default values
-//                    model.Status = "Active";
-//                    model.LoginAttempts = 0;
-//                    model.DateJoined = DateTime.Now;
-//                    model.Discriminator = "Student";
+                    // Set default values
+                    //model.Status = "Active";
+                    //model.LoginAttempts = 0;
+                    //model.DateJoin = DateOnly.FromDateTime(DateTime.Now);
 
 //                    _db.Students.Add(model);
 //                    await _db.SaveChangesAsync();
@@ -93,14 +92,14 @@
 //                        return RedirectToAction(nameof(UserManagement));
 //                    }
 
-//                    // Update fields
-//                    existingStudent.FirstName = model.FirstName;
-//                    existingStudent.LastName = model.LastName;
-//                    existingStudent.Email = model.Email;
-//                    existingStudent.ContactNumber = model.ContactNumber;
-//                    existingStudent.Program = model.Program;
-//                    existingStudent.YearLevel = model.YearLevel;
-//                    existingStudent.Status = model.Status;
+                    // Update fields
+                    //existingStudent.FirstName = model.FirstName;
+                    //existingStudent.LastName = model.LastName;
+                    //existingStudent.Email = model.Email;
+                    //existingStudent.Contact = model.Contact;
+                    //existingStudent.Program = model.Program;
+                    //existingStudent.YearLevel = model.YearLevel;
+                    //existingStudent.Status = model.Status;
 
 //                    _db.Students.Update(existingStudent);
 //                    await _db.SaveChangesAsync();

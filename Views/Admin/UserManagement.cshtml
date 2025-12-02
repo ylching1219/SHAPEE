@@ -151,7 +151,7 @@
                                         student.FirstName,
                                         student.LastName,
                                         student.Email,
-                                        student.ContactNumber,
+                                        student.Contact,
                                         student.Program,
                                         student.YearLevel,
                                         student.Status
@@ -160,10 +160,10 @@
                                         <td>@student.FullName</td>
                                         <td>@student.Id</td>
                                         <td>@student.Email</td>
-                                        <td>@(student.ContactNumber ?? "N/A")</td>
-                                        <td>@(student.Program ?? "N/A")</td>
-                                        <td><span class="badge badge-info">Year @(student.YearLevel ?? 0)</span></td>
-                                        <td>@student.DateJoined.ToString("dd/MM/yyyy")</td>
+                                        <td>@(student.Contact ?? "N/A")</td>
+                                        <td>@(student.Program?.Name ?? "N/A")</td>
+                                        <td><span class="badge badge-info">Year @student.YearLevel</span></td>
+                                        <td>@student.DateJoin.ToString("dd/MM/yyyy")</td>
                                         <td>
                                             <span class="badge @statusClass">@statusRaw</span>
                                         </td>
