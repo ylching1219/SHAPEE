@@ -131,7 +131,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         [MaxLength(100)]
         public string Name { get; set; }
 
-        [Precision(3, 2)]
+        [Precision(5, 2)]
         public decimal CostPerCreditHour { get; set; }
 
         // 1 Faculty have many programs
@@ -409,7 +409,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string SemesterId { get; set; }
         public Semester Semester { get; set; }
 
-        [Precision(5, 2)]
+        [Precision(8, 2)]
         public decimal TotalAmount { get; set; }
 
         public bool IsPaid { get; set; }
@@ -429,7 +429,7 @@ public class DB(DbContextOptions options) : DbContext(options)
         public string InvoiceId { get; set; }
         public Invoice Invoice { get; set; }
 
-        [Precision(5, 2)]
+        [Precision(8, 2)]
         public decimal AmountPaid { get; set; }
 
         [MaxLength(100)]

@@ -12,7 +12,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251202083617_InitiaDB")]
+    [Migration("20251203011426_InitiaDB")]
     partial class InitiaDB
     {
         /// <inheritdoc />
@@ -350,8 +350,8 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("CostPerCreditHour")
-                        .HasPrecision(3, 2)
-                        .HasColumnType("decimal(3,2)");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -386,8 +386,8 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
                     b.HasKey("InvoiceId");
 
@@ -488,8 +488,8 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("AmountPaid")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
                     b.Property<string>("InvoiceId")
                         .IsRequired()

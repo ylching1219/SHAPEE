@@ -62,7 +62,7 @@ namespace SHAPEE.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CostPerCreditHour = table.Column<decimal>(type: "decimal(3,2)", precision: 3, scale: 2, nullable: false)
+                    CostPerCreditHour = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -319,7 +319,7 @@ namespace SHAPEE.Migrations
                     InvoiceId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     SemesterId = table.Column<string>(type: "nvarchar(10)", nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(8,2)", precision: 8, scale: 2, nullable: false),
                     IsPaid = table.Column<bool>(type: "bit", nullable: false),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     GenerateDate = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -496,7 +496,7 @@ namespace SHAPEE.Migrations
                 {
                     TransactionId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     InvoiceId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                    AmountPaid = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    AmountPaid = table.Column<decimal>(type: "decimal(8,2)", precision: 8, scale: 2, nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReceiptUrl = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)

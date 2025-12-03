@@ -1,0 +1,503 @@
+﻿@model IEnumerable<SHAPEE.Models.DB.Student>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "User Management";
+    var students = Model?.ToList() ?? new List<SHAPEE.Models.DB.Student>();
+    var studentCount = students.Count;
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white p-2">
+        <ul class="nav nav-pills" id="userManagementTabs" role="tablist">
+            <li class="nav-item flex-fill">
+                <a class="nav-link active rounded-pill text-center" id="students-tab" data-toggle="tab" href="#students" role="tab">
+                    <i class="fas fa-user-graduate mr-1"></i> Students
+                </a>
+            </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link rounded-pill text-center" id="staff-tab" data-toggle="tab" href="#staff" role="tab">
+                    <i class="fas fa-chalkboard-teacher mr-1"></i> Staff
+                </a>
+            </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link rounded-pill text-center" id="admins-tab" data-toggle="tab" href="#admins" role="tab">
+                    <i class="fas fa-user-shield mr-1"></i> Admins
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="tab-content" id="userManagementTabContent">
+    <!-- Students Tab -->
+    <div class="tab-pane fade show active" id="students" role="tabpanel">
+        <div class="card shadow-sm">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                        Students (<span id="studentCount">@studentCount</span>)
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
+                            <i class="fas fa-user-plus mr-1"></i> Add Student
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
+                            <i class="fas fa-download mr-1"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="card-body bg-light border-bottom">
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search students...">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="programFilter">
+                            <option value="">All Programs</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Business">Business</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Arts">Arts</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="yearFilter">
+                            <option value="">All Years</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Table -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="studentsTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Year Level</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            @if (studentCount == 0)
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center py-5">
+                                        <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                                        <p class="text-muted mb-0">No students found</p>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var student in students)
+                                {
+                                    var statusRaw = student.Status ?? "Unknown";
+                                    var status = statusRaw.Trim();
+                                    var statusClass = status.ToLowerInvariant() switch
+                                    {
+                                        "active" => "badge-success",
+                                        "inactive" => "badge-secondary",
+                                        "suspended" => "badge-warning",
+                                        _ => "badge-light"
+                                    };
+                                    var studentJson = JsonSerializer.Serialize(new
+                                    {
+                                        student.Id,
+                                        student.FirstName,
+                                        student.LastName,
+                                        student.Email,
+                                        student.Contact,
+                                        Program = student.Program?.Name ?? "",
+                                        student.YearLevel,
+                                        student.Status
+                                    });
+                                    <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.FullName</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-muted">@student.Id</td>
+                                        <td class="px-4 py-3 text-muted">@student.Email</td>
+                                        <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
+                                        <td class="px-4 py-3 text-muted">@(student.Program?.Name ?? "N/A")</td>
+                                        <td class="px-4 py-3">
+                                            <span class="badge badge-info badge-pill">Year @student.YearLevel</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
+                                        <td class="px-4 py-3">
+                                            <span class="badge @statusClass badge-pill">@statusRaw</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                                    </a>
+                                                    <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
+                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                                    </a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                                        <i class="fas fa-trash mr-2"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Tab -->
+    <div class="tab-pane fade" id="staff" role="tabpanel">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 font-weight-semibold text-gray-800">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Staff Management
+                </h5>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Staff management coming soon...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admins Tab -->
+    <div class="tab-pane fade" id="admins" role="tabpanel">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 font-weight-semibold text-gray-800">
+                    <i class="fas fa-user-shield mr-2"></i>Admin Management
+                </h5>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Admin management coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Student Modal -->
+<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog" aria-labelledby="addEditStudentModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditStudentModalLabel">Add New Student</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="studentForm" method="post" asp-controller="Admin" asp-action="Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" id="studentId" name="Id" value="" />
+                    <input type="hidden" name="Discriminator" value="Student" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="firstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="lastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="lastName" name="LastName" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="studentEmail" name="Email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactNumber" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" name="Contact" placeholder="+60 12-345-6789">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
+                                <select class="form-control" id="program" name="Program" required>
+                                    <option value="">Select Program</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Arts">Arts</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="statusGroup" style="display:none;">
+                        <label for="status" class="font-weight-medium">Status</label>
+                        <select class="form-control" id="status" name="Status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">
+                        <i class="fas fa-save mr-1"></i> Save Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="studentToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const modalTitle = document.getElementById('addEditStudentModalLabel');
+            const form = document.getElementById('studentForm');
+            const statusGroup = document.getElementById('statusGroup');
+
+            // Prepare Add Modal
+            window.prepareAddModal = function() {
+                modalTitle.innerText = 'Add New Student';
+                form.setAttribute('action', '@Url.Action("Create", "Admin")');
+                form.reset();
+                document.getElementById('studentId').value = '';
+                statusGroup.style.display = 'none';
+            };
+
+            // Prepare Edit Modal
+            window.prepareEditModal = function(element) {
+                const row = element.closest('tr');
+                const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
+                form.setAttribute('action', '@Url.Action("Edit", "Admin")');
+
+                document.getElementById('studentId').value = studentData.Id;
+                document.getElementById('firstName').value = studentData.FirstName;
+                document.getElementById('lastName').value = studentData.LastName;
+                document.getElementById('studentEmail').value = studentData.Email;
+                document.getElementById('contactNumber').value = studentData.Contact || '';
+                document.getElementById('program').value = studentData.Program;
+                document.getElementById('yearLevel').value = studentData.YearLevel;
+                document.getElementById('status').value = studentData.Status.trim();
+
+                statusGroup.style.display = 'block';
+            };
+
+            // Prepare Delete Modal
+            window.prepareDeleteModal = function(element) {
+                const row = element.closest('tr');
+                const studentName = row.getAttribute('data-student-name');
+                const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                document.getElementById('studentToDeleteName').innerText = studentName;
+                document.getElementById('deleteStudentId').value = studentData.Id;
+            };
+
+            // Toggle Suspend/Activate
+            window.toggleSuspend = function(studentId, element) {
+                if (confirm('Are you sure you want to change this student\'s status?')) {
+                    const formData = new FormData();
+                    formData.append('id', studentId);
+                    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                    fetch('@Url.Action("Suspend", "Admin")', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            };
+
+            // Search and Filter functionality
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const programFilter = document.getElementById('programFilter');
+            const yearFilter = document.getElementById('yearFilter');
+
+            searchInput.addEventListener('keyup', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+            programFilter.addEventListener('change', filterTable);
+            yearFilter.addEventListener('change', filterTable);
+
+            function filterTable() {
+                const searchValue = searchInput.value.toLowerCase();
+                const statusValue = statusFilter.value.toLowerCase();
+                const programValue = programFilter.value.toLowerCase();
+                const yearValue = yearFilter.value;
+
+                const rows = document.querySelectorAll('#studentsTableBody tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    // Skip "no students" row
+                    if (row.cells.length === 1) return;
+
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const id = row.cells[1].textContent.toLowerCase();
+                    const email = row.cells[2].textContent.toLowerCase();
+                    const program = row.cells[4].textContent.toLowerCase();
+                    const year = row.cells[5].textContent;
+                    const status = row.cells[7].textContent.toLowerCase();
+
+                    const matchesSearch = name.includes(searchValue) || id.includes(searchValue) || email.includes(searchValue);
+                    const matchesStatus = !statusValue || status.includes(statusValue);
+                    const matchesProgram = !programValue || program.includes(programValue);
+                    const matchesYear = !yearValue || year.includes('year ' + yearValue);
+
+                    if (matchesSearch && matchesStatus && matchesProgram && matchesYear) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                document.getElementById('studentCount').textContent = visibleCount;
+            }
+
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
+
+            // Export CSV functionality
+            document.getElementById('exportCsvBtn').addEventListener('click', function() {
+                alert('Export CSV functionality to be implemented');
+            });
+        });
+    </script>
+}
