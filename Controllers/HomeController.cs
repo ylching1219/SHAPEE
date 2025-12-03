@@ -2,11 +2,12 @@
 
 namespace SHAPEE.Controllers;
 
-public class HomeController : Controller
+public class HomeController(DB db) : Controller
 {
     // GET: Home/Index
     public IActionResult Index()
     {
-        return View();
+        var items = db.Students;
+        return View(items); 
     }
 }

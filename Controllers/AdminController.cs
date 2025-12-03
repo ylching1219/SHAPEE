@@ -9,15 +9,9 @@ using static SHAPEE.Models.DB;
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class AdminController : Controller
+    public class AdminController(DB db) : Controller
     {
-        private readonly DB _db;
-
-        public AdminController(DB db)
-        {
-            _db = db;
-        }
-
+  
         // Dashboard
         public IActionResult Dashboard()
         {

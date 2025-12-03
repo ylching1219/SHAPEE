@@ -1,8 +1,8 @@
-﻿@model IEnumerable<SHAPEE.Models.DB.Student>
+﻿@model IEnumerable<Student>
 @using System.Text.Json
 @{
     ViewData["Title"] = "User Management";
-    var students = Model?.ToList() ?? new List<SHAPEE.Models.DB.Student>();
+    var students = Model?.ToList() ?? new List<Student>();
     var studentCount = students.Count;
 }
 
