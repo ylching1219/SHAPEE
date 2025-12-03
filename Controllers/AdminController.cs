@@ -336,7 +336,12 @@ namespace SHAPEE.Controllers
         }
 
         public IActionResult RoomManagement() {
-            return View();
+
+            var rooms = db.Rooms
+                .OrderBy(r => r.RoomId)
+                .ToList();
+
+            return View(rooms);
         }
     }
 }
