@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
 using System.Text;
+using static SHAPEE.Models.DB;
 
 namespace SHAPEE.Controllers
 {
@@ -21,25 +22,110 @@ namespace SHAPEE.Controllers
         public IActionResult UserManagement()
         {
             ViewData["Title"] = "User Management";
-
             var students = db.Students
+                .Include(s => s.Program) // Include Program navigation property
                 .OrderBy(s => s.Id)
                 .ToList();
-
             return View(students);
         }
 
-        public IActionResult CourseManagement()
+        // POST: Admin/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(string firstName, string lastName, string gender,
+            string email, string contact, string programName, int yearLevel)
         {
-            ViewData["Title"] = "Course Management";
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName) ||
+                    string.IsNullOrWhiteSpace(lastName) ||
+                    string.IsNullOrWhiteSpace(email) ||
+                    string.IsNullOrWhiteSpace(gender))
+                {
+                    TempData["ErrorMessage"] = "Please fill in all required fields.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
 
+                // Check for duplicate email
+                var duplicateEmail = await db.Students
+                    .AnyAsync(s => s.Email == email);
 
-            return View();
+                if (duplicateEmail)
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                // Generate Student ID
+                var lastStudent = await db.Students
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefaultAsync();
+
+                string newId;
+                if (lastStudent != null && lastStudent.Id.StartsWith("S"))
+                {
+                    // Extract number and increment
+                    int lastNumber = int.Parse(lastStudent.Id.Substring(1));
+                    newId = $"S{(lastNumber + 1).ToString("D3")}";
+                }
+                else
+                {
+                    newId = "S001";
+                }
+
+                // Find program by name
+                var program = await db.Programs
+                    .FirstOrDefaultAsync(p => p.Name == programName);
+
+                if (program == null)
+                {
+                    TempData["ErrorMessage"] = "Selected program not found.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                // Create new student
+                var student = new Student
+                {
+                    Id = newId,
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    Gender = gender.Trim(),
+                    Email = email.Trim().ToLower(),
+                    Contact = contact?.Trim(),
+                    ProgramId = program.Id,
+                    YearLevel = yearLevel,
+                    DateJoin = DateOnly.FromDateTime(DateTime.Now),
+                    Status = "Active"
+                };
+
+                db.Students.Add(student);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Student '{student.FirstName} {student.LastName}' (ID: {student.Id}) created successfully!";
+                return RedirectToAction(nameof(UserManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error creating student: {ex.Message}";
+                return RedirectToAction(nameof(UserManagement));
+            }
         }
 
-        public IActionResult FacultyManagement(string? sort) 
+        // POST: Admin/Edit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(string id, string firstName, string lastName, string gender,
+            string email, string contact, string programName, int yearLevel, string status)
         {
-            ViewData["Title"] = "Faculty Management";
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["ErrorMessage"] = "First name is required.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
 
             var facultiesQuery = (sort == "1") ? db.Faculties.OrderBy(f => f.CostPerCreditHour) :
                      (sort == "2") ? db.Faculties.OrderByDescending(f => f.CostPerCreditHour) :
@@ -54,164 +140,167 @@ namespace SHAPEE.Controllers
                 return PartialView("_Faculty", faculties);
             }
 
-            return View(faculties);
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["ErrorMessage"] = "Email is required.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                if (string.IsNullOrWhiteSpace(gender))
+                {
+                    TempData["ErrorMessage"] = "Gender is required.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                // Check if student exists
+                var existingStudent = await db.Students.FindAsync(id);
+                if (existingStudent == null)
+                {
+                    TempData["ErrorMessage"] = "Student not found.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                // Check for duplicate email (excluding current student)
+                var duplicateEmail = await db.Students
+                    .AnyAsync(s => s.Email == email && s.Id != id);
+
+                if (duplicateEmail)
+                {
+                    TempData["ErrorMessage"] = "Email already exists for another student.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                // Update student properties
+                existingStudent.FirstName = firstName.Trim();
+                existingStudent.LastName = lastName.Trim();
+                existingStudent.Gender = gender.Trim();
+                existingStudent.Email = email.Trim().ToLower();
+                existingStudent.Contact = contact?.Trim();
+                existingStudent.YearLevel = yearLevel;
+                existingStudent.Status = status?.Trim() ?? "Active";
+
+                // Handle Program - find program by name and set ProgramId
+                if (!string.IsNullOrWhiteSpace(programName))
+                {
+                    var program = await db.Programs
+                        .FirstOrDefaultAsync(p => p.Name == programName);
+
+                    if (program != null)
+                    {
+                        existingStudent.ProgramId = program.Id;
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "Selected program not found.";
+                        return RedirectToAction(nameof(UserManagement));
+                    }
+                }
+
+                // Save changes to database
+                db.Students.Update(existingStudent);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Student '{existingStudent.FullName}' updated successfully!";
+                return RedirectToAction(nameof(UserManagement));
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Check if student still exists
+                if (!await db.Students.AnyAsync(s => s.Id == id))
+                {
+                    TempData["ErrorMessage"] = "Student no longer exists.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Concurrency error. The student was updated by another user. Please try again.";
+                }
+                return RedirectToAction(nameof(UserManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating student: {ex.Message}";
+                return RedirectToAction(nameof(UserManagement));
+            }
         }
 
-        //    // User Management - Display all students
-        //    public async Task<IActionResult> UserManagement()
-        //    {
-        //        var students = await _db.Students.ToListAsync();
-        //        return View(students);
-        //    }
+        // POST: Admin/Delete
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(string id)
+        {
+            try
+            {
+                var student = await db.Students.FindAsync(id);
 
-        //    // CREATE - Add new student
-        //    [HttpPost]
-        //    [ValidateAntiForgeryToken]
-        //    public async Task<IActionResult> Create(Student model)
-        //    {
-        //        if (ModelState.IsValid)
-        //        {
-        //            try
-        //            {
-        //                // Generate student ID (e.g., STU + timestamp)
-        //                model.Id = "STU" + DateTime.Now.Ticks.ToString().Substring(8);
+                if (student == null)
+                {
+                    TempData["ErrorMessage"] = "Student not found.";
+                    return RedirectToAction(nameof(UserManagement));
+                }
 
-        //                // Hash the default password (you should change this logic)
-        //                model.Hash = HashPassword("Password123");
+                var studentName = student.FullName;
 
-        //                 Set default values
-        //                 model.Status = "Active";
-        //                 model.LoginAttempts = 0;
-        //                 model.DateJoin = DateOnly.FromDateTime(DateTime.Now);
+                db.Students.Remove(student);
+                await db.SaveChangesAsync();
 
-        //                _db.Students.Add(model);
-        //                await _db.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Student '{studentName}' deleted successfully!";
+                return RedirectToAction(nameof(UserManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting student: {ex.Message}";
+                return RedirectToAction(nameof(UserManagement));
+            }
+        }
 
-        //                TempData["SuccessMessage"] = $"Student {model.FullName} has been added successfully!";
-        //                return RedirectToAction(nameof(UserManagement));
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                TempData["ErrorMessage"] = $"Error adding student: {ex.Message}";
-        //            }
-        //        }
+        // POST: Admin/Suspend
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Suspend(string id)
+        {
+            try
+            {
+                var student = await db.Students.FindAsync(id);
 
-        //        var students = await _db.Students.ToListAsync();
-        //        return View("UserManagement", students);
-        //    }
+                if (student == null)
+                {
+                    return Json(new { success = false, message = "Student not found." });
+                }
 
-        //    // READ - Get student details for editing
-        //    [HttpGet]
-        //    public async Task<IActionResult> GetStudent(string id)
-        //    {
-        //        var student = await _db.Students.FindAsync(id);
-        //        if (student == null)
-        //        {
-        //            return NotFound();
-        //        }
-        //        return Json(student);
-        //    }
+                // Toggle status between Active and Suspended
+                if (student.Status?.Trim().Equals("Suspended", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    student.Status = "Active";
+                }
+                else
+                {
+                    student.Status = "Suspended";
+                }
 
-        //    // UPDATE - Edit existing student
-        //    [HttpPost]
-        //    [ValidateAntiForgeryToken]
-        //    public async Task<IActionResult> Edit(Student model)
-        //    {
-        //        if (ModelState.IsValid)
-        //        {
-        //            try
-        //            {
-        //                var existingStudent = await _db.Students.FindAsync(model.Id);
-        //                if (existingStudent == null)
-        //                {
-        //                    TempData["ErrorMessage"] = "Student not found.";
-        //                    return RedirectToAction(nameof(UserManagement));
-        //                }
+                db.Students.Update(student);
+                await db.SaveChangesAsync();
 
-        //                 Update fields
-        //                 existingStudent.FirstName = model.FirstName;
-        //                 existingStudent.LastName = model.LastName;
-        //                 existingStudent.Email = model.Email;
-        //                 existingStudent.Contact = model.Contact;
-        //                 existingStudent.Program = model.Program;
-        //                 existingStudent.YearLevel = model.YearLevel;
-        //                 existingStudent.Status = model.Status;
+                return Json(new { success = true, message = $"Student status updated to {student.Status}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
-        //                _db.Students.Update(existingStudent);
-        //                await _db.SaveChangesAsync();
+        public IActionResult CourseManagement()
+        {
+            ViewData["Title"] = "Course Management";
+            return View();
+        }
 
-        //                TempData["SuccessMessage"] = $"Student {existingStudent.FullName} has been updated successfully!";
-        //                return RedirectToAction(nameof(UserManagement));
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                TempData["ErrorMessage"] = $"Error updating student: {ex.Message}";
-        //            }
-        //        }
-
-        //        var students = await _db.Students.ToListAsync();
-        //        return View("UserManagement", students);
-        //    }
-
-        //    // DELETE - Remove student
-        //    [HttpPost]
-        //    [ValidateAntiForgeryToken]
-        //    public async Task<IActionResult> Delete(string Id)
-        //    {
-        //        try
-        //        {
-        //            var student = await _db.Students.FindAsync(Id);
-        //            if (student == null)
-        //            {
-        //                TempData["ErrorMessage"] = "Student not found.";
-        //                return RedirectToAction(nameof(UserManagement));
-        //            }
-
-        //            var studentName = student.FullName;
-        //            _db.Students.Remove(student);
-        //            await _db.SaveChangesAsync();
-
-        //            TempData["SuccessMessage"] = $"Student {studentName} has been deleted successfully!";
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            TempData["ErrorMessage"] = $"Error deleting student: {ex.Message}";
-        //        }
-
-        //        return RedirectToAction(nameof(UserManagement));
-        //    }
-
-        //    // SUSPEND - Change student status to suspended
-        //    [HttpPost]
-        //    [ValidateAntiForgeryToken]
-        //    public async Task<IActionResult> Suspend(string id)
-        //    {
-        //        try
-        //        {
-        //            var student = await _db.Students.FindAsync(id);
-        //            if (student == null)
-        //            {
-        //                return Json(new { success = false, message = "Student not found." });
-        //            }
-
-        //            student.Status = student.Status == "Suspended" ? "Active" : "Suspended";
-        //            _db.Students.Update(student);
-        //            await _db.SaveChangesAsync();
-
-        //            return Json(new { success = true, message = $"Student status updated to {student.Status}.", status = student.Status });
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            return Json(new { success = false, message = ex.Message });
-        //        }
-        //    }
-
-        //    // Helper method to hash passwords
-        //    private string HashPassword(string password)
-        //    {
-        //        using var sha256 = SHA256.Create();
-        //        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        //        return Convert.ToBase64String(hashedBytes);
-        //    }
+        public IActionResult FacultyManagement()
+        {
+            ViewData["Title"] = "Faculty Management";
+            var faculties = db.Faculties
+                .OrderBy(f => f.Id)
+                .ToList();
+            return View(faculties);
+        }
     }
 }
