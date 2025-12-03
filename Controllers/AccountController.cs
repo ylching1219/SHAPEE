@@ -74,9 +74,9 @@ public class AccountController(DB db, Helper hp) : Controller
 
         return u.Role switch
         {
-            "Admin"   => RedirectToAction("Index", "Admin"),
-            "Staff"   => RedirectToAction("Index", "Staff"),
-            "Student" => RedirectToAction("Index", "Student"),
+            "Admin"   => RedirectToAction("Dashboard", "Admin"),
+            "Staff"   => RedirectToAction("Dashboard", "Staff"),
+            "Student" => RedirectToAction("Dashboard", "Student"),
             _         => RedirectToAction("Index", "Home"),
         };
     }

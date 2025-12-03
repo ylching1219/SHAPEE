@@ -18,10 +18,10 @@ namespace SHAPEE.Controllers
        }
 
        // Dashboard
-       public IActionResult Index()
+       public IActionResult Dashboard()
         {
             ViewData["Title"] = "Admin Dashboard";
-            return View("Admin");
+            return View();
         }
 
         public IActionResult UserManagement()
