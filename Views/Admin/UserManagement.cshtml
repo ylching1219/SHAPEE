@@ -1,8 +1,8 @@
-﻿@* @model IEnumerable<SHAPEE.Models.Student>
+﻿@model IEnumerable<SHAPEE.Models.DB.Student>
 @using System.Text.Json
 @{
     ViewData["Title"] = "User Management";
-    var students = Model?.ToList() ?? new List<SHAPEE.Models.Student>();
+    var students = Model?.ToList() ?? new List<SHAPEE.Models.DB.Student>();
     var studentCount = students.Count;
 }
 
@@ -27,108 +27,121 @@
     </div>
 }
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
     <h1 class="h3 mb-0 text-gray-800">User Management</h1>
 </div>
 
 <!-- Navigation Tabs -->
-<ul class="nav nav-tabs mb-4" id="userManagementTabs" role="tablist">
-    <li class="nav-item">
-        <a class="nav-link active" id="students-tab" data-toggle="tab" href="#students" role="tab">Students</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="staff-tab" data-toggle="tab" href="#staff" role="tab">Staff</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="admins-tab" data-toggle="tab" href="#admins" role="tab">Admins</a>
-    </li>
-</ul>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white p-2">
+        <ul class="nav nav-pills" id="userManagementTabs" role="tablist">
+            <li class="nav-item flex-fill">
+                <a class="nav-link active rounded-pill text-center" id="students-tab" data-toggle="tab" href="#students" role="tab">
+                    <i class="fas fa-user-graduate mr-1"></i> Students
+                </a>
+            </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link rounded-pill text-center" id="staff-tab" data-toggle="tab" href="#staff" role="tab">
+                    <i class="fas fa-chalkboard-teacher mr-1"></i> Staff
+                </a>
+            </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link rounded-pill text-center" id="admins-tab" data-toggle="tab" href="#admins" role="tab">
+                    <i class="fas fa-user-shield mr-1"></i> Admins
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
 
 <div class="tab-content" id="userManagementTabContent">
     <!-- Students Tab -->
     <div class="tab-pane fade show active" id="students" role="tabpanel">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <div class="d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Students (<span id="studentCount">@studentCount</span>)</h6>
-                    <div class="d-flex">
-                        <button class="btn btn-sm btn-primary mr-2" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
+        <div class="card shadow-sm">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                        Students (<span id="studentCount">@studentCount</span>)
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
                             <i class="fas fa-user-plus mr-1"></i> Add Student
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" id="exportCsvBtn">
-                            <i class="fas fa-file-export mr-1"></i> Export CSV
+                        <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
+                            <i class="fas fa-download mr-1"></i> Export CSV
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <!-- Search and Filters -->
-                <div class="row mb-3">
-                    <div class="col-md-6 mb-2">
+
+            <!-- Filters Section -->
+            <div class="card-body bg-light border-bottom">
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
                         <div class="input-group">
                             <div class="input-group-prepend">
-                                <span class="input-group-text bg-white border-right-0">
-                                    <i class="fas fa-search text-gray-400"></i>
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
                                 </span>
                             </div>
-                            <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search students by name, ID, or email...">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search students...">
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="row">
-                            <div class="col-md-4 mb-2">
-                                <select class="form-control form-control-sm" id="statusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                    <option value="Suspended">Suspended</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <select class="form-control form-control-sm" id="programFilter">
-                                    <option value="">All Programs</option>
-                                    <option value="Computer Science">Computer Science</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Arts">Arts</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <select class="form-control form-control-sm" id="yearFilter">
-                                    <option value="">All Years</option>
-                                    <option value="1">Year 1</option>
-                                    <option value="2">Year 2</option>
-                                    <option value="3">Year 3</option>
-                                    <option value="4">Year 4</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="programFilter">
+                            <option value="">All Programs</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Business">Business</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Arts">Arts</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <select class="form-control" id="yearFilter">
+                            <option value="">All Years</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
                     </div>
                 </div>
+            </div>
 
-                <!-- Students Table -->
+            <!-- Students Table -->
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover" id="studentsTable">
-                        <thead class="thead-light">
+                    <table class="table table-hover mb-0" id="studentsTable">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Student ID</th>
-                                <th>Email</th>
-                                <th>Contact Number</th>
-                                <th>Program</th>
-                                <th>Year Level</th>
-                                <th>Date Joined</th>
-                                <th>Status</th>
-                                <th style="width: 100px;">Actions</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Year Level</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="studentsTableBody">
                             @if (studentCount == 0)
                             {
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">
-                                        <i class="fas fa-user-graduate fa-2x mb-2"></i>
-                                        <p>No students found.</p>
+                                    <td colspan="9" class="text-center py-5">
+                                        <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                                        <p class="text-muted mb-0">No students found</p>
                                     </td>
                                 </tr>
                             }
@@ -152,32 +165,36 @@
                                         student.LastName,
                                         student.Email,
                                         student.Contact,
-                                        student.Program,
+                                        Program = student.Program?.Name ?? "",
                                         student.YearLevel,
                                         student.Status
                                     });
-                                    <tr data-student='@studentJson' data-student-name="@student.FullName">
-                                        <td>@student.FullName</td>
-                                        <td>@student.Id</td>
-                                        <td>@student.Email</td>
-                                        <td>@(student.Contact ?? "N/A")</td>
-                                        <td>@(student.Program?.Name ?? "N/A")</td>
-                                        <td><span class="badge badge-info">Year @student.YearLevel</span></td>
-                                        <td>@student.DateJoin.ToString("dd/MM/yyyy")</td>
-                                        <td>
-                                            <span class="badge @statusClass">@statusRaw</span>
+                                    <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.FullName</div>
                                         </td>
-                                        <td class="text-center">
-                                            <div class="dropdown dropup">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">
-                                                    <span class="sr-only">Toggle actions</span>
+                                        <td class="px-4 py-3 text-muted">@student.Id</td>
+                                        <td class="px-4 py-3 text-muted">@student.Email</td>
+                                        <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
+                                        <td class="px-4 py-3 text-muted">@(student.Program?.Name ?? "N/A")</td>
+                                        <td class="px-4 py-3">
+                                            <span class="badge badge-info badge-pill">Year @student.YearLevel</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
+                                        <td class="px-4 py-3">
+                                            <span class="badge @statusClass badge-pill">@statusRaw</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
                                                 </button>
-                                                <div class="dropdown-menu dropdown-menu-right shadow">
+                                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
                                                     <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
-                                                        <i class="fas fa-edit mr-2"></i> Edit
+                                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                                     </a>
                                                     <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
-                                                        <i class="fas fa-user-lock mr-2"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
                                                     </a>
                                                     <div class="dropdown-divider"></div>
                                                     <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
@@ -196,39 +213,45 @@
         </div>
     </div>
 
-    <!-- Staff Tab (Placeholder) -->
+    <!-- Staff Tab -->
     <div class="tab-pane fade" id="staff" role="tabpanel">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Staff Management</h6>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 font-weight-semibold text-gray-800">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Staff Management
+                </h5>
             </div>
-            <div class="card-body">
-                <p>Staff management coming soon...</p>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Staff management coming soon...</p>
             </div>
         </div>
     </div>
 
-    <!-- Admins Tab (Placeholder) -->
+    <!-- Admins Tab -->
     <div class="tab-pane fade" id="admins" role="tabpanel">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Admin Management</h6>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 font-weight-semibold text-gray-800">
+                    <i class="fas fa-user-shield mr-2"></i>Admin Management
+                </h5>
             </div>
-            <div class="card-body">
-                <p>Admin management coming soon...</p>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Admin management coming soon...</p>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Add/Edit Student Modal -->
-<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog" aria-labelledby="addEditStudentModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addEditStudentModalLabel">Add New Student</h5>
-                <button class="close text-white" type="button" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title font-weight-semibold" id="addEditStudentModalLabel">Add New Student</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="studentForm" method="post" asp-controller="Admin" asp-action="Create">
@@ -237,38 +260,54 @@
                     <input type="hidden" id="studentId" name="Id" value="" />
                     <input type="hidden" name="Discriminator" value="Student" />
 
-                    <div class="form-group">
-                        <label for="firstName">First Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="firstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="lastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="lastName" name="LastName" required>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="lastName">Last Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="lastName" name="LastName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="studentEmail">Email <span class="text-danger">*</span></label>
+                        <label for="studentEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
                         <input type="email" class="form-control" id="studentEmail" name="Email" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="contactNumber">Contact Number</label>
-                        <input type="tel" class="form-control" id="contactNumber" name="ContactNumber" placeholder="+60 12-345-6789">
+                        <label for="contactNumber" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" name="Contact" placeholder="+60 12-345-6789">
                     </div>
-                    <div class="form-group">
-                        <label for="program">Program <span class="text-danger">*</span></label>
-                        <select class="form-control" id="program" name="Program" required>
-                            <option value="">Select Program</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Business">Business</option>
-                            <option value="Engineering">Engineering</option>
-                            <option value="Arts">Arts</option>
-                        </select>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
+                                <select class="form-control" id="program" name="Program" required>
+                                    <option value="">Select Program</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Arts">Arts</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="yearLevel">Year Level <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
-                    </div>
+
                     <div class="form-group" id="statusGroup" style="display:none;">
-                        <label for="status">Status</label>
+                        <label for="status" class="font-weight-medium">Status</label>
                         <select class="form-control" id="status" name="Status">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
@@ -276,9 +315,13 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">Save Student</button>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">
+                        <i class="fas fa-save mr-1"></i> Save Student
+                    </button>
                 </div>
             </form>
         </div>
@@ -286,25 +329,35 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-sm" role="document">
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirm Deletion</h5>
-                <button class="close text-white" type="button" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete <strong><span id="studentToDeleteName"></span></strong>?</p>
-                <p class="text-danger small">This action cannot be undone.</p>
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="studentToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
                 <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="deleteStudentId" name="Id" />
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
                 </form>
             </div>
         </div>
@@ -314,11 +367,12 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
             const modalTitle = document.getElementById('addEditStudentModalLabel');
             const form = document.getElementById('studentForm');
             const statusGroup = document.getElementById('statusGroup');
 
-            // Add Student
+            // Prepare Add Modal
             window.prepareAddModal = function() {
                 modalTitle.innerText = 'Add New Student';
                 form.setAttribute('action', '@Url.Action("Create", "Admin")');
@@ -327,7 +381,7 @@
                 statusGroup.style.display = 'none';
             };
 
-            // Edit Student
+            // Prepare Edit Modal
             window.prepareEditModal = function(element) {
                 const row = element.closest('tr');
                 const studentData = JSON.parse(row.getAttribute('data-student'));
@@ -339,7 +393,7 @@
                 document.getElementById('firstName').value = studentData.FirstName;
                 document.getElementById('lastName').value = studentData.LastName;
                 document.getElementById('studentEmail').value = studentData.Email;
-                document.getElementById('contactNumber').value = studentData.ContactNumber || '';
+                document.getElementById('contactNumber').value = studentData.Contact || '';
                 document.getElementById('program').value = studentData.Program;
                 document.getElementById('yearLevel').value = studentData.YearLevel;
                 document.getElementById('status').value = studentData.Status.trim();
@@ -347,7 +401,7 @@
                 statusGroup.style.display = 'block';
             };
 
-            // Delete Student
+            // Prepare Delete Modal
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
                 const studentName = row.getAttribute('data-student-name');
@@ -357,7 +411,7 @@
                 document.getElementById('deleteStudentId').value = studentData.Id;
             };
 
-            // Suspend/Activate Student
+            // Toggle Suspend/Activate
             window.toggleSuspend = function(studentId, element) {
                 if (confirm('Are you sure you want to change this student\'s status?')) {
                     const formData = new FormData();
@@ -382,23 +436,29 @@
                 }
             };
 
-            // Search functionality
-            document.getElementById('searchInput').addEventListener('keyup', filterTable);
-            document.getElementById('statusFilter').addEventListener('change', filterTable);
-            document.getElementById('programFilter').addEventListener('change', filterTable);
-            document.getElementById('yearFilter').addEventListener('change', filterTable);
+            // Search and Filter functionality
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const programFilter = document.getElementById('programFilter');
+            const yearFilter = document.getElementById('yearFilter');
+
+            searchInput.addEventListener('keyup', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+            programFilter.addEventListener('change', filterTable);
+            yearFilter.addEventListener('change', filterTable);
 
             function filterTable() {
-                const searchValue = document.getElementById('searchInput').value.toLowerCase();
-                const statusValue = document.getElementById('statusFilter').value.toLowerCase();
-                const programValue = document.getElementById('programFilter').value.toLowerCase();
-                const yearValue = document.getElementById('yearFilter').value;
+                const searchValue = searchInput.value.toLowerCase();
+                const statusValue = statusFilter.value.toLowerCase();
+                const programValue = programFilter.value.toLowerCase();
+                const yearValue = yearFilter.value;
 
                 const rows = document.querySelectorAll('#studentsTableBody tr');
                 let visibleCount = 0;
 
                 rows.forEach(row => {
-                    if (row.cells.length === 1) return; // Skip "no students" row
+                    // Skip "no students" row
+                    if (row.cells.length === 1) return;
 
                     const name = row.cells[0].textContent.toLowerCase();
                     const id = row.cells[1].textContent.toLowerCase();
@@ -427,10 +487,17 @@
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(alert => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
                 });
             }, 5000);
+
+            // Export CSV functionality
+            document.getElementById('exportCsvBtn').addEventListener('click', function() {
+                alert('Export CSV functionality to be implemented');
+            });
         });
     </script>
-} *@
+}
