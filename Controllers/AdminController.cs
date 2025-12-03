@@ -22,7 +22,7 @@ namespace SHAPEE.Controllers
         public IActionResult UserManagement()
         {
             ViewData["Title"] = "User Management";
-            var students = _db.Students
+            var students = db.Students
                 .Include(s => s.Program) // Include Program navigation property
                 .OrderBy(s => s.Id)
                 .ToList();
@@ -48,7 +48,7 @@ namespace SHAPEE.Controllers
                 }
 
                 // Check for duplicate email
-                var duplicateEmail = await _db.Students
+                var duplicateEmail = await db.Students
                     .AnyAsync(s => s.Email == email);
 
                 if (duplicateEmail)
@@ -58,7 +58,7 @@ namespace SHAPEE.Controllers
                 }
 
                 // Generate Student ID
-                var lastStudent = await _db.Students
+                var lastStudent = await db.Students
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
 
@@ -75,7 +75,7 @@ namespace SHAPEE.Controllers
                 }
 
                 // Find program by name
-                var program = await _db.Programs
+                var program = await db.Programs
                     .FirstOrDefaultAsync(p => p.Name == programName);
 
                 if (program == null)
@@ -99,8 +99,8 @@ namespace SHAPEE.Controllers
                     Status = "Active"
                 };
 
-                _db.Students.Add(student);
-                await _db.SaveChangesAsync();
+                db.Students.Add(student);
+                await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Student '{student.FirstName} {student.LastName}' (ID: {student.Id}) created successfully!";
                 return RedirectToAction(nameof(UserManagement));
@@ -146,7 +146,7 @@ namespace SHAPEE.Controllers
                 }
 
                 // Check if student exists
-                var existingStudent = await _db.Students.FindAsync(id);
+                var existingStudent = await db.Students.FindAsync(id);
                 if (existingStudent == null)
                 {
                     TempData["ErrorMessage"] = "Student not found.";
@@ -154,7 +154,7 @@ namespace SHAPEE.Controllers
                 }
 
                 // Check for duplicate email (excluding current student)
-                var duplicateEmail = await _db.Students
+                var duplicateEmail = await db.Students
                     .AnyAsync(s => s.Email == email && s.Id != id);
 
                 if (duplicateEmail)
@@ -175,7 +175,7 @@ namespace SHAPEE.Controllers
                 // Handle Program - find program by name and set ProgramId
                 if (!string.IsNullOrWhiteSpace(programName))
                 {
-                    var program = await _db.Programs
+                    var program = await db.Programs
                         .FirstOrDefaultAsync(p => p.Name == programName);
 
                     if (program != null)
@@ -190,8 +190,8 @@ namespace SHAPEE.Controllers
                 }
 
                 // Save changes to database
-                _db.Students.Update(existingStudent);
-                await _db.SaveChangesAsync();
+                db.Students.Update(existingStudent);
+                await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Student '{existingStudent.FullName}' updated successfully!";
                 return RedirectToAction(nameof(UserManagement));
@@ -199,7 +199,7 @@ namespace SHAPEE.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 // Check if student still exists
-                if (!await _db.Students.AnyAsync(s => s.Id == id))
+                if (!await db.Students.AnyAsync(s => s.Id == id))
                 {
                     TempData["ErrorMessage"] = "Student no longer exists.";
                 }
@@ -223,7 +223,7 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                var student = await _db.Students.FindAsync(id);
+                var student = await db.Students.FindAsync(id);
 
                 if (student == null)
                 {
@@ -233,8 +233,8 @@ namespace SHAPEE.Controllers
 
                 var studentName = student.FullName;
 
-                _db.Students.Remove(student);
-                await _db.SaveChangesAsync();
+                db.Students.Remove(student);
+                await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Student '{studentName}' deleted successfully!";
                 return RedirectToAction(nameof(UserManagement));
@@ -253,7 +253,7 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                var student = await _db.Students.FindAsync(id);
+                var student = await db.Students.FindAsync(id);
 
                 if (student == null)
                 {
@@ -270,8 +270,8 @@ namespace SHAPEE.Controllers
                     student.Status = "Suspended";
                 }
 
-                _db.Students.Update(student);
-                await _db.SaveChangesAsync();
+                db.Students.Update(student);
+                await db.SaveChangesAsync();
 
                 return Json(new { success = true, message = $"Student status updated to {student.Status}." });
             }
@@ -290,7 +290,7 @@ namespace SHAPEE.Controllers
         public IActionResult FacultyManagement()
         {
             ViewData["Title"] = "Faculty Management";
-            var faculties = _db.Faculties
+            var faculties = db.Faculties
                 .OrderBy(f => f.Id)
                 .ToList();
             return View(faculties);
