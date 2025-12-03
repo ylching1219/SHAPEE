@@ -282,13 +282,24 @@ namespace SHAPEE.Controllers
         }
 
 
-        public IActionResult FacultyManagement(string? sort)
+        public IActionResult FacultyManagement(string? sort, string? name)
         {
             ViewData["Title"] = "Faculty Management";
 
-            var facultiesQuery = (sort == "1") ? db.Faculties.OrderBy(f => f.CostPerCreditHour) :
-                     (sort == "2") ? db.Faculties.OrderByDescending(f => f.CostPerCreditHour) :
-                                     db.Faculties.OrderBy(f => f.Id);
+            name = name?.Trim() ?? "";
+
+
+            var filteredFaculties = db.Faculties
+                .Where(f => f.Name.Contains(name))
+                .AsQueryable();
+
+            var facultiesQuery =
+                (sort == "1") ? filteredFaculties.OrderByDescending(f => f.Id) :
+                (sort == "2") ? filteredFaculties.OrderBy(f => f.Name) :
+                (sort == "3") ? filteredFaculties.OrderByDescending(f => f.Id) :
+                (sort == "4") ? filteredFaculties.OrderBy(f => f.CostPerCreditHour) :
+                (sort == "5") ? filteredFaculties.OrderByDescending(f => f.CostPerCreditHour) :
+                                     filteredFaculties.OrderBy(f => f.Id);
 
             var faculties = facultiesQuery.ToList();
 

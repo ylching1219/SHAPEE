@@ -127,3 +127,20 @@ $(document).on('click', '[data-post]', e => {
     f.action = url || location;
     f.submit();
 });
+
+// Auto-submit search form on keyup in search input
+$("#searchInput").on("keyup", function () {
+    $("#filterForm").submit();
+});
+
+$("#costSort").on("change", function () {
+    $("#filterForm").submit();
+});
+
+$("#filterForm").on("reset", function () {
+    setTimeout(() => {
+        $("#filterForm").submit();
+    }, 0);
+});
+
+
