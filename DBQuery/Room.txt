@@ -1,0 +1,4 @@
+K101	Classroom	K	1	Available
+K203	Classroom	K	2	Available
+B001	Computer Lab	B	1	Available
+B101	Computer Lab	B	2	Unavailable

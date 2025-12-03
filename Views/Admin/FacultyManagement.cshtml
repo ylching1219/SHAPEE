@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<Faculty>
 @using System.Text.Json
 @{
-    ViewData["Title"] = "User Management";
+    ViewData["Title"] = "Faculty Management";
 }
 
 <!-- Success/Error Messages -->
@@ -55,37 +55,49 @@
 
             <!-- Filters Section -->
             <div class="card-body bg-light border-bottom">
-                <div class="row g-3">
-                    <div class="col-12 col-md-3">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
+                <form id="filterForm"
+                      data-ajax="true"
+                      data-ajax-method="GET"
+                      data-ajax-url="/Admin/FacultyManagement"
+                      data-ajax-update="#facultyData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-5">
+                            <div class="input-group">
                                 <span class="input-group-text bg-white">
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
+                                <input type="text"
+                                       class="form-control"
+                                       name="name"
+                                       id="searchInput"
+                                       placeholder="Search faculties..." />
                             </div>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search faculties...">
                         </div>
+                        <div class="col-12 col-md-2"></div>
+                        <div class="col-12 col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2 text-nowrap">Sort By:</span>
+                                <select class="form-control" name="sort" id="costSort">
+                                    <option value="">Program Code by Ascending</option>
+                                    <option value="1">Program Code by Descending</option>
+                                    <option value="2">Program Name by Ascending</option>
+                                    <option value="3">Program Name by Descending</option>
+                                    <option value="4">Cost Low to High</option>
+                                    <option value="5">Cost High to Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                       
                     </div>
-                    <div class="col-12 col-md-5"></div>
-                    Sort By:
-                    <div class="col-12 col-md-3">
-                        <form id="sortForm" data-ajax="true"
-                              data-ajax-url="/Admin/FacultyManagement"
-                              data-ajax-method="GET"
-                              data-ajax-update="#facultyData"
-                        data-ajax->
-                            <select class="form-control" name="sort" id="costSort">
-                                <option value="">Default</option>
-                                <option value="1">Low to High</option>
-                                <option value="2">High to Low</option>
-                            </select>
-                        </form>
-
-                    </div>
-                </div>
+                </form>
             </div>
 
-            <!-- Students Table -->
+            <!-- Faculty Table -->
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <div id="facultyData">
@@ -98,20 +110,20 @@
 
 </div>
 
-@* <!-- Add/Edit Student Modal -->
-<div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog" aria-labelledby="addEditStudentModalLabel">
+<!-- Add/Edit Faculty Modal -->
+<div class="modal fade" id="addEditFacultyModal" tabindex="-1" role="dialog" aria-labelledby="addEditFacultyModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-semibold" id="addEditStudentModalLabel">Add New Student</h5>
+                <h5 class="modal-title font-weight-semibold" id="addEditFacultyModalLabel">Add New Faculty</h5>
                 <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="studentForm" method="post" asp-controller="Admin" asp-action="Create">
-                @Html.AntiForgeryToken()
+            <form id="facultyForm" method="post" asp-controller="Admin" asp-action="Create">
+               
                 <div class="modal-body">
-                    <input type="hidden" id="studentId" name="Id" value="" />
+                    <input type="hidden" id="facultyId" name="Id" value="" />
                     <input type="hidden" name="Discriminator" value="Student" />
 
                     <div class="row">
@@ -216,10 +228,10 @@
             </div>
         </div>
     </div>
-</div> *@
+</div>
 
 @section Scripts {
-    @* <script>
+    <script>
 
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -356,11 +368,6 @@
             document.getElementById('exportCsvBtn').addEventListener('click', function() {
                 alert('Export CSV functionality to be implemented');
             });
-        });
-    </script> *@
-    <script>
-           $('#costSort').change(function() {
-            $('#sortForm').submit();
         });
     </script>
 }
