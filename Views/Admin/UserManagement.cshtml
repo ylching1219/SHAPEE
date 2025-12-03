@@ -79,155 +79,56 @@
 
             <!-- Filters Section -->
             <div class="card-body bg-light border-bottom">
-                <div class="row g-3">
-                    <div class="col-12 col-md-3">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text bg-white">
-                                    <i class="fas fa-search text-muted"></i>
-                                </span>
+                <form id="filterForm"
+                    data-ajax="true"
+                    data-ajax-method="GET"
+                    data-ajax-url="/Admin/UserManagement"
+                    data-ajax-update="#studentData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                </div>
+                                <input type="text" class="form-control" id="searchInput" name="name" placeholder="Search students...">
                             </div>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search students...">
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-control" id="statusFilter" name="filter1">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-control" id="genderFilter" name="filter2">
+                                <option value="">All Genders</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-control" id="programFilter" name="filter3">
+                                <option value="">All Programs</option>
+                                @foreach (var p in ViewBag.Programs)
+                                {
+                                    <option value="@p.Id">@p.Name</option>
+                                }
+                            </select>
                         </div>
                     </div>
-                    <div class="col-12 col-md-3">
-                        <select class="form-control" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Suspended">Suspended</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <select class="form-control" id="genderFilter">
-                            <option value="">All Genders</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <select class="form-control" id="programFilter">
-                            <option value="">All Programs</option>
-                           
-                            @foreach(var p in @ViewBag.Programs)
-                            {
-                                <option value="@programCount">@p.Name</option>
-                                programCount++;
-                            }
-                           
-                        </select>
-                    </div>
-                </div>
+                </form>
             </div>
 
             <!-- Students Table -->
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="studentsTable">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Gender</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program Code</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentsTableBody">
-                            @if (studentCount == 0)
-                            {
-                                <tr>
-                                    <td colspan="9" class="text-center py-5">
-                                        <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
-                                        <p class="text-muted mb-0">No students found</p>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                foreach (var student in students)
-                                {
-                                    var statusRaw = student.Status ?? "Unknown";
-                                    var status = statusRaw.Trim();
-                                    var statusClass = status.ToLowerInvariant() switch
-                                    {
-                                        "active" => "badge-success",
-                                        "inactive" => "badge-secondary",
-                                        "suspended" => "badge-warning",
-                                        _ => "badge-light"
-                                    };
-                                    var studentJson = JsonSerializer.Serialize(new
-                                    {
-                                        student.Id,
-                                        student.FirstName,
-                                        student.LastName,
-                                        student.Email,
-                                        student.Contact,
-                                        student.Gender,
-                                        Program = student.Program?.Name ?? "",
-                                        ProgramCode = student.Program?.Id ?? "",
-                                        student.YearLevel,
-                                        student.Semester,
-                                        student.Status
-                                    });
-                                    // Generate program code (e.g., DCSY2S1)
-                                    var programCode = (student.Program?.Id ?? "N/A") + "Y" + student.YearLevel + "S" + student.Semester;
-                                    <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
-                                        <td class="px-4 py-3 text-muted">@student.Id</td>
-                                        <td class="px-4 py-3">
-                                            <div class="font-weight-medium text-gray-900">@student.FullName</div>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            @if (student.Gender == "Male")
-                                            {
-                                                <span class="badge badge-primary badge-pill"><i class="fas fa-mars mr-1"></i>Male</span>
-                                            }
-                                            else if (student.Gender == "Female")
-                                            {
-                                                <span class="badge badge-pink badge-pill"><i class="fas fa-venus mr-1"></i>Female</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">N/A</span>
-                                            }
-                                        </td>
-                                        <td class="px-4 py-3 text-muted">@student.Email</td>
-                                        <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
-                                        <td class="px-4 py-3">
-                                            <span class="badge badge-dark badge-pill font-weight-bold">@programCode</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
-                                        <td class="px-4 py-3">
-                                            <span class="badge @statusClass badge-pill">@statusRaw</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
-                                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
-                                                    </a>
-                                                    <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
-                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
-                                                    </a>
-                                                    <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
-                                                        <i class="fas fa-trash mr-2"></i> Delete
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
+                    <div id="studentData">
+                        <partial name="_User" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -466,12 +367,12 @@
             facultySelect.addEventListener('change', function() {
                 const selectedFaculty = this.value;
                 programSelect.innerHTML = '<option value="">Select Program</option>';
-                
+
                 if (selectedFaculty && programsByFaculty[selectedFaculty]) {
                     programSelect.disabled = false;
                     programsByFaculty[selectedFaculty].forEach(program => {
                         const option = document.createElement('option');
-                        option.value = program.name;
+                        option.value = program.code;
                         option.textContent = `${program.code} - ${program.name}`;
                         programSelect.appendChild(option);
                     });
@@ -479,8 +380,7 @@
                     programSelect.disabled = true;
                     programSelect.innerHTML = '<option value="">Select Faculty First</option>';
                 }
-                
-                // Reset program selection
+
                 programSelect.value = '';
             });
 
@@ -492,12 +392,10 @@
                 document.getElementById('studentId').value = '';
                 statusGroup.style.display = 'none';
 
-                // Reset faculty and program dropdowns
                 facultySelect.value = '';
                 programSelect.disabled = true;
                 programSelect.innerHTML = '<option value="">Select Faculty First</option>';
 
-                // Remove validation states
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
                     input.classList.remove('is-invalid');
@@ -522,7 +420,6 @@
                 modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
                 form.setAttribute('action', '@Url.Action("Edit", "Admin")');
 
-                // Populate form fields
                 document.getElementById('studentId').value = studentData.Id;
                 document.getElementById('firstName').value = studentData.FirstName;
                 document.getElementById('lastName').value = studentData.LastName;
@@ -536,7 +433,7 @@
                 // Find faculty for the program
                 let foundFaculty = '';
                 for (const [faculty, programs] of Object.entries(programsByFaculty)) {
-                    if (programs.some(p => p.name === studentData.Program)) {
+                    if (programs.some(p => p.code === studentData.ProgramCode)) {
                         foundFaculty = faculty;
                         break;
                     }
@@ -546,17 +443,14 @@
                 if (foundFaculty) {
                     facultySelect.value = foundFaculty;
                     facultySelect.dispatchEvent(new Event('change'));
-                    
-                    // Set program after dropdown is populated
+
                     setTimeout(() => {
-                        programSelect.value = studentData.Program;
+                        programSelect.value = studentData.ProgramCode;
                     }, 0);
                 }
 
-                // Show status field for edit
                 statusGroup.style.display = 'block';
 
-                // Remove validation states
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
                     input.classList.remove('is-invalid');
@@ -599,68 +493,9 @@
                 }
             };
 
-                const searchInput = document.getElementById("searchInput");
-            const statusFilter = document.getElementById("statusFilter");
-            const programFilter = document.getElementById("programFilter");
-            const genderFilter = document.getElementById("genderFilter");
+        const searchInput = document.getElementById("searchInput");
 
-            const tableBody = document.getElementById("studentsTableBody");
-
-            // Attach events
-            searchInput.addEventListener("keyup", applyFilters);
-            statusFilter.addEventListener("change", applyFilters);
-            programFilter.addEventListener("change", applyFilters);
-            genderFilter.addEventListener("change", applyFilters);
-
-            function applyFilters() {
-
-                const searchValue = searchInput.value.toLowerCase();
-                const statusValue = statusFilter.value.toLowerCase();
-                const programValue = programFilter.value.toLowerCase();
-                const genderValue = genderFilter.value.toLowerCase();
-
-                let visibleCount = 0;
-
-                // Loop all rows
-                [...tableBody.getElementsByTagName("tr")].forEach(row => {
-
-                    const student = JSON.parse(row.getAttribute("data-student"));
-
-                    const id = student.Id?.toLowerCase() || "";
-                    const name = `${student.FirstName} ${student.LastName}`.toLowerCase();
-                    const email = student.Email?.toLowerCase() || "";
-                    const contact = student.Contact?.toLowerCase() || "";
-                    const program = student.ProgramCode?.toLowerCase() || "";
-                    const gender = student.Gender?.toLowerCase() || "";
-                    const status = student.Status?.toLowerCase() || "";
-
-                    // SEARCH check
-                    const matchesSearch =
-                        id.includes(searchValue) ||
-                        name.includes(searchValue) ||
-                        email.includes(searchValue) ||
-                        contact.includes(searchValue);
-
-                    // FILTER checks
-                    const matchesStatus = !statusValue || status === statusValue;
-                    const matchesProgram = !programValue || program === programValue;
-                    const matchesGender = !genderValue || gender === genderValue;
-
-                    const showRow =
-                        matchesSearch &&
-                        matchesStatus &&
-                        matchesProgram &&
-                        matchesGender;
-
-                    row.style.display = showRow ? "" : "none";
-
-                    if (showRow) visibleCount++;
-                });
-
-                // Update student count display
-                const studentCountLabel = document.getElementById("studentCount");
-                if (studentCountLabel) studentCountLabel.textContent = visibleCount;
-            }
+        searchInput.addEventListener("keyup", debounce(submitFilterForm, 300));
 
             // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {

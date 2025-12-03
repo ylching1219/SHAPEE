@@ -1,0 +1,108 @@
+﻿@model IEnumerable<Student>
+@using System.Text.Json
+
+<table class="table table-hover mb-0" id="studentsTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Gender</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program Code</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="studentsTableBody">
+        @if (Model.Count() == 0)
+        {
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No students found</p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            foreach (var student in Model)
+            {
+                var statusRaw = student.Status ?? "Unknown";
+                var status = statusRaw.Trim();
+                var statusClass = status.ToLowerInvariant() switch
+                {
+                    "active" => "badge-success",
+                    "inactive" => "badge-secondary",
+                    "suspended" => "badge-warning",
+                    _ => "badge-light"
+                };
+                var studentJson = JsonSerializer.Serialize(new
+                {
+                    student.Id,
+                    student.FirstName,
+                    student.LastName,
+                    student.Email,
+                    student.Contact,
+                    student.Gender,
+                    Program = student.Program?.Name ?? "",
+                    ProgramCode = student.Program?.Id ?? "",
+                    student.YearLevel,
+                    student.Semester,
+                    student.Status
+                });
+                // Generate program code (e.g., DCSY2S1)
+                var programCode = (student.Program?.Id ?? "N/A") + "Y" + student.YearLevel + "S" + student.Semester;
+                <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
+                    <td class="px-4 py-3 text-muted">@student.Id</td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@student.FullName</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        @if (student.Gender == "Male")
+                        {
+                            <span class="badge badge-primary badge-pill"><i class="fas fa-mars mr-1"></i>Male</span>
+                        }
+                        else if (student.Gender == "Female")
+                        {
+                            <span class="badge badge-pink badge-pill"><i class="fas fa-venus mr-1"></i>Female</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">N/A</span>
+                        }
+                    </td>
+                    <td class="px-4 py-3 text-muted">@student.Email</td>
+                    <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
+                    <td class="px-4 py-3">
+                        <span class="badge badge-dark badge-pill font-weight-bold">@programCode</span>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
+                    <td class="px-4 py-3">
+                        <span class="badge @statusClass badge-pill">@statusRaw</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
+                                    <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                    <i class="fas fa-trash mr-2"></i> Delete
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
