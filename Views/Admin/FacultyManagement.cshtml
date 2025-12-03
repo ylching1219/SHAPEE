@@ -1,9 +1,7 @@
-﻿@* @model IEnumerable<Faculty>
+﻿@model IEnumerable<Faculty>
 @using System.Text.Json
 @{
     ViewData["Title"] = "User Management";
-    var students = Model?.ToList() ?? new List<SHAPEE.Models.DB.Student>();
-    var studentCount = students.Count;
 }
 
 <!-- Success/Error Messages -->
@@ -29,45 +27,24 @@
 
 <!-- Header -->
 <div class="bg-white border-bottom px-4 py-3 mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+    <h1 class="h3 mb-0 text-gray-800">Faculty Management</h1>
 </div>
 
-<!-- Navigation Tabs -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white p-2">
-        <ul class="nav nav-pills" id="userManagementTabs" role="tablist">
-            <li class="nav-item flex-fill">
-                <a class="nav-link active rounded-pill text-center" id="students-tab" data-toggle="tab" href="#students" role="tab">
-                    <i class="fas fa-user-graduate mr-1"></i> Students
-                </a>
-            </li>
-            <li class="nav-item flex-fill">
-                <a class="nav-link rounded-pill text-center" id="staff-tab" data-toggle="tab" href="#staff" role="tab">
-                    <i class="fas fa-chalkboard-teacher mr-1"></i> Staff
-                </a>
-            </li>
-            <li class="nav-item flex-fill">
-                <a class="nav-link rounded-pill text-center" id="admins-tab" data-toggle="tab" href="#admins" role="tab">
-                    <i class="fas fa-user-shield mr-1"></i> Admins
-                </a>
-            </li>
-        </ul>
-    </div>
-</div>
 
-<div class="tab-content" id="userManagementTabContent">
+
+<div class="tab-content" id="FacultyManagementTabContent">
     <!-- Students Tab -->
-    <div class="tab-pane fade show active" id="students" role="tabpanel">
+    <div class="tab-pane fade show active" id="faculties" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
             <div class="card-header bg-white border-bottom py-3">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
                     <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
-                        Students (<span id="studentCount">@studentCount</span>)
+                        Faculties (<span id="facultyCount">@Model.Count()</span>)
                     </h5>
                     <div class="d-flex gap-2">
                         <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
-                            <i class="fas fa-user-plus mr-1"></i> Add Student
+                            <i class="fas fa-user-plus mr-1"></i> Add Faculty
                         </button>
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
                             <i class="fas fa-download mr-1"></i> Export CSV
@@ -86,34 +63,24 @@
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
                             </div>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search students...">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search faculties...">
                         </div>
                     </div>
+                    <div class="col-12 col-md-5"></div>
+                    Sort By:
                     <div class="col-12 col-md-3">
-                        <select class="form-control" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Suspended">Suspended</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <select class="form-control" id="programFilter">
-                            <option value="">All Programs</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Business">Business</option>
-                            <option value="Engineering">Engineering</option>
-                            <option value="Arts">Arts</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <select class="form-control" id="yearFilter">
-                            <option value="">All Years</option>
-                            <option value="1">Year 1</option>
-                            <option value="2">Year 2</option>
-                            <option value="3">Year 3</option>
-                            <option value="4">Year 4</option>
-                        </select>
+                        <form id="sortForm" data-ajax="true"
+                              data-ajax-url="/Admin/FacultyManagement"
+                              data-ajax-method="GET"
+                              data-ajax-update="#facultyData"
+                        data-ajax->
+                            <select class="form-control" name="sort" id="costSort">
+                                <option value="">Default</option>
+                                <option value="1">Low to High</option>
+                                <option value="2">High to Low</option>
+                            </select>
+                        </form>
+
                     </div>
                 </div>
             </div>
@@ -121,130 +88,17 @@
             <!-- Students Table -->
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="studentsTable">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Year Level</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentsTableBody">
-                            @if (studentCount == 0)
-                            {
-                                <tr>
-                                    <td colspan="9" class="text-center py-5">
-                                        <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
-                                        <p class="text-muted mb-0">No students found</p>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                foreach (var student in students)
-                                {
-                                    var statusRaw = student.Status ?? "Unknown";
-                                    var status = statusRaw.Trim();
-                                    var statusClass = status.ToLowerInvariant() switch
-                                    {
-                                        "active" => "badge-success",
-                                        "inactive" => "badge-secondary",
-                                        "suspended" => "badge-warning",
-                                        _ => "badge-light"
-                                    };
-                                    var studentJson = JsonSerializer.Serialize(new
-                                    {
-                                        student.Id,
-                                        student.FirstName,
-                                        student.LastName,
-                                        student.Email,
-                                        student.Contact,
-                                        Program = student.Program?.Name ?? "",
-                                        student.YearLevel,
-                                        student.Status
-                                    });
-                                    <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
-                                        <td class="px-4 py-3">
-                                            <div class="font-weight-medium text-gray-900">@student.FullName</div>
-                                        </td>
-                                        <td class="px-4 py-3 text-muted">@student.Id</td>
-                                        <td class="px-4 py-3 text-muted">@student.Email</td>
-                                        <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
-                                        <td class="px-4 py-3 text-muted">@(student.Program?.Name ?? "N/A")</td>
-                                        <td class="px-4 py-3">
-                                            <span class="badge badge-info badge-pill">Year @student.YearLevel</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
-                                        <td class="px-4 py-3">
-                                            <span class="badge @statusClass badge-pill">@statusRaw</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
-                                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
-                                                    </a>
-                                                    <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
-                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
-                                                    </a>
-                                                    <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
-                                                        <i class="fas fa-trash mr-2"></i> Delete
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
+                    <div id="facultyData">
+                        <partial name="_Faculty" />
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Staff Tab -->
-    <div class="tab-pane fade" id="staff" role="tabpanel">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 font-weight-semibold text-gray-800">
-                    <i class="fas fa-chalkboard-teacher mr-2"></i>Staff Management
-                </h5>
-            </div>
-            <div class="card-body text-center py-5">
-                <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
-                <p class="text-muted mb-0">Staff management coming soon...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admins Tab -->
-    <div class="tab-pane fade" id="admins" role="tabpanel">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 font-weight-semibold text-gray-800">
-                    <i class="fas fa-user-shield mr-2"></i>Admin Management
-                </h5>
-            </div>
-            <div class="card-body text-center py-5">
-                <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
-                <p class="text-muted mb-0">Admin management coming soon...</p>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Add/Edit Student Modal -->
+@* <!-- Add/Edit Student Modal -->
 <div class="modal fade" id="addEditStudentModal" tabindex="-1" role="dialog" aria-labelledby="addEditStudentModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -362,11 +216,15 @@
             </div>
         </div>
     </div>
-</div>
+</div> *@
 
 @section Scripts {
-    <script>
+    @* <script>
+
+
         document.addEventListener('DOMContentLoaded', function() {
+
+
             // Modal elements
             const modalTitle = document.getElementById('addEditStudentModalLabel');
             const form = document.getElementById('studentForm');
@@ -499,5 +357,10 @@
                 alert('Export CSV functionality to be implemented');
             });
         });
+    </script> *@
+    <script>
+           $('#costSort').change(function() {
+            $('#sortForm').submit();
+        });
     </script>
-} *@
+}

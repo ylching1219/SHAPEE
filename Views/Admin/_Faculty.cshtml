@@ -1,0 +1,59 @@
+﻿@model IEnumerable<Faculty>
+
+<table class="table table-hover mb-0" id="studentsTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Faculty Code</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Cost Per Credit Hour</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="studentsTableBody">
+        @if (Model.Count() == 0)
+        {
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No faculty found</p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var f in Model)
+            {
+                <tr class="border-bottom">
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@f.Id</div>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@f.Name</td>
+                    <td class="px-4 py-3 text-muted">RM @f.CostPerCreditHour</td>
+
+                    <td class="px-4 py-3 text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                </a>
+                                @* <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
+                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                                    </a> *@
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                    <i class="fas fa-trash mr-2"></i> Delete
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+            }
+        }
+    </tbody>
+</table>
+
+
