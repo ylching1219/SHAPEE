@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
@@ -29,6 +30,17 @@ namespace SHAPEE.Controllers
             return View(students);
         }
 
+        private string GenerateRandomPassword(int length = 8)
+        {
+            const string valid = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            return new string(Enumerable
+                .Range(1, length)
+                .Select(_ => valid[random.Next(valid.Length)])
+                .ToArray());
+        }
+
+
         // POST: Admin/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -47,36 +59,21 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(UserManagement));
                 }
 
-                // Check for duplicate email
-                var duplicateEmail = await db.Students
-                    .AnyAsync(s => s.Email == email);
-
-                if (duplicateEmail)
+                // Check duplicate email
+                if (await db.Students.AnyAsync(s => s.Email == email))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
                     return RedirectToAction(nameof(UserManagement));
                 }
 
                 // Generate Student ID
-                var lastStudent = await db.Students
-                    .OrderByDescending(s => s.Id)
-                    .FirstOrDefaultAsync();
+                var lastStudent = await db.Students.OrderByDescending(s => s.Id).FirstOrDefaultAsync();
+                string newId = (lastStudent != null && lastStudent.Id.StartsWith("R"))
+                    ? $"R{(int.Parse(lastStudent.Id.Substring(1)) + 1).ToString("D4")}"
+                    : "R0001";
 
-                string newId;
-                if (lastStudent != null && lastStudent.Id.StartsWith("S"))
-                {
-                    // Extract number and increment
-                    int lastNumber = int.Parse(lastStudent.Id.Substring(1));
-                    newId = $"S{(lastNumber + 1).ToString("D3")}";
-                }
-                else
-                {
-                    newId = "S001";
-                }
-
-                // Find program by name
-                var program = await db.Programs
-                    .FirstOrDefaultAsync(p => p.Name == programName);
+                // Find Program
+                var program = await db.Programs.FirstOrDefaultAsync(p => p.Name == programName);
 
                 if (program == null)
                 {
@@ -84,7 +81,12 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(UserManagement));
                 }
 
-                // Create new student
+                // Generate random password + hash
+                string rawPassword = GenerateRandomPassword(8);
+                var passwordHasher = new PasswordHasher<User>();
+                string passwordHash = passwordHasher.HashPassword(null, rawPassword);
+
+                // Create student
                 var student = new Student
                 {
                     Id = newId,
@@ -95,22 +97,35 @@ namespace SHAPEE.Controllers
                     Contact = contact?.Trim(),
                     ProgramId = program.Id,
                     YearLevel = yearLevel,
+                    Semester = 1,
                     DateJoin = DateOnly.FromDateTime(DateTime.Now),
-                    Status = "Active"
+
+                    // Required User fields
+                    Hash = passwordHash,
+                    LoginAttempts = 3,
+                    Status = "Active",
+                    // Discriminator will automatically be "Student"
                 };
 
                 db.Students.Add(student);
                 await db.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Student '{student.FirstName} {student.LastName}' (ID: {student.Id}) created successfully!";
+                // OPTIONAL – show the generated password to admin (for giving to student)
+                TempData["SuccessMessage"] =
+                    $"Student '{student.FirstName} {student.LastName}' created successfully! " +
+                    $"Generated password: {rawPassword}";
+
                 return RedirectToAction(nameof(UserManagement));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error creating student: {ex.Message}";
+                TempData["ErrorMessage"] =
+                    $"Error creating student: {ex.InnerException?.Message ?? ex.Message}";
                 return RedirectToAction(nameof(UserManagement));
             }
         }
+
+
 
         // POST: Admin/Edit
         [HttpPost]

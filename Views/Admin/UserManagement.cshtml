@@ -98,21 +98,31 @@
                         </select>
                     </div>
                     <div class="col-12 col-md-3">
-                        <select class="form-control" id="programFilter">
-                            <option value="">All Programs</option>
-                            <option value="Bachelor of Accountancy (Hons)">Accountancy</option>
-                            <option value="Business">Business</option>
-                            <option value="Engineering">Engineering</option>
-                            <option value="Arts">Arts</option>
+                        <select class="form-control" id="genderFilter">
+                            <option value="">All Genders</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-3">
-                        <select class="form-control" id="yearFilter">
-                            <option value="">All Years</option>
-                            <option value="1">Year 1</option>
-                            <option value="2">Year 2</option>
-                            <option value="3">Year 3</option>
-                            <option value="4">Year 4</option>
+                        <select class="form-control" id="programFilter">
+                            <option value="">All Programs</option>
+                            <option value="BCS">BCS - Computer Science</option>
+                            <option value="BIT">BIT - Information Technology</option>
+                            <option value="BAC">BAC - Accountancy</option>
+                            <option value="BFN">BFN - Finance</option>
+                            <option value="BCH">BCH - Chemistry</option>
+                            <option value="BPH">BPH - Physics</option>
+                            <option value="BCE">BCE - Civil Engineering</option>
+                            <option value="BEE">BEE - Electrical Engineering</option>
+                            <option value="DFT">DFT - IT Diploma</option>
+                            <option value="DCS">DCS - CS Diploma</option>
+                            <option value="DAC">DAC - Accountancy Diploma</option>
+                            <option value="DFI">DFI - Finance Diploma</option>
+                            <option value="DCH">DCH - Chemistry Diploma</option>
+                            <option value="DPH">DPH - Physics Diploma</option>
+                            <option value="DCE">DCE - Civil Eng Diploma</option>
+                            <option value="DEE">DEE - Electrical Eng Diploma</option>
                         </select>
                     </div>
                 </div>
@@ -129,8 +139,7 @@
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Gender</th>
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program</th>
-                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Year Level</th>
+                                <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program Code</th>
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
                                 <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
@@ -140,7 +149,7 @@
                             @if (studentCount == 0)
                             {
                                 <tr>
-                                    <td colspan="10" class="text-center py-5">
+                                    <td colspan="9" class="text-center py-5">
                                         <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
                                         <p class="text-muted mb-0">No students found</p>
                                     </td>
@@ -168,9 +177,13 @@
                                         student.Contact,
                                         student.Gender,
                                         Program = student.Program?.Name ?? "",
+                                        ProgramCode = student.Program?.Id ?? "",
                                         student.YearLevel,
+                                        student.Semester,
                                         student.Status
                                     });
+                                    // Generate program code (e.g., DCSY2S1)
+                                    var programCode = (student.Program?.Id ?? "N/A") + "Y" + student.YearLevel + "S" + student.Semester;
                                     <tr data-student='@studentJson' data-student-name="@student.FullName" class="border-bottom">
                                         <td class="px-4 py-3 text-muted">@student.Id</td>
                                         <td class="px-4 py-3">
@@ -192,9 +205,8 @@
                                         </td>
                                         <td class="px-4 py-3 text-muted">@student.Email</td>
                                         <td class="px-4 py-3 text-muted">@(student.Contact ?? "N/A")</td>
-                                        <td class="px-4 py-3 text-muted">@(student.Program?.Name ?? "N/A")</td>
                                         <td class="px-4 py-3">
-                                            <span class="badge badge-info badge-pill">Year @student.YearLevel</span>
+                                            <span class="badge badge-dark badge-pill font-weight-bold">@programCode</span>
                                         </td>
                                         <td class="px-4 py-3 text-muted">@student.DateJoin.ToString("dd/MM/yyyy")</td>
                                         <td class="px-4 py-3">
@@ -313,44 +325,52 @@
                         <input type="tel" class="form-control" id="contactNumber" name="Contact" placeholder="+60 12-345-6789">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="faculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
-                                <select class="form-control" id="faculty" name="FacultyId" required>
-                                    <option value="">Select Faculty</option>
-                                    <option value="FOCS">Faculty of Computer Science (FOCS)</option>
-                                    <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
-                                    <option value="FAS">Faculty of Applied Sciences (FAS)</option>
-                                    <option value="FOET">Faculty of Engineering & Technology (FOET)</option>
-                                </select>
-                                <div class="invalid-feedback">Please select a faculty.</div>
-                            </div>
+                    <div class="form-group">
+                        <label for="faculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
+                        <select class="form-control" id="faculty" name="FacultyId" required>
+                            <option value="">Select Faculty</option>
+                            <option value="FOCS">Faculty of Computer Science (FOCS)</option>
+                            <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
+                            <option value="FAS">Faculty of Applied Sciences (FAS)</option>
+                            <option value="FOET">Faculty of Engineering & Technology (FOET)</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a faculty.</div>
+                    </div>
 
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="form-group">
-                                        <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
-                                        <select class="form-control" id="program" name="ProgramName" required disabled>
-                                            <option value="">Select Faculty First</option>
-                                        </select>
-                                        <div class="invalid-feedback">Please select a program.</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
-                                        <select class="form-control" id="yearLevel" name="YearLevel" required>
-                                            <option value="">Year</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                        </select>
-                                        <div class="invalid-feedback">Please select year level.</div>
-                                    </div>
-                                </div>
+                    <div class="form-group">
+                        <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
+                        <select class="form-control" id="program" name="ProgramName" required disabled>
+                            <option value="">Select Faculty First</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a program.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                                <select class="form-control" id="yearLevel" name="YearLevel" required>
+                                    <option value="">Year</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                                <div class="invalid-feedback">Please select year level.</div>
                             </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="semester" class="font-weight-medium">Semester <span class="text-danger">*</span></label>
+                                <select class="form-control" id="semester" name="Semester" required>
+                                    <option value="">Semester</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <div class="invalid-feedback">Please select semester.</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group" id="statusGroup" style="display:none;">
@@ -419,6 +439,59 @@
             const form = document.getElementById('studentForm');
             const statusGroup = document.getElementById('statusGroup');
 
+            // Faculty-Program mapping
+            const programsByFaculty = {
+                'FOCS': [
+                    { code: 'BCS', name: 'Bachelor of Computer Science (Hons)' },
+                    { code: 'BIT', name: 'Bachelor of Information Technology (Hons)' },
+                    { code: 'DFT', name: 'Diploma in Information Technology' },
+                    { code: 'DCS', name: 'Diploma in Computer Science' }
+                ],
+                'FAFB': [
+                    { code: 'BAC', name: 'Bachelor of Accountancy (Hons)' },
+                    { code: 'BFN', name: 'Bachelor of Finance (Hons)' },
+                    { code: 'DAC', name: 'Diploma in Accountancy' },
+                    { code: 'DFI', name: 'Diploma in Finance' }
+                ],
+                'FAS': [
+                    { code: 'BCH', name: 'Bachelor of Applied Science (Hons) in Chemistry' },
+                    { code: 'BPH', name: 'Bachelor of Applied Science (Hons) in Physics' },
+                    { code: 'DCH', name: 'Diploma in Chemistry' },
+                    { code: 'DPH', name: 'Diploma in Physics' }
+                ],
+                'FOET': [
+                    { code: 'BCE', name: 'Bachelor of Civil Engineering (Hons)' },
+                    { code: 'BEE', name: 'Bachelor of Electrical Engineering (Hons)' },
+                    { code: 'DCE', name: 'Diploma in Civil Engineering' },
+                    { code: 'DEE', name: 'Diploma in Electrical Engineering' }
+                ]
+            };
+
+            // Faculty dropdown change handler
+            const facultySelect = document.getElementById('faculty');
+            const programSelect = document.getElementById('program');
+
+            facultySelect.addEventListener('change', function() {
+                const selectedFaculty = this.value;
+                programSelect.innerHTML = '<option value="">Select Program</option>';
+                
+                if (selectedFaculty && programsByFaculty[selectedFaculty]) {
+                    programSelect.disabled = false;
+                    programsByFaculty[selectedFaculty].forEach(program => {
+                        const option = document.createElement('option');
+                        option.value = program.name;
+                        option.textContent = `${program.code} - ${program.name}`;
+                        programSelect.appendChild(option);
+                    });
+                } else {
+                    programSelect.disabled = true;
+                    programSelect.innerHTML = '<option value="">Select Faculty First</option>';
+                }
+                
+                // Reset program selection
+                programSelect.value = '';
+            });
+
             // Prepare Add Modal
             window.prepareAddModal = function() {
                 modalTitle.innerText = 'Add New Student';
@@ -426,6 +499,11 @@
                 form.reset();
                 document.getElementById('studentId').value = '';
                 statusGroup.style.display = 'none';
+
+                // Reset faculty and program dropdowns
+                facultySelect.value = '';
+                programSelect.disabled = true;
+                programSelect.innerHTML = '<option value="">Select Faculty First</option>';
 
                 // Remove validation states
                 form.classList.remove('was-validated');
@@ -459,9 +537,29 @@
                 document.getElementById('gender').value = studentData.Gender || '';
                 document.getElementById('studentEmail').value = studentData.Email;
                 document.getElementById('contactNumber').value = studentData.Contact || '';
-                document.getElementById('program').value = studentData.Program;
                 document.getElementById('yearLevel').value = studentData.YearLevel;
+                document.getElementById('semester').value = studentData.Semester || '1';
                 document.getElementById('status').value = (studentData.Status || '').trim();
+
+                // Find faculty for the program
+                let foundFaculty = '';
+                for (const [faculty, programs] of Object.entries(programsByFaculty)) {
+                    if (programs.some(p => p.name === studentData.Program)) {
+                        foundFaculty = faculty;
+                        break;
+                    }
+                }
+
+                // Set faculty and trigger change to populate programs
+                if (foundFaculty) {
+                    facultySelect.value = foundFaculty;
+                    facultySelect.dispatchEvent(new Event('change'));
+                    
+                    // Set program after dropdown is populated
+                    setTimeout(() => {
+                        programSelect.value = studentData.Program;
+                    }, 0);
+                }
 
                 // Show status field for edit
                 statusGroup.style.display = 'block';
@@ -509,51 +607,67 @@
                 }
             };
 
-            // Search and Filter functionality
-            const searchInput = document.getElementById('searchInput');
-            const statusFilter = document.getElementById('statusFilter');
-            const programFilter = document.getElementById('programFilter');
-            const yearFilter = document.getElementById('yearFilter');
+                const searchInput = document.getElementById("searchInput");
+            const statusFilter = document.getElementById("statusFilter");
+            const programFilter = document.getElementById("programFilter");
+            const genderFilter = document.getElementById("genderFilter");
 
-            searchInput.addEventListener('keyup', filterTable);
-            statusFilter.addEventListener('change', filterTable);
-            programFilter.addEventListener('change', filterTable);
-            yearFilter.addEventListener('change', filterTable);
+            const tableBody = document.getElementById("studentsTableBody");
 
-            function filterTable() {
+            // Attach events
+            searchInput.addEventListener("keyup", applyFilters);
+            statusFilter.addEventListener("change", applyFilters);
+            programFilter.addEventListener("change", applyFilters);
+            genderFilter.addEventListener("change", applyFilters);
+
+            function applyFilters() {
+
                 const searchValue = searchInput.value.toLowerCase();
                 const statusValue = statusFilter.value.toLowerCase();
                 const programValue = programFilter.value.toLowerCase();
-                const yearValue = yearFilter.value;
+                const genderValue = genderFilter.value.toLowerCase();
 
-                const rows = document.querySelectorAll('#studentsTableBody tr');
                 let visibleCount = 0;
 
-                rows.forEach(row => {
-                    // Skip "no students" row
-                    if (row.cells.length === 1) return;
+                // Loop all rows
+                [...tableBody.getElementsByTagName("tr")].forEach(row => {
 
-                    const id = row.cells[0].textContent.toLowerCase();
-                    const name = row.cells[1].textContent.toLowerCase();
-                    const email = row.cells[2].textContent.toLowerCase();
-                    const program = row.cells[4].textContent.toLowerCase();
-                    const year = row.cells[5].textContent;
-                    const status = row.cells[7].textContent.toLowerCase();
+                    const student = JSON.parse(row.getAttribute("data-student"));
 
-                    const matchesSearch = name.includes(searchValue) || id.includes(searchValue) || email.includes(searchValue);
-                    const matchesStatus = !statusValue || status.includes(statusValue);
-                    const matchesProgram = !programValue || program.includes(programValue);
-                    const matchesYear = !yearValue || year.includes('year ' + yearValue);
+                    const id = student.Id?.toLowerCase() || "";
+                    const name = `${student.FirstName} ${student.LastName}`.toLowerCase();
+                    const email = student.Email?.toLowerCase() || "";
+                    const contact = student.Contact?.toLowerCase() || "";
+                    const program = student.ProgramCode?.toLowerCase() || "";
+                    const gender = student.Gender?.toLowerCase() || "";
+                    const status = student.Status?.toLowerCase() || "";
 
-                    if (matchesSearch && matchesStatus && matchesProgram && matchesYear) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    // SEARCH check
+                    const matchesSearch =
+                        id.includes(searchValue) ||
+                        name.includes(searchValue) ||
+                        email.includes(searchValue) ||
+                        contact.includes(searchValue);
+
+                    // FILTER checks
+                    const matchesStatus = !statusValue || status === statusValue;
+                    const matchesProgram = !programValue || program === programValue;
+                    const matchesGender = !genderValue || gender === genderValue;
+
+                    const showRow =
+                        matchesSearch &&
+                        matchesStatus &&
+                        matchesProgram &&
+                        matchesGender;
+
+                    row.style.display = showRow ? "" : "none";
+
+                    if (showRow) visibleCount++;
                 });
 
-                document.getElementById('studentCount').textContent = visibleCount;
+                // Update student count display
+                const studentCountLabel = document.getElementById("studentCount");
+                if (studentCountLabel) studentCountLabel.textContent = visibleCount;
             }
 
             // Auto-dismiss alerts after 5 seconds
