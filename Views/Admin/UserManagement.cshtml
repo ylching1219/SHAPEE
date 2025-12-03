@@ -316,30 +316,41 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="form-group">
-                                <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program" name="ProgramName" required>
-                                    <option value="">Select Program</option>
-                                    <option value="Bachelor of Accountancy (Hons)">Accountancy</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Arts">Arts</option>
+                                <label for="faculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
+                                <select class="form-control" id="faculty" name="FacultyId" required>
+                                    <option value="">Select Faculty</option>
+                                    <option value="FOCS">Faculty of Computer Science (FOCS)</option>
+                                    <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
+                                    <option value="FAS">Faculty of Applied Sciences (FAS)</option>
+                                    <option value="FOET">Faculty of Engineering & Technology (FOET)</option>
                                 </select>
-                                <div class="invalid-feedback">Please select a program.</div>
+                                <div class="invalid-feedback">Please select a faculty.</div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
-                                <select class="form-control" id="yearLevel" name="YearLevel" required>
-                                    <option value="">Year</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                                <div class="invalid-feedback">Please select year level.</div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="program" name="ProgramName" required disabled>
+                                            <option value="">Select Faculty First</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a program.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="yearLevel" name="YearLevel" required>
+                                            <option value="">Year</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select year level.</div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
                     </div>
 
                     <div class="form-group" id="statusGroup" style="display:none;">
@@ -562,69 +573,4 @@
             });
         });
     </script>
-
-    <style>
-        /* Custom Styles for Modern Look */
-        .nav-pills .nav-link {
-            color: #6c757d;
-            transition: all 0.3s ease;
-        }
-
-            .nav-pills .nav-link.active {
-                background-color: #4e73df;
-                color: white;
-            }
-
-            .nav-pills .nav-link:hover:not(.active) {
-                background-color: #f8f9fc;
-            }
-
-        .card {
-            border: 1px solid #e3e6f0;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: #f8f9fc;
-        }
-
-        .badge-pill {
-            padding: 0.35em 0.65em;
-            font-size: 0.75rem;
-        }
-
-        .dropdown-menu {
-            border: 1px solid #e3e6f0;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
-
-        .dropdown-item:hover {
-            background-color: #f8f9fc;
-        }
-
-        .font-weight-semibold {
-            font-weight: 600;
-        }
-
-        .btn-light:hover {
-            background-color: #f8f9fc;
-        }
-
-        .input-group-text {
-            border-right: 0;
-        }
-
-        .input-group .form-control {
-            border-left: 0;
-        }
-
-            .input-group .form-control:focus {
-                border-color: #ced4da;
-                box-shadow: none;
-            }
-
-        .modal-content {
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-    </style>
 }
