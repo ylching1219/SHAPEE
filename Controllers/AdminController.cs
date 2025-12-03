@@ -11,7 +11,7 @@ namespace SHAPEE.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController(DB db) : Controller
     {
-  
+
         // Dashboard
         public IActionResult Dashboard()
         {
@@ -126,19 +126,6 @@ namespace SHAPEE.Controllers
                     TempData["ErrorMessage"] = "First name is required.";
                     return RedirectToAction(nameof(UserManagement));
                 }
-
-            var facultiesQuery = (sort == "1") ? db.Faculties.OrderBy(f => f.CostPerCreditHour) :
-                     (sort == "2") ? db.Faculties.OrderByDescending(f => f.CostPerCreditHour) :
-                                     db.Faculties.OrderBy(f => f.Id);
-
-            var faculties = facultiesQuery.ToList(); 
-
-
-
-            if (Request.IsAjax())
-            {
-                return PartialView("_Faculty", faculties);
-            }
 
                 if (string.IsNullOrWhiteSpace(email))
                 {
@@ -294,12 +281,24 @@ namespace SHAPEE.Controllers
             return View();
         }
 
-        public IActionResult FacultyManagement()
+
+        public IActionResult FacultyManagement(string? sort)
         {
             ViewData["Title"] = "Faculty Management";
-            var faculties = db.Faculties
-                .OrderBy(f => f.Id)
-                .ToList();
+
+            var facultiesQuery = (sort == "1") ? db.Faculties.OrderBy(f => f.CostPerCreditHour) :
+                     (sort == "2") ? db.Faculties.OrderByDescending(f => f.CostPerCreditHour) :
+                                     db.Faculties.OrderBy(f => f.Id);
+
+            var faculties = facultiesQuery.ToList();
+
+
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Faculty", faculties);
+            }
+
             return View(faculties);
         }
     }
