@@ -20,21 +20,54 @@ namespace SHAPEE.Controllers
             return View();
         }
 
-        public IActionResult UserManagement()
+        public IActionResult UserManagement(string? name, string? filter1, string? filter2, string? filter3)
         {
             ViewData["Title"] = "User Management";
-            var students = db.Students
-                .Include(s => s.Program) // Include Program navigation property
+
+            var programs = db.Programs
+                .OrderBy(p => p.Id)
+                .ToList();
+            ViewBag.Programs = programs;
+
+            var filteredStudent = db.Students
+                .Include(s => s.Program)
+                .AsQueryable();
+
+            name = name?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(name))
+            {
+                filteredStudent = filteredStudent
+                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+            }
+
+            filter1 = filter1?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter1))
+            {
+                filteredStudent = filteredStudent.Where(s => s.Status == filter1);
+            }
+
+            filter2 = filter2?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter2))
+            {
+                filteredStudent = filteredStudent.Where(s => s.Gender == filter2);
+            }
+
+            filter3 = filter3?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter3))
+            {
+                filteredStudent = filteredStudent.Where(s => s.ProgramId == filter3);
+            }
+
+            var result = filteredStudent
                 .OrderBy(s => s.Id)
                 .ToList();
 
-            var programs = db.Programs
-                .OrderBy(p =>  p.Id)
-                .ToList();
+            if (Request.IsAjax())
+            {
+                return PartialView("_User", result);
+            }
 
-            ViewBag.Programs = programs;
-
-            return View(students);
+            return View(result);
         }
 
         private string GenerateRandomPassword(int length = 8)

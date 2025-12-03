@@ -143,4 +143,24 @@ $("#filterForm").on("reset", function () {
     }, 0);
 });
 
+$("#genderFilter").on("change", function () {
+    setTimeout(() => {
+        $("#genderFilter").submit();
+    }, 0);
+});
+
+$("#programFilter").on("change", function () {
+    setTimeout(() => {
+        $("#programFilter").submit();
+    }, 0);
+});
+
+$("#statusFilter").on("change", function () {
+    setTimeout(() => {
+        $("#statusFilter").submit();
+    }, 0);
+});
+
+
+
 
