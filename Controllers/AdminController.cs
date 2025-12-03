@@ -20,7 +20,7 @@ namespace SHAPEE.Controllers
             return View();
         }
 
-        public IActionResult UserManagement(string? name, string? filter1, string? filter2, string? filter3)
+        public IActionResult StudentManagement(string? name, string? filter1, string? filter2, string? filter3)
         {
             ViewData["Title"] = "User Management";
 
@@ -64,7 +64,7 @@ namespace SHAPEE.Controllers
 
             if (Request.IsAjax())
             {
-                return PartialView("_User", result);
+                return PartialView("_Student", result);
             }
 
             return View(result);
@@ -96,14 +96,14 @@ namespace SHAPEE.Controllers
                     string.IsNullOrWhiteSpace(gender))
                 {
                     TempData["ErrorMessage"] = "Please fill in all required fields.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Check duplicate email
                 if (await db.Students.AnyAsync(s => s.Email == email))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Generate Student ID
@@ -118,7 +118,7 @@ namespace SHAPEE.Controllers
                 if (program == null)
                 {
                     TempData["ErrorMessage"] = "Selected program not found.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Generate random password + hash
@@ -155,13 +155,13 @@ namespace SHAPEE.Controllers
                     $"Student '{student.FirstName} {student.LastName}' created successfully! " +
                     $"Generated password: {rawPassword}";
 
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] =
                     $"Error creating student: {ex.InnerException?.Message ?? ex.Message}";
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
         }
 
@@ -179,19 +179,19 @@ namespace SHAPEE.Controllers
                 if (string.IsNullOrWhiteSpace(firstName))
                 {
                     TempData["ErrorMessage"] = "First name is required.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     TempData["ErrorMessage"] = "Email is required.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 if (string.IsNullOrWhiteSpace(gender))
                 {
                     TempData["ErrorMessage"] = "Gender is required.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Check if student exists
@@ -199,7 +199,7 @@ namespace SHAPEE.Controllers
                 if (existingStudent == null)
                 {
                     TempData["ErrorMessage"] = "Student not found.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Check for duplicate email (excluding current student)
@@ -209,7 +209,7 @@ namespace SHAPEE.Controllers
                 if (duplicateEmail)
                 {
                     TempData["ErrorMessage"] = "Email already exists for another student.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Update student properties
@@ -234,7 +234,7 @@ namespace SHAPEE.Controllers
                     else
                     {
                         TempData["ErrorMessage"] = "Selected program not found.";
-                        return RedirectToAction(nameof(UserManagement));
+                        return RedirectToAction(nameof(StudentManagement));
                     }
                 }
 
@@ -243,7 +243,7 @@ namespace SHAPEE.Controllers
                 await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Student '{existingStudent.FullName}' updated successfully!";
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -256,12 +256,12 @@ namespace SHAPEE.Controllers
                 {
                     TempData["ErrorMessage"] = "Concurrency error. The student was updated by another user. Please try again.";
                 }
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error updating student: {ex.Message}";
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
         }
 
@@ -277,7 +277,7 @@ namespace SHAPEE.Controllers
                 if (student == null)
                 {
                     TempData["ErrorMessage"] = "Student not found.";
-                    return RedirectToAction(nameof(UserManagement));
+                    return RedirectToAction(nameof(StudentManagement));
                 }
 
                 var studentName = student.FullName;
@@ -286,12 +286,12 @@ namespace SHAPEE.Controllers
                 await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Student '{studentName}' deleted successfully!";
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error deleting student: {ex.Message}";
-                return RedirectToAction(nameof(UserManagement));
+                return RedirectToAction(nameof(StudentManagement));
             }
         }
 

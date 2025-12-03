@@ -1,0 +1,220 @@
+﻿@model IEnumerable<Staff>
+@{
+    var staff = Model?.ToList() ?? new List<Staff>();
+    var staffCount = staff.Count;
+}
+
+<div class="card shadow-sm">
+    <!-- Card Header -->
+    <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                Teaching Staff (<span id="staffCount">@staffCount</span>)
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditStaffModal" onclick="prepareAddStaffModal()">
+                    <i class="fas fa-user-plus mr-1"></i> Add Staff
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="exportStaffCsvBtn">
+                    <i class="fas fa-download mr-1"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card-body bg-light border-bottom">
+        <form id="staffFilterForm"
+              data-ajax="true"
+              data-ajax-method="GET"
+              data-ajax-url="/Admin/StaffManagement"
+              data-ajax-update="#staffData">
+            <div class="row g-3">
+                <div class="col-12 col-md-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                        <input type="text" class="form-control" id="staffSearchInput" name="name" placeholder="Search staff by name/ID...">
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select class="form-control" id="staffStatusFilter" name="filter1">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select class="form-control" id="staffGenderFilter" name="filter2">
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select class="form-control" id="staffFacultyFilter" name="filter3">
+                        <option value="">All Faculties</option>
+                        <option value="FOCS">FOCS</option>
+                        <option value="FAFB">FAFB</option>
+                        <option value="FAS">FAS</option>
+                        <option value="FOET">FOET</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Staff Table -->
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <div id="staffData">
+                <partial name="_Staff" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Staff Modal -->
+<div class="modal fade" id="addEditStaffModal" tabindex="-1" role="dialog" aria-labelledby="addEditStaffModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditStaffModalLabel">Add New Staff</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="staffForm" method="post" asp-controller="Admin" asp-action="CreateStaff">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" id="staffId" name="Id" value="" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="staffFirstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="staffFirstName" name="FirstName" required>
+                                <div class="invalid-feedback">Please enter first name.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="staffLastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="staffLastName" name="LastName" required>
+                                <div class="invalid-feedback">Please enter last name.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffGender" class="font-weight-medium">Gender <span class="text-danger">*</span></label>
+                        <select class="form-control" id="staffGender" name="Gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        <div class="invalid-feedback">Please select gender.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="staffEmail" name="Email" required>
+                        <div class="invalid-feedback">Please enter a valid email.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffContact" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="staffContact" name="Contact" placeholder="+60 12-345-6789">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffFaculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
+                        <select class="form-control" id="staffFaculty" name="FacultyId" required>
+                            <option value="">Select Faculty</option>
+                            <option value="FOCS">Faculty of Computer Science (FOCS)</option>
+                            <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
+                            <option value="FAS">Faculty of Applied Sciences (FAS)</option>
+                            <option value="FOET">Faculty of Engineering & Technology (FOET)</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a faculty.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffDepartment" class="font-weight-medium">Department</label>
+                        <input type="text" class="form-control" id="staffDepartment" name="Department" placeholder="e.g., Software Engineering">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staffPosition" class="font-weight-medium">Position <span class="text-danger">*</span></label>
+                        <select class="form-control" id="staffPosition" name="Position" required>
+                            <option value="">Select Position</option>
+                            <option value="Lecturer">Lecturer</option>
+                            <option value="Senior Lecturer">Senior Lecturer</option>
+                            <option value="Associate Professor">Associate Professor</option>
+                            <option value="Professor">Professor</option>
+                            <option value="Teaching Assistant">Teaching Assistant</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a position.</div>
+                    </div>
+
+                    <div class="form-group" id="staffStatusGroup" style="display:none;">
+                        <label for="staffStatus" class="font-weight-medium">Status</label>
+                        <select class="form-control" id="staffStatus" name="Status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button class="btn btn-primary" type="submit" id="saveStaffBtn">
+                        <i class="fas fa-save mr-1"></i> Save Staff
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Staff Confirmation Modal -->
+<div class="modal fade" id="deleteStaffModal" tabindex="-1" role="dialog" aria-labelledby="deleteStaffModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="staffToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteStaffForm" method="post" asp-controller="Admin" asp-action="DeleteStaff" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteStaffId" name="Id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

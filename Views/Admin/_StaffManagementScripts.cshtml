@@ -1,0 +1,126 @@
+﻿<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Staff Modal elements
+        const staffModalTitle = document.getElementById('addEditStaffModalLabel');
+        const staffForm = document.getElementById('staffForm');
+        const staffStatusGroup = document.getElementById('staffStatusGroup');
+
+        // Prepare Add Staff Modal
+        window.prepareAddStaffModal = function() {
+            if (!staffModalTitle || !staffForm) return;
+
+            staffModalTitle.innerText = 'Add New Staff';
+            staffForm.setAttribute('action', '@Url.Action("CreateStaff", "Admin")');
+            staffForm.reset();
+            document.getElementById('staffId').value = '';
+            staffStatusGroup.style.display = 'none';
+
+            staffForm.classList.remove('was-validated');
+            document.querySelectorAll('#staffForm .form-control').forEach(input => {
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+            });
+        };
+
+        // Staff Form validation
+        if (staffForm) {
+            staffForm.addEventListener('submit', function(e) {
+                if (!staffForm.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                staffForm.classList.add('was-validated');
+            }, false);
+        }
+
+        // Prepare Edit Staff Modal
+        window.prepareEditStaffModal = function(element) {
+            const row = element.closest('tr');
+            const staffData = JSON.parse(row.getAttribute('data-staff'));
+
+            staffModalTitle.innerText = 'Edit Staff: ' + staffData.FirstName + ' ' + staffData.LastName;
+            staffForm.setAttribute('action', '@Url.Action("EditStaff", "Admin")');
+
+            document.getElementById('staffId').value = staffData.Id;
+            document.getElementById('staffFirstName').value = staffData.FirstName;
+            document.getElementById('staffLastName').value = staffData.LastName;
+            document.getElementById('staffGender').value = staffData.Gender || '';
+            document.getElementById('staffEmail').value = staffData.Email;
+            document.getElementById('staffContact').value = staffData.Contact || '';
+            document.getElementById('staffFaculty').value = staffData.FacultyId || '';
+            document.getElementById('staffDepartment').value = staffData.Department || '';
+            document.getElementById('staffPosition').value = staffData.Position || '';
+            document.getElementById('staffStatus').value = (staffData.Status || '').trim();
+
+            staffStatusGroup.style.display = 'block';
+
+            staffForm.classList.remove('was-validated');
+            document.querySelectorAll('#staffForm .form-control').forEach(input => {
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+            });
+        };
+
+        // Prepare Delete Staff Modal
+        window.prepareDeleteStaffModal = function(element) {
+            const row = element.closest('tr');
+            const staffName = row.getAttribute('data-staff-name');
+            const staffData = JSON.parse(row.getAttribute('data-staff'));
+
+            document.getElementById('staffToDeleteName').innerText = staffName;
+            document.getElementById('deleteStaffId').value = staffData.Id;
+        };
+
+        // Toggle Staff Suspend/Activate
+        window.toggleStaffSuspend = function(staffId, element) {
+            if (confirm('Are you sure you want to change this staff member\'s status?')) {
+                const formData = new FormData();
+                formData.append('id', staffId);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                fetch('@Url.Action("SuspendStaff", "Admin")', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+            }
+        };
+
+        // Staff Search with debounce
+        const staffSearchInput = document.getElementById("staffSearchInput");
+        if (staffSearchInput) {
+            staffSearchInput.addEventListener("keyup", window.debounce(submitStaffFilterForm, 300));
+        }
+
+        function submitStaffFilterForm() {
+            const form = document.getElementById('staffFilterForm');
+            const formData = new FormData(form);
+            const url = form.getAttribute('data-ajax-url') + '?' + new URLSearchParams(formData).toString();
+
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('staffData').innerHTML = html;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Export Staff CSV functionality
+        const exportStaffCsvBtn = document.getElementById('exportStaffCsvBtn');
+        if (exportStaffCsvBtn) {
+            exportStaffCsvBtn.addEventListener('click', function() {
+                alert('Export Staff CSV functionality to be implemented');
+            });
+        }
+    });
+</script>
