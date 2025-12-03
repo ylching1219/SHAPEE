@@ -27,6 +27,13 @@ namespace SHAPEE.Controllers
                 .Include(s => s.Program) // Include Program navigation property
                 .OrderBy(s => s.Id)
                 .ToList();
+
+            var programs = db.Programs
+                .OrderBy(p =>  p.Id)
+                .ToList();
+
+            ViewBag.Programs = programs;
+
             return View(students);
         }
 

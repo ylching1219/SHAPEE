@@ -4,6 +4,7 @@
     ViewData["Title"] = "User Management";
     var students = Model?.ToList() ?? new List<Student>();
     var studentCount = students.Count;
+    var programCount = 1;
 }
 
 <!-- Success/Error Messages -->
@@ -107,22 +108,13 @@
                     <div class="col-12 col-md-3">
                         <select class="form-control" id="programFilter">
                             <option value="">All Programs</option>
-                            <option value="BCS">BCS - Computer Science</option>
-                            <option value="BIT">BIT - Information Technology</option>
-                            <option value="BAC">BAC - Accountancy</option>
-                            <option value="BFN">BFN - Finance</option>
-                            <option value="BCH">BCH - Chemistry</option>
-                            <option value="BPH">BPH - Physics</option>
-                            <option value="BCE">BCE - Civil Engineering</option>
-                            <option value="BEE">BEE - Electrical Engineering</option>
-                            <option value="DFT">DFT - IT Diploma</option>
-                            <option value="DCS">DCS - CS Diploma</option>
-                            <option value="DAC">DAC - Accountancy Diploma</option>
-                            <option value="DFI">DFI - Finance Diploma</option>
-                            <option value="DCH">DCH - Chemistry Diploma</option>
-                            <option value="DPH">DPH - Physics Diploma</option>
-                            <option value="DCE">DCE - Civil Eng Diploma</option>
-                            <option value="DEE">DEE - Electrical Eng Diploma</option>
+                           
+                            @foreach(var p in @ViewBag.Programs)
+                            {
+                                <option value="@programCount">@p.Name</option>
+                                programCount++;
+                            }
+                           
                         </select>
                     </div>
                 </div>
