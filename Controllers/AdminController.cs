@@ -301,5 +301,9 @@ namespace SHAPEE.Controllers
 
             return View(faculties);
         }
+
+        public IActionResult RoomManagement() {
+            return View();
+        }
     }
 }
