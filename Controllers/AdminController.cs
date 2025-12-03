@@ -8,15 +8,9 @@ using System.Text;
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class AdminController : Controller
+    public class AdminController(DB db) : Controller
     {
-        private readonly DB _db;
-
-        public AdminController(DB db)
-        {
-            _db = db;
-        }
-
+  
         // Dashboard
         public IActionResult Dashboard()
         {
@@ -28,7 +22,7 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "User Management";
 
-            var students = _db.Students
+            var students = db.Students
                 .OrderBy(s => s.Id)
                 .ToList();
 
@@ -47,9 +41,10 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "Faculty Management";
 
-            var faculties = _db.Faculties
+            var faculties = db.Faculties
                 .OrderBy(f => f.Id)
                 .ToList();
+
             return View(faculties);
         }
 

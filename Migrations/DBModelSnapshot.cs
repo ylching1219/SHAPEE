@@ -37,7 +37,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("CourseTaskMaterial");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Announcement", b =>
+            modelBuilder.Entity("SHAPEE.Models.Announcement", b =>
                 {
                     b.Property<string>("AnnouncementId")
                         .HasMaxLength(50)
@@ -69,7 +69,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Announcements");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Attendance", b =>
+            modelBuilder.Entity("SHAPEE.Models.Attendance", b =>
                 {
                     b.Property<string>("AttendanceId")
                         .HasMaxLength(50)
@@ -109,7 +109,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Attendances");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+CalendarEvent", b =>
+            modelBuilder.Entity("SHAPEE.Models.CalendarEvent", b =>
                 {
                     b.Property<string>("EventId")
                         .HasMaxLength(50)
@@ -141,7 +141,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("CalendarEvents");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ChatMessage", b =>
+            modelBuilder.Entity("SHAPEE.Models.ChatMessage", b =>
                 {
                     b.Property<string>("MessageId")
                         .HasMaxLength(50)
@@ -173,7 +173,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("ChatMessages");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ClassSection", b =>
+            modelBuilder.Entity("SHAPEE.Models.ClassSection", b =>
                 {
                     b.Property<string>("SectionId")
                         .HasMaxLength(50)
@@ -243,7 +243,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("ClassSections");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Course", b =>
+            modelBuilder.Entity("SHAPEE.Models.Course", b =>
                 {
                     b.Property<string>("CourseCode")
                         .HasMaxLength(10)
@@ -262,7 +262,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+CourseTask", b =>
+            modelBuilder.Entity("SHAPEE.Models.CourseTask", b =>
                 {
                     b.Property<string>("TaskId")
                         .HasMaxLength(50)
@@ -295,7 +295,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("CourseTasks");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Enrollment", b =>
+            modelBuilder.Entity("SHAPEE.Models.Enrollment", b =>
                 {
                     b.Property<int>("EnrollmentId")
                         .ValueGeneratedOnAdd()
@@ -340,7 +340,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Enrollments");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Faculty", b =>
+            modelBuilder.Entity("SHAPEE.Models.Faculty", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(50)
@@ -360,7 +360,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Faculties");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Invoice", b =>
+            modelBuilder.Entity("SHAPEE.Models.Invoice", b =>
                 {
                     b.Property<string>("InvoiceId")
                         .HasMaxLength(50)
@@ -395,7 +395,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Invoices");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+LeaveApplication", b =>
+            modelBuilder.Entity("SHAPEE.Models.LeaveApplication", b =>
                 {
                     b.Property<int>("LeaveId")
                         .ValueGeneratedOnAdd()
@@ -446,7 +446,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("LeaveApplications");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Material", b =>
+            modelBuilder.Entity("SHAPEE.Models.Material", b =>
                 {
                     b.Property<string>("MaterialId")
                         .HasMaxLength(50)
@@ -478,7 +478,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Materials");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+PaymentTransaction", b =>
+            modelBuilder.Entity("SHAPEE.Models.PaymentTransaction", b =>
                 {
                     b.Property<string>("TransactionId")
                         .HasMaxLength(50)
@@ -512,7 +512,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("PaymentTransactions");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Program", b =>
+            modelBuilder.Entity("SHAPEE.Models.Program", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(50)
@@ -534,7 +534,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Programs");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ProgramCourse", b =>
+            modelBuilder.Entity("SHAPEE.Models.ProgramCourse", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -565,7 +565,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("ProgramCourses");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ResetPassToken", b =>
+            modelBuilder.Entity("SHAPEE.Models.ResetPassToken", b =>
                 {
                     b.Property<string>("TokenId")
                         .HasMaxLength(50)
@@ -591,7 +591,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("ResetPassTokens");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Room", b =>
+            modelBuilder.Entity("SHAPEE.Models.Room", b =>
                 {
                     b.Property<string>("RoomId")
                         .HasMaxLength(50)
@@ -620,7 +620,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Rooms");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Semester", b =>
+            modelBuilder.Entity("SHAPEE.Models.Semester", b =>
                 {
                     b.Property<string>("SemesterId")
                         .HasMaxLength(10)
@@ -640,7 +640,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Semesters");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Submission", b =>
+            modelBuilder.Entity("SHAPEE.Models.Submission", b =>
                 {
                     b.Property<string>("SubmissionId")
                         .HasMaxLength(50)
@@ -681,7 +681,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("Submissions");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+SupportTicket", b =>
+            modelBuilder.Entity("SHAPEE.Models.SupportTicket", b =>
                 {
                     b.Property<string>("TicketId")
                         .HasMaxLength(50)
@@ -723,7 +723,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("SupportTickets");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+TicketMessage", b =>
+            modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>
                 {
                     b.Property<string>("MessageId")
                         .HasMaxLength(50)
@@ -756,7 +756,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("TicketMessages");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+TutorialGroup", b =>
+            modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
                     b.Property<string>("GroupId")
                         .HasMaxLength(50)
@@ -782,7 +782,7 @@ namespace SHAPEE.Migrations
                     b.ToTable("TutorialGroups");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+User", b =>
+            modelBuilder.Entity("SHAPEE.Models.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(50)
@@ -832,16 +832,16 @@ namespace SHAPEE.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Admin", b =>
+            modelBuilder.Entity("SHAPEE.Models.Admin", b =>
                 {
-                    b.HasBaseType("SHAPEE.Models.DB+User");
+                    b.HasBaseType("SHAPEE.Models.User");
 
                     b.HasDiscriminator().HasValue("Admin");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Staff", b =>
+            modelBuilder.Entity("SHAPEE.Models.Staff", b =>
                 {
-                    b.HasBaseType("SHAPEE.Models.DB+User");
+                    b.HasBaseType("SHAPEE.Models.User");
 
                     b.Property<DateOnly>("DateJoin")
                         .HasColumnType("date");
@@ -876,9 +876,9 @@ namespace SHAPEE.Migrations
                     b.HasDiscriminator().HasValue("Staff");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Student", b =>
+            modelBuilder.Entity("SHAPEE.Models.Student", b =>
                 {
-                    b.HasBaseType("SHAPEE.Models.DB+User");
+                    b.HasBaseType("SHAPEE.Models.User");
 
                     b.Property<DateOnly>("DateJoin")
                         .HasColumnType("date");
@@ -914,28 +914,28 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("CourseTaskMaterial", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Material", null)
+                    b.HasOne("SHAPEE.Models.Material", null)
                         .WithMany()
                         .HasForeignKey("MaterialsMaterialId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+CourseTask", null)
+                    b.HasOne("SHAPEE.Models.CourseTask", null)
                         .WithMany()
                         .HasForeignKey("TasksTaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Attendance", b =>
+            modelBuilder.Entity("SHAPEE.Models.Attendance", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+ClassSection", "ClassSection")
+                    b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany("Attendances")
                         .HasForeignKey("ClassSectionSectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Student", "Student")
+                    b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Attendances")
                         .HasForeignKey("StudentId");
 
@@ -944,13 +944,13 @@ namespace SHAPEE.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ChatMessage", b =>
+            modelBuilder.Entity("SHAPEE.Models.ChatMessage", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+User", "Receiver")
+                    b.HasOne("SHAPEE.Models.User", "Receiver")
                         .WithMany()
                         .HasForeignKey("ReceiverId");
 
-                    b.HasOne("SHAPEE.Models.DB+User", "Sender")
+                    b.HasOne("SHAPEE.Models.User", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId");
 
@@ -959,33 +959,33 @@ namespace SHAPEE.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ClassSection", b =>
+            modelBuilder.Entity("SHAPEE.Models.ClassSection", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Course", "Course")
+                    b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseCode")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Room", "Room")
+                    b.HasOne("SHAPEE.Models.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Semester", "Semester")
+                    b.HasOne("SHAPEE.Models.Semester", "Semester")
                         .WithMany("ClassSections")
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Staff", "Staff")
+                    b.HasOne("SHAPEE.Models.Staff", "Staff")
                         .WithMany()
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+TutorialGroup", "TutorialGroup")
+                    b.HasOne("SHAPEE.Models.TutorialGroup", "TutorialGroup")
                         .WithMany()
                         .HasForeignKey("TutorialGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1002,22 +1002,22 @@ namespace SHAPEE.Migrations
                     b.Navigation("TutorialGroup");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+CourseTask", b =>
+            modelBuilder.Entity("SHAPEE.Models.CourseTask", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+ClassSection", "ClassSection")
+                    b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany()
                         .HasForeignKey("ClassSectionSectionId");
 
                     b.Navigation("ClassSection");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Enrollment", b =>
+            modelBuilder.Entity("SHAPEE.Models.Enrollment", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+ClassSection", "ClassSection")
+                    b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany("Enrollments")
                         .HasForeignKey("ClassSectionSectionId");
 
-                    b.HasOne("SHAPEE.Models.DB+Student", "Student")
+                    b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1028,15 +1028,15 @@ namespace SHAPEE.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Invoice", b =>
+            modelBuilder.Entity("SHAPEE.Models.Invoice", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Semester", "Semester")
+                    b.HasOne("SHAPEE.Models.Semester", "Semester")
                         .WithMany("Invoices")
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Student", "Student")
+                    b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Invoices")
                         .HasForeignKey("StudentId");
 
@@ -1045,18 +1045,18 @@ namespace SHAPEE.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+LeaveApplication", b =>
+            modelBuilder.Entity("SHAPEE.Models.LeaveApplication", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+User", "User")
+                    b.HasOne("SHAPEE.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Material", b =>
+            modelBuilder.Entity("SHAPEE.Models.Material", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Course", "Course")
+                    b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseCode")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1065,9 +1065,9 @@ namespace SHAPEE.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+PaymentTransaction", b =>
+            modelBuilder.Entity("SHAPEE.Models.PaymentTransaction", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Invoice", "Invoice")
+                    b.HasOne("SHAPEE.Models.Invoice", "Invoice")
                         .WithMany()
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1076,9 +1076,9 @@ namespace SHAPEE.Migrations
                     b.Navigation("Invoice");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Program", b =>
+            modelBuilder.Entity("SHAPEE.Models.Program", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Faculty", "Faculty")
+                    b.HasOne("SHAPEE.Models.Faculty", "Faculty")
                         .WithMany("Programs")
                         .HasForeignKey("FacultyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1087,15 +1087,15 @@ namespace SHAPEE.Migrations
                     b.Navigation("Faculty");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ProgramCourse", b =>
+            modelBuilder.Entity("SHAPEE.Models.ProgramCourse", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Course", "Course")
+                    b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany("ProgramCourses")
                         .HasForeignKey("CourseCode")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SHAPEE.Models.DB+Program", "Program")
+                    b.HasOne("SHAPEE.Models.Program", "Program")
                         .WithMany("ProgramCourses")
                         .HasForeignKey("ProgramId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1106,9 +1106,9 @@ namespace SHAPEE.Migrations
                     b.Navigation("Program");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ResetPassToken", b =>
+            modelBuilder.Entity("SHAPEE.Models.ResetPassToken", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+User", "User")
+                    b.HasOne("SHAPEE.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1117,13 +1117,13 @@ namespace SHAPEE.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Submission", b =>
+            modelBuilder.Entity("SHAPEE.Models.Submission", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+CourseTask", "CourseTask")
+                    b.HasOne("SHAPEE.Models.CourseTask", "CourseTask")
                         .WithMany("Submissions")
                         .HasForeignKey("CourseTaskTaskId");
 
-                    b.HasOne("SHAPEE.Models.DB+Student", "Student")
+                    b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Submissions")
                         .HasForeignKey("StudentId");
 
@@ -1132,22 +1132,22 @@ namespace SHAPEE.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+SupportTicket", b =>
+            modelBuilder.Entity("SHAPEE.Models.SupportTicket", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+User", "User")
+                    b.HasOne("SHAPEE.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+TicketMessage", b =>
+            modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+User", "Sender")
+                    b.HasOne("SHAPEE.Models.User", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId");
 
-                    b.HasOne("SHAPEE.Models.DB+SupportTicket", "SupportTicket")
+                    b.HasOne("SHAPEE.Models.SupportTicket", "SupportTicket")
                         .WithMany("TicketMessages")
                         .HasForeignKey("SupportTicketTicketId");
 
@@ -1156,9 +1156,9 @@ namespace SHAPEE.Migrations
                     b.Navigation("SupportTicket");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+TutorialGroup", b =>
+            modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Program", "Program")
+                    b.HasOne("SHAPEE.Models.Program", "Program")
                         .WithMany("TutorialGroups")
                         .HasForeignKey("ProgramId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1167,22 +1167,22 @@ namespace SHAPEE.Migrations
                     b.Navigation("Program");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Staff", b =>
+            modelBuilder.Entity("SHAPEE.Models.Staff", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Faculty", "Faculty")
+                    b.HasOne("SHAPEE.Models.Faculty", "Faculty")
                         .WithMany("Staffs")
                         .HasForeignKey("FacultyId");
 
                     b.Navigation("Faculty");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Student", b =>
+            modelBuilder.Entity("SHAPEE.Models.Student", b =>
                 {
-                    b.HasOne("SHAPEE.Models.DB+Program", "Program")
+                    b.HasOne("SHAPEE.Models.Program", "Program")
                         .WithMany("Students")
                         .HasForeignKey("ProgramId");
 
-                    b.HasOne("SHAPEE.Models.DB+TutorialGroup", "TutorialGroup")
+                    b.HasOne("SHAPEE.Models.TutorialGroup", "TutorialGroup")
                         .WithMany("Students")
                         .HasForeignKey("TutorialGroupId");
 
@@ -1191,31 +1191,31 @@ namespace SHAPEE.Migrations
                     b.Navigation("TutorialGroup");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+ClassSection", b =>
+            modelBuilder.Entity("SHAPEE.Models.ClassSection", b =>
                 {
                     b.Navigation("Attendances");
 
                     b.Navigation("Enrollments");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Course", b =>
+            modelBuilder.Entity("SHAPEE.Models.Course", b =>
                 {
                     b.Navigation("ProgramCourses");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+CourseTask", b =>
+            modelBuilder.Entity("SHAPEE.Models.CourseTask", b =>
                 {
                     b.Navigation("Submissions");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Faculty", b =>
+            modelBuilder.Entity("SHAPEE.Models.Faculty", b =>
                 {
                     b.Navigation("Programs");
 
                     b.Navigation("Staffs");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Program", b =>
+            modelBuilder.Entity("SHAPEE.Models.Program", b =>
                 {
                     b.Navigation("ProgramCourses");
 
@@ -1224,24 +1224,24 @@ namespace SHAPEE.Migrations
                     b.Navigation("TutorialGroups");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Semester", b =>
+            modelBuilder.Entity("SHAPEE.Models.Semester", b =>
                 {
                     b.Navigation("ClassSections");
 
                     b.Navigation("Invoices");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+SupportTicket", b =>
+            modelBuilder.Entity("SHAPEE.Models.SupportTicket", b =>
                 {
                     b.Navigation("TicketMessages");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+TutorialGroup", b =>
+            modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
                     b.Navigation("Students");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.DB+Student", b =>
+            modelBuilder.Entity("SHAPEE.Models.Student", b =>
                 {
                     b.Navigation("Attendances");
 
