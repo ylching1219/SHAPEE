@@ -1,0 +1,107 @@
+﻿@model IEnumerable<Room>
+@using System.Text.Json
+
+<table class="table table-hover mb-0">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 font-weight-semibold">Room ID</th>
+            <th class="border-0 font-weight-semibold">Type</th>
+            <th class="border-0 font-weight-semibold">Block</th>
+            <th class="border-0 font-weight-semibold">Floor</th>
+            <th class="border-0 font-weight-semibold">Status</th>
+            <th class="border-0 font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="roomsTableBody">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var room in Model)
+            {
+                var statusClass = room.Status switch
+                {
+                    "Available" => "success",
+                    "Unavailable" => "warning",
+                    "Maintenance" => "danger",
+                    _ => "secondary"
+                };
+
+                var typeIcon = room.Type switch
+                {
+                    "Classroom" => "fa-chalkboard-teacher",
+                    "Lab" => "fa-flask",
+                    "Lecture Hall" => "fa-building",
+                    "Conference" => "fa-users",
+                    _ => "fa-door-open"
+                };
+
+                var roomJson = JsonSerializer.Serialize(new
+                {
+                    room.RoomId,
+                    room.Type,
+                    room.Block,
+                    room.Floor,
+                    room.Status
+                });
+
+                <tr data-room='@roomJson' data-room-id="@room.RoomId">
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-primary text-white mr-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                <i class="fas @typeIcon fa-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-bold text-gray-800">@room.RoomId</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <span class="badge badge-info">@room.Type</span>
+                    </td>
+                    <td class="align-middle">
+                        <span class="font-weight-medium text-gray-700">Block @room.Block</span>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-layer-group text-muted mr-2"></i>
+                            <span class="text-gray-600">Floor @room.Floor</span>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <span class="badge badge-@statusClass">
+                            @room.Status
+                        </span>
+                    </td>
+                    <td class="align-middle text-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-toggle="modal"
+                                    data-target="#addEditRoomModal"
+                                    onclick="prepareEditModal(this)"
+                                    title="Edit Room">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    data-toggle="modal"
+                                    data-target="#deleteRoomModal"
+                                    onclick="prepareDeleteModal(this)"
+                                    title="Delete Room">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <div class="text-gray-500">
+                        <i class="fas fa-door-closed fa-3x mb-3 d-block"></i>
+                        <p class="mb-0">No rooms found</p>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

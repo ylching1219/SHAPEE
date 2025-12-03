@@ -4,6 +4,36 @@
 
 @section Styles {
     <link href="~/css/student-dashboard.css" rel="stylesheet" />
+    <style>
+        .subject-attendance-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding-left: 15px;
+        }
+
+            .subject-attendance-item:hover {
+                background-color: #f8f9fa;
+                transform: translateX(2px);
+            }
+
+            .subject-attendance-item.active {
+                background-color: #e7f3ff;
+                border-left: 3px solid #007bff;
+                padding-left: 15px;
+            }
+
+        .clickable-hint {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+            .clickable-hint i {
+                margin-right: 4px;
+            }
+    </style>
 }
 
 <!-- Page Heading -->
@@ -70,25 +100,30 @@
         <div class="card shadow dashboard-card">
             <div class="card-body">
                 <h4 class="font-weight-bold mb-4">Attendance Overview</h4>
+                <p class="text-muted small mb-3" id="selectedSubjectName">Data Structure and Algorithms</p>
 
                 <div class="attendance-chart-container">
                     <!-- Donut Chart -->
                     <div class="attendance-chart">
                         <canvas id="attendanceChart" width="200" height="200"></canvas>
-                        <div class="attendance-percentage">83%</div>
+                        <div class="attendance-percentage" id="attendancePercentage">92%</div>
                     </div>
 
                     <!-- Overall Statistics -->
                     <div class="attendance-stats">
-                        <p class="mb-2"><strong>Present:</strong> 28 days</p>
-                        <p class="mb-2"><strong>Absent:</strong> 4 days</p>
-                        <p class="mb-0"><strong>Leave:</strong> 1 days</p>
+                        <p class="mb-2"><strong>Present:</strong> <span id="presentDays">28</span> days</p>
+                        <p class="mb-2"><strong>Absent:</strong> <span id="absentDays">4</span> days</p>
+                        <p class="mb-0"><strong>Leave:</strong> <span id="leaveDays">1</span> days</p>
                     </div>
                 </div>
 
                 <!-- Subject-wise Attendance Breakdown -->
+                <p class="clickable-hint">
+                    <i class="fas fa-hand-pointer"></i>
+                    Click on a subject to view its attendance chart
+                </p>
                 <div class="subject-attendance-list">
-                    <div class="subject-attendance-item">
+                    <div class="subject-attendance-item active" data-subject="0" onclick="updateAttendanceChart(0)">
                         <div class="subject-name">
                             <div>Data Structure and Algorithms</div>
                             <span class="subject-code">BMCS2084</span>
@@ -101,7 +136,7 @@
                         </div>
                     </div>
 
-                    <div class="subject-attendance-item">
+                    <div class="subject-attendance-item" data-subject="1" onclick="updateAttendanceChart(1)">
                         <div class="subject-name">
                             <div>Web Design and Development</div>
                             <span class="subject-code">BMCS2068</span>
@@ -114,7 +149,7 @@
                         </div>
                     </div>
 
-                    <div class="subject-attendance-item">
+                    <div class="subject-attendance-item" data-subject="2" onclick="updateAttendanceChart(2)">
                         <div class="subject-name">
                             <div>Discrete Structure</div>
                             <span class="subject-code">BMCS1024</span>
@@ -127,7 +162,7 @@
                         </div>
                     </div>
 
-                    <div class="subject-attendance-item">
+                    <div class="subject-attendance-item" data-subject="3" onclick="updateAttendanceChart(3)">
                         <div class="subject-name">
                             <div>Database Systems</div>
                             <span class="subject-code">BMCS2043</span>
@@ -258,16 +293,53 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        // Wait for DOM to be ready
+        // Subject data
+        const subjectsData = [
+            {
+                name: 'Data Structure and Algorithms',
+                code: 'BMCS2084',
+                percentage: 92,
+                present: 23,
+                absent: 2,
+                leave: 0
+            },
+            {
+                name: 'Web Design and Development',
+                code: 'BMCS2068',
+                percentage: 88,
+                present: 22,
+                absent: 3,
+                leave: 0
+            },
+            {
+                name: 'Discrete Structure',
+                code: 'BMCS1024',
+                percentage: 75,
+                present: 18,
+                absent: 5,
+                leave: 1
+            },
+            {
+                name: 'Database Systems',
+                code: 'BMCS2043',
+                percentage: 65,
+                present: 13,
+                absent: 6,
+                leave: 1
+            }
+        ];
+
+        let attendanceChart;
+
+        // Initialize chart on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Attendance Donut Chart - Larger size
             var ctx = document.getElementById('attendanceChart');
             if (ctx) {
-                var attendanceChart = new Chart(ctx.getContext('2d'), {
+                attendanceChart = new Chart(ctx.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         datasets: [{
-                            data: [83, 17],
+                            data: [92, 8],
                             backgroundColor: [
                                 '#28a745',
                                 '#e9ecef'
@@ -291,5 +363,37 @@
                 });
             }
         });
+
+        // Function to update chart when subject is clicked
+        function updateAttendanceChart(subjectIndex) {
+            const subject = subjectsData[subjectIndex];
+
+            // Update chart data
+            attendanceChart.data.datasets[0].data = [subject.percentage, 100 - subject.percentage];
+
+            // Update chart color based on percentage
+            let chartColor = '#28a745'; // green
+            if (subject.percentage < 70) {
+                chartColor = '#dc3545'; // red
+            } else if (subject.percentage < 80) {
+                chartColor = '#ffc107'; // yellow
+            }
+            attendanceChart.data.datasets[0].backgroundColor = [chartColor, '#e9ecef'];
+
+            attendanceChart.update();
+
+            // Update displayed information
+            document.getElementById('selectedSubjectName').textContent = subject.name;
+            document.getElementById('attendancePercentage').textContent = subject.percentage + '%';
+            document.getElementById('presentDays').textContent = subject.present;
+            document.getElementById('absentDays').textContent = subject.absent;
+            document.getElementById('leaveDays').textContent = subject.leave;
+
+            // Update active state
+            document.querySelectorAll('.subject-attendance-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-subject="${subjectIndex}"]`).classList.add('active');
+        }
     </script>
 }
