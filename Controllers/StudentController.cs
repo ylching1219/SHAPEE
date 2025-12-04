@@ -16,7 +16,7 @@ namespace SHAPEE.Controllers
             return View();
         }
 
-        // student main attendance page, optional section/token from QR
+        // student main attendance page
         public IActionResult ViewAttendance(string? sectionId, string? token)
         {
             ViewData["Title"] = "View Attendance";
@@ -37,17 +37,21 @@ namespace SHAPEE.Controllers
         public IActionResult SubmitAttendance(string sectionId, string? qrToken, string? manualCode)
         {
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = DateOnly.FromDateTime(now);
 
             if (string.IsNullOrEmpty(sectionId))
                 return BadRequest("Section is required.");
 
+            //load class section and verify it exists
             var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
-            if (section == null || !section.IsAttendanceSessionActive)
+            if (section == null)
+                return BadRequest("Invalid section ID.");
+
+            if (!section.IsAttendanceSessionActive)
                 return BadRequest("Attendance session is not active.");
 
-            // validate QR (token + expiry)
+            // validate QR (token and expiry)
             bool validQr = !string.IsNullOrEmpty(qrToken)
                            && qrToken == section.CurrentQrToken
                            && section.CurrentQrExpiry.HasValue
@@ -60,7 +64,7 @@ namespace SHAPEE.Controllers
             if (!validQr && !validCode)
                 return BadRequest("Invalid or expired token/code.");
 
-            // prevent duplicate
+            // prevent duplicate attendance
             bool already = db.Attendances.Any(a =>
                 a.SectionId == sectionId &&
                 a.StudentId == studentId &&
@@ -86,10 +90,12 @@ namespace SHAPEE.Controllers
 
             bool isFlagged = othersFromSameIp >= 1;
 
+            //create attendance
             var att = new Attendance
             {
                 AttendanceId = Guid.NewGuid().ToString("N"),
-                SectionId = sectionId,
+                SectionId = sectionId,  // FK property
+                ClassSection = section, // Navigation
                 StudentId = studentId,
                 Date = today,
                 RegisteredAt = now,
@@ -99,15 +105,22 @@ namespace SHAPEE.Controllers
                 IsFlaged = isFlagged,
                 FlagReason = isFlagged ? "Multiple students using same IP in short time window." : null
             };
-
             db.Attendances.Add(att);
-            db.SaveChanges();
+            
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error saving attendance: " + ex.Message);
+            }
 
             TempData["AttendanceMessage"] = isFlagged
                 ? "Attendance recorded (flagged for review)."
                 : "Attendance recorded successfully.";
 
-            return RedirectToAction("ViewAttendance", new { sectionId });
+            return RedirectToAction("ViewAttendance");
         }
     }
 }

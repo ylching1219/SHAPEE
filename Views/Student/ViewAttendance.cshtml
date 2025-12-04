@@ -428,7 +428,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <script>
-        // Existing filter hooks (keep or extend)
+        // filter
         document.getElementById('subjectFilter').addEventListener('change', function () {
             // Filter logic
         });
@@ -441,59 +441,94 @@
             // Filter logic
         });
 
-        // NEW: Take Attendance UI
+        //take att
         const btnScanQr = document.getElementById('btnScanQr');
         const btnEnterCode = document.getElementById('btnEnterCode');
         const qrPanel = document.getElementById('qrPanel');
         const codePanel = document.getElementById('codePanel');
 
         let html5QrScanner = null;
-
+        
+        //scan qr code
         btnScanQr.addEventListener('click', function () {
             qrPanel.style.display = 'block';
             codePanel.style.display = 'none';
-
+            //start scanner
             if (!html5QrScanner) {
-                html5QrScanner = new Html5Qrcode("qrReader");
-                Html5Qrcode.getCameras().then(devices => {
-                    if (devices && devices.length) {
-                        const cameraId = devices[0].id;
-                        html5QrScanner.start(
-                            cameraId,
-                            { fps: 10, qrbox: 250 },
-                            onQrSuccess,
-                            onQrError
-                        );
-                    }
-                }).catch(err => {
-                    console.error(err);
-                    alert("Unable to access camera.");
-                });
-            }
+                    html5QrScanner = new Html5Qrcode("qrReader");
+                    Html5Qrcode.getCameras().then(devices => {
+                        if (devices && devices.length) {
+                            //find for back camera
+                            let cameraId = devices[0].id;
+                            for (const d of devices) {
+                                const label = (d.label || '').toLowerCase();
+                                if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+                                    cameraId = d.id;
+                                break;
+                            }
+                        }
+                        //start scanning
+                            html5QrScanner.start(
+                                cameraId,
+                                { 
+                                    fps: 10, 
+                                    qrbox: { width: 250, height: 250 },
+                                    aspectRatio: 1.0
+                                },
+                                onQrSuccess,
+                                onQrError
+                            ).catch(err => {
+                                alert("Failed to start camera: " + err.message);
+                            });
+                        }
+                    }).catch(err => {
+                        alert("Unable to access camera: " + err.message);
+                    });
+                }
         });
 
-        btnEnterCode.addEventListener('click', function () {
-            codePanel.style.display = 'block';
-            qrPanel.style.display = 'none';
+        function onQrSuccess(decodedText, decodedResult) {
+            //stop scanner immediately to prevent multiple scans
             if (html5QrScanner) {
                 html5QrScanner.stop().catch(() => { });
                 html5QrScanner = null;
             }
-        });
 
-        function onQrSuccess(decodedText, decodedResult) {
-            // Expect the QR to contain a URL like /Student/ViewAttendance?sectionId=...&token=...
             try {
-                const url = new URL(decodedText, window.location.origin);
-                const sectionId = url.searchParams.get("sectionId");
-                const token = url.searchParams.get("token");
+                let sectionId = null;
+                let token = null;
+
+                // try parsing as full URL first
+                if (decodedText.includes('http://') || decodedText.includes('https://')) {
+                    const url = new URL(decodedText);
+                    sectionId = url.searchParams.get("sectionId");
+                    token = url.searchParams.get("token");
+                } 
+                // try parsing as relative URL
+                else if (decodedText.includes('sectionId=') && decodedText.includes('token=')) {
+                    const params = new URLSearchParams(decodedText.split('?')[1] || decodedText);
+                    sectionId = params.get("sectionId");
+                    token = params.get("token");
+                }
+                // fallback: try to extract from any query string format
+                else {
+                    const match = decodedText.match(/sectionId=([^&]+).*token=([^&]+)/);
+                    if (match) {
+                        sectionId = match[1];
+                        token = match[2];
+                    }
+                }
 
                 if (!sectionId || !token) {
-                    alert("Invalid QR code.");
+                    alert("Invalid QR code format. Expected: sectionId and token parameters.");
                     return;
                 }
 
-                // Auto-submit via fetch to SubmitAttendance
+                // show loading feedback
+                const qrReaderDiv = document.getElementById('qrReader');
+                qrReaderDiv.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Processing...</div>';
+
+                // submit attendance
                 fetch('@Url.Action("SubmitAttendance", "Student")', {
                     method: 'POST',
                     headers: {
@@ -509,26 +544,24 @@
                         return r.text().then(t => { throw new Error(t); });
                     }
                     return r.text();
-                }).then(_ => {
-                    alert("Attendance recorded successfully.");
-                    // Optionally stop scanner after success
-                    if (html5QrScanner) {
-                        html5QrScanner.stop().catch(() => { });
-                        html5QrScanner = null;
-                    }
+                }).then(response => {
+                    alert("Attendance recorded successfully!");
                     qrPanel.style.display = 'none';
+                    // reload page to show updated attendance
+                    window.location.reload();
                 }).catch(err => {
-                    console.error(err);
                     alert("Failed to record attendance: " + err.message);
+                    // reset scanner
+                    qrPanel.style.display = 'none';
                 });
+
             } catch (e) {
-            console.error(e);
-                alert("Invalid QR data.");
+                alert("Error processing QR code: " + e.message);
+                qrPanel.style.display = 'none';
             }
         }
 
         function onQrError(err) {
-            // You can log or ignore scan errors; they fire frequently
         }
     </script>
 }

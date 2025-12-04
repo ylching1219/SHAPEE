@@ -75,7 +75,7 @@ namespace SHAPEE.Controllers
             if (section == null) return NotFound();
 
             section.CurrentQrToken = Guid.NewGuid().ToString("N");
-            section.CurrentQrExpiry = DateTime.UtcNow.AddSeconds(120);
+            section.CurrentQrExpiry = DateTime.Now.AddSeconds(120);
             section.IsAttendanceSessionActive = true;
 
             if (string.IsNullOrEmpty(section.AttendanceCode))
@@ -100,7 +100,7 @@ namespace SHAPEE.Controllers
             if (section == null || !section.IsAttendanceSessionActive) return BadRequest();
 
             section.CurrentQrToken = Guid.NewGuid().ToString("N");
-            section.CurrentQrExpiry = DateTime.UtcNow.AddSeconds(120);
+            section.CurrentQrExpiry = DateTime.Now.AddSeconds(120);
             db.SaveChanges();
 
             return Json(new { success = true, token = section.CurrentQrToken });
