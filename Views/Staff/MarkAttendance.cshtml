@@ -371,6 +371,9 @@
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // put this near the top of your script
+        var baseAttendanceUrl = '@Url.Action("ViewAttendance", "Student")';
+
         var sectionId = $('#sectionId').val();
         var visible = false;
         var realCode = '';
@@ -380,14 +383,14 @@
         var remaining = totalSeconds;
 
         function buildSmallQrUrl(token) {
-            var url = '@Url.Action("ScanAttendance", "Student", null, Request.Scheme)' +
+            var url = baseAttendanceUrl +
                     '?sectionId=' + encodeURIComponent(sectionId) +
                     '&token=' + encodeURIComponent(token);
             return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(url);
         }
 
         function buildLargeQrUrl(token) {
-            var url = '@Url.Action("ScanAttendance", "Student", null, Request.Scheme)' +
+            var url = baseAttendanceUrl +
                     '?sectionId=' + encodeURIComponent(sectionId) +
                     '&token=' + encodeURIComponent(token);
             return "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(url);
