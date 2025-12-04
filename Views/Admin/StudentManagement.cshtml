@@ -410,10 +410,6 @@
                 }
             };
 
-        const searchInput = document.getElementById("searchInput");
-
-        searchInput.addEventListener("keyup", debounce(submitFilterForm, 300));
-
             // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
