@@ -1,0 +1,346 @@
+@using SHAPEE.Models
+@model ClassSection
+
+@{
+    ViewData["Title"] = "Live Attendance Session";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">
+            Live Attendance: @Model.Course?.Name (@Model.SectionId)
+        </h1>
+        <p class="text-muted small mt-2">
+            @Model.Day, @Model.StartTime.ToString("HH:mm") – @Model.EndTime.ToString("HH:mm") · Room @Model.Room?.RoomId
+        </p>
+    </div>
+    <div>
+        <a href="#" class="btn btn-sm btn-secondary shadow-sm mr-2">
+            <i class="fas fa-redo fa-sm text-white-50"></i> Restart Session
+        </a>
+        <a href="#" class="btn btn-sm btn-danger shadow-sm">
+            <i class="fas fa-stop-circle fa-sm text-white-50"></i> End Session
+        </a>
+    </div>
+</div>
+
+<!-- Make the content row fill almost full viewport height -->
+<div class="row g-4 align-items-stretch">
+    <!-- LEFT COLUMN: QR SCAN -->
+    <div class="col-xl-5 col-lg-5 d-flex">
+        <div class="card shadow w-100 h-100 d-flex flex-column">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <h6 class="m-0 font-weight-bold text-primary">Method 1: Scan QR</h6>
+                    <small class="text-muted">Dynamic token refresh for better security.</small>
+                </div>
+                <span class="badge badge-success">Live</span>
+            </div>
+            <!-- QR card body -->
+            <div class="card-body d-flex flex-column text-center"
+                 style="height: calc(100vh - 560px);">
+                <div class="qr-container mb-3 d-flex align-items-center justify-content-center bg-light border rounded flex-grow-1">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=DynamicToken_XYZ"
+                         alt="QR Code"
+                         class="img-fluid">
+                </div>
+
+                <div class="mb-2 small font-weight-bold">
+                    Token refreshes in:
+                    <span class="text-primary" id="timerCount">12</span>s
+                </div>
+
+                <div class="progress mb-3" style="height: 6px;">
+                    <div class="progress-bar bg-info" id="qrProgressBar" role="progressbar" style="width: 40%"></div>
+                </div>
+
+                <div class="alert alert-warning small text-left mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Suspicious Detection:</strong> System checks for duplicate IPs and reused devices.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: MANUAL CODE + LIVE SCANS -->
+    <div class="col-xl-7 col-lg-7 d-flex flex-column">
+        <!-- MANUAL CODE CARD (auto height at top) -->
+        <div class="card shadow mb-3 border-left-info">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Method 2: Manual Attendance Code (Backup)</h6>
+                <span class="badge badge-light text-muted small">For students who cannot scan QR</span>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-7 mb-3 mb-md-0">
+                        <label class="small font-weight-bold d-block">Current Attendance Code</label>
+                        <div class="input-group">
+                            <input type="text"
+                                   id="attendanceCodeInput"
+                                   class="form-control font-weight-bold text-monospace"
+                                   value="A 7 X 9"
+                                   readonly />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" id="revealBtn">
+                                    <i class="fas fa-eye"></i>
+                                    <span class="d-none d-md-inline"> Reveal</span>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            Code is auto‑generated and can be hidden to avoid screen‑peeking.
+                        </small>
+                    </div>
+
+                    <div class="col-md-5 text-md-right">
+                        <button class="btn btn-primary btn-sm mb-2" type="button" id="generateBtn">
+                            <i class="fas fa-random fa-sm text-white-50"></i> Generate New Code
+                        </button>
+                        <div class="small text-gray-600">
+                            <i class="fas fa-info-circle"></i>
+                            Code expires when the session ends or after a set time.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIVE SCANS TABLE (fixed height, scroll inside) -->
+        <div class="card shadow flex-grow-1 d-flex flex-column">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Live Scans</h6>
+                <span class="badge badge-secondary" id="joinedCount">2 Joined</span>
+            </div>
+            <!-- Live Scans card body -->
+            <div class="card-body d-flex flex-column"
+                 style="height: calc(100vh - 560px);">
+                <div class="table-responsive flex-grow-1 overflow-auto">
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 20%;">Time</th>
+                                <th style="width: 40%;">Name</th>
+                                <th style="width: 20%;">Method</th>
+                                <th style="width: 20%;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveScanTableBody">
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <!-- many more rows will scroll inside this area -->
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    New scans will appear here in real time during the session.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Simple demo: toggle reveal / hide attendance code
+        (function () {
+            const input = document.getElementById('attendanceCodeInput');
+            const revealBtn = document.getElementById('revealBtn');
+            const generateBtn = document.getElementById('generateBtn');
+
+            let realCode = 'A 7 X 9';
+            let isRevealed = true;
+
+            function maskCode(code) {
+                // basic masking: replace characters with *
+                return code.replace(/[A-Za-z0-9]/g, '*');
+            }
+
+            function updateDisplay() {
+                input.value = isRevealed ? realCode : maskCode(realCode);
+                revealBtn.innerHTML = isRevealed
+                    ? '<i class="fas fa-eye-slash"></i><span class="d-none d-md-inline"> Hide</span>'
+                    : '<i class="fas fa-eye"></i><span class="d-none d-md-inline"> Reveal</span>';
+            }
+
+            revealBtn.addEventListener('click', function () {
+                isRevealed = !isRevealed;
+                updateDisplay();
+            });
+
+            generateBtn.addEventListener('click', function () {
+                // Simple random demo generator – replace with server-side token generation later
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                realCode = '';
+                for (let i = 0; i < 5; i++) {
+                    if (i > 0) realCode += ' ';
+                    realCode += chars[Math.floor(Math.random() * chars.length)];
+                }
+                isRevealed = true;
+                updateDisplay();
+            });
+
+            // Initialize display once
+            updateDisplay();
+        })();
+    </script>
+}

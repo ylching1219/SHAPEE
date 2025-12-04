@@ -189,9 +189,13 @@
                         <div id="collapseAttendance" class="collapse" aria-labelledby="headingAttendance" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Attendance</h6>
-                                <a class="collapse-item" href="#">Take Attendance</a>
-                                <a class="collapse-item" href="#">View Attendance</a>
-                                <a class="collapse-item" href="#">Attendance Reports</a>
+                                <a class="collapse-item" href="@Url.Action("ClassSelection", "Staff", new { mode = "take" })">
+                                    Take Attendance
+                                </a>
+                                <a class="collapse-item" href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })">
+                                    View Attendance
+                                </a>
+                                <a class="collapse-item" href="@Url.Action("AttendanceReport", "Staff")">Attendance Reports</a>
                             </div>
                         </div>
                     </li>
