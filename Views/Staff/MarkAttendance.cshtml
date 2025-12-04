@@ -24,6 +24,8 @@
     </div>
 </div>
 
+<!-- hidden section id for JS -->
+<input type="hidden" id="sectionId" value="@Model.SectionId" />
 
 <div class="row g-4 align-items-stretch">
     <!-- LEFT COLUMN: QR SCAN -->
@@ -31,27 +33,37 @@
         <div class="card shadow w-100 h-100 d-flex flex-column">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <div>
-                    <h6 class="m-0 font-weight-bold text-primary">Method 1: Scan QR</h6>
-                    <small class="text-muted">Dynamic token refresh for better security.</small>
+                    <h6 class="m-0 font-weight-bold text-primary">Scan QR Code</h6>
+                    <small class="text-muted">Dynamic refresh every 120 seconds.</small>
                 </div>
-                <span class="badge badge-success">Live</span>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-light text-primary border-0"
+                            id="qrFsOpenBtn">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <span class="badge badge-success">Live</span>
+                </div>
             </div>
+
             <!-- QR card body -->
             <div class="card-body d-flex flex-column text-center"
                  style="height: calc(100vh - 560px);">
-                <div class="qr-container mb-3 d-flex align-items-center justify-content-center bg-light border rounded flex-grow-1">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=DynamicToken_XYZ"
+                <div class="qr-container mb-3 d-flex align-items-center justify-content-center bg-light border rounded"
+                     style="height:420px;">
+                    <img id="qrImage"
+                         src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=INIT"
                          alt="QR Code"
-                         class="img-fluid">
+                         class="img-fluid"
+                         style="max-height:220px; width:auto;" />
                 </div>
 
-                <div class="mb-2 small font-weight-bold">
+                <div class="mb-1 small font-weight-bold">
                     Token refreshes in:
-                    <span class="text-primary" id="timerCount">12</span>s
+                    <span class="text-primary" id="timerCount">120</span>s
                 </div>
 
                 <div class="progress mb-3" style="height: 6px;">
-                    <div class="progress-bar bg-info" id="qrProgressBar" role="progressbar" style="width: 40%"></div>
+                    <div class="progress-bar bg-info" id="qrProgressBar" role="progressbar" style="width: 100%"></div>
                 </div>
 
                 <div class="alert alert-warning small text-left mb-0">
@@ -67,35 +79,35 @@
         <!-- MANUAL CODE CARD -->
         <div class="card shadow mb-3 border-left-info">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Method 2: Manual Attendance Code (Backup)</h6>
-                <span class="badge badge-light text-muted small">For students who cannot scan QR</span>
+                <h6 class="m-0 font-weight-bold text-primary">Attendance Code</h6>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-light text-primary border-0"
+                            id="codeFsOpenBtn">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <span class="badge badge-light text-muted small">For students who cannot scan QR</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-7 mb-3 mb-md-0">
                         <label class="small font-weight-bold d-block">Current Attendance Code</label>
-                        <div class="input-group">
-                            <input type="text"
-                                   id="attendanceCodeInput"
-                                   class="form-control font-weight-bold text-monospace"
-                                   value="A 7 X 9"
-                                   readonly />
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary btn-sm" type="button" id="revealBtn">
-                                    <i class="fas fa-eye"></i>
-                                    <span class="d-none d-md-inline"> Reveal</span>
-                                </button>
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-1">
-                            Code is auto‑generated and can be hidden to avoid screen‑peeking.
-                        </small>
-                    </div>
 
-                    <div class="col-md-5 text-md-right">
-                        <button class="btn btn-primary btn-sm mb-2" type="button" id="generateBtn">
-                            <i class="fas fa-random fa-sm text-white-50"></i> Generate New Code
-                        </button>
+                        <div class="d-flex align-items-center">
+                            <span class="h4 font-weight-bold mr-3" id="manualCode">•••••</span>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary mr-2"
+                                    id="revealBtn">
+                                Reveal
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    id="regenCodeBtn">
+                                Regenerate
+                            </button>
+                        </div>
                         <div class="small text-gray-600">
                             <i class="fas fa-info-circle"></i>
                             Code expires when the session ends or after a set time.
@@ -105,7 +117,7 @@
             </div>
         </div>
 
-        <!-- LIVE SCANS TABLE -->
+        <!-- LIVE SCANS TABLE (your existing card) -->
         <div class="card shadow flex-grow-1 d-flex flex-column">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Live Scans</h6>
@@ -204,6 +216,24 @@
                                 <td><span class="badge badge-success">Present</span></td>
                             </tr>
                             <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:45</td>
+                                <td>Ching Yong Le</td>
+                                <td><span class="badge badge-primary">QR Scan</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:05:22</td>
+                                <td>Lee Kai Sheng</td>
+                                <td><span class="badge badge-info">Manual Code</span></td>
+                                <td><span class="badge badge-success">Present</span></td>
+                            </tr>
+                            <tr>
                                 <td>10:05:22</td>
                                 <td>Lee Kai Sheng</td>
                                 <td><span class="badge badge-info">Manual Code</span></td>
@@ -299,48 +329,175 @@
     </div>
 </div>
 
+<!-- FULLSCREEN QR OVERLAY -->
+<div id="qrFullscreen"
+     style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1050; display:none;">
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <button type="button" class="btn btn-light btn-sm position-absolute"
+                style="top:15px; right:15px;"
+                id="qrFsCloseBtn">
+            <i class="fas fa-times"></i> Close
+        </button>
+        <img id="qrFullscreenImg" class="img-fluid" style="max-width:80%; max-height:80%;" alt="QR Code" />
+        <div class="text-light mt-3 small">
+            Token refreshes in: <span id="fsTimerCount">120</span>s
+        </div>
+    </div>
+</div>
+
+<!-- FULLSCREEN CODE OVERLAY -->
+<div id="codeFullscreen"
+     style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1050; display:none;">
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <button type="button" class="btn btn-light btn-sm position-absolute"
+                style="top:15px; right:15px;"
+                id="codeFsCloseBtn">
+            <i class="fas fa-times"></i> Close
+        </button>
+
+        <div class="d-flex align-items-center mb-3">
+            <div class="display-1 font-weight-bold text-white mr-3" id="codeFullscreenText">•••••</div>
+            <button type="button" class="btn btn-sm btn-outline-light" id="fsRevealBtn">
+                Reveal
+            </button>
+        </div>
+
+        <div class="text-muted mt-2 small">
+            Manual attendance code
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Simple demo: toggle reveal / hide attendance code
-        (function () {
-            const input = document.getElementById('attendanceCodeInput');
-            const revealBtn = document.getElementById('revealBtn');
-            const generateBtn = document.getElementById('generateBtn');
+        var sectionId = $('#sectionId').val();
+        var visible = false;
+        var realCode = '';
+        var timer = null;
 
-            let realCode = 'A 7 X 9';
-            let isRevealed = true;
+        var totalSeconds = 120;
+        var remaining = totalSeconds;
 
-            function maskCode(code) {
-                // basic masking: replace characters with *
-                return code.replace(/[A-Za-z0-9]/g, '*');
-            }
+        function buildSmallQrUrl(token) {
+            return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(token);
+        }
 
-            function updateDisplay() {
-                input.value = isRevealed ? realCode : maskCode(realCode);
-                revealBtn.innerHTML = isRevealed
-                    ? '<i class="fas fa-eye-slash"></i><span class="d-none d-md-inline"> Hide</span>'
-                    : '<i class="fas fa-eye"></i><span class="d-none d-md-inline"> Reveal</span>';
-            }
+        function buildLargeQrUrl(token) {
+            return "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(token);
+        }
 
-            revealBtn.addEventListener('click', function () {
-                isRevealed = !isRevealed;
-                updateDisplay();
-            });
+        function updateCountdown() {
+            $('#timerCount').text(remaining);
+            $('#fsTimerCount').text(remaining);
 
-            generateBtn.addEventListener('click', function () {
-                // Simple random demo generator – replace with server-side token generation later
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                realCode = '';
-                for (let i = 0; i < 5; i++) {
-                    if (i > 0) realCode += ' ';
-                    realCode += chars[Math.floor(Math.random() * chars.length)];
+            // update progress bar (from 100% down to 0%)
+            var pct = (remaining / totalSeconds) * 100;
+            $('#qrProgressBar').css('width', pct + '%');
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            remaining = totalSeconds;
+            updateCountdown();
+            timer = setInterval(function () {
+                remaining--;
+                if (remaining < 0) {
+                    clearInterval(timer);
+                    refreshQr();
+                    return;
                 }
-                isRevealed = true;
-                updateDisplay();
+                updateCountdown();
+            }, 1000);
+        }
+
+        function startSession() {
+            $.post('@Url.Action("StartAttendanceSession","Staff")',
+                { sectionId: sectionId },
+                function (data) {
+                    if (!data.success) return;
+                    var smallUrl = buildSmallQrUrl(data.token);
+                    var largeUrl = buildLargeQrUrl(data.token);
+
+                    $('#qrImage').attr('src', smallUrl);          // normal small QR
+                    $('#qrFullscreenImg').attr('src', largeUrl);  // fullscreen big QR
+
+                    realCode = data.manualCode;
+                    if (visible) {
+                        $('#manualCode').text(realCode);
+                        $('#codeFullscreenText').text(realCode);
+                    }
+                    startTimer();
+                });
+        }
+
+        function refreshQr() {
+            $.post('@Url.Action("RefreshQrToken","Staff")',
+                { sectionId: sectionId },
+                function (data) {
+                    if (!data.success) return;
+                    var smallUrl = buildSmallQrUrl(data.token);
+                    var largeUrl = buildLargeQrUrl(data.token);
+
+                    $('#qrImage').attr('src', smallUrl);
+                    $('#qrFullscreenImg').attr('src', largeUrl);
+                    startTimer();
+                });
+        }
+
+        function regenCode() {
+            $.post('@Url.Action("RegenerateManualCode","Staff")',
+                { sectionId: sectionId },
+                function (data) {
+                    if (!data.success) return;
+                    realCode = data.manualCode;
+                    if (visible) {
+                        $('#manualCode').text(realCode);
+                        $('#codeFullscreenText').text(realCode);
+                    }
+                });
+        }
+
+        function toggleReveal() {
+            visible = !visible;
+            var text = visible ? realCode : '•••••';
+            $('#manualCode').text(text);
+            $('#codeFullscreenText').text(text);
+            $('#revealBtn').text(visible ? 'Hide' : 'Reveal');
+            $('#fsRevealBtn').text(visible ? 'Hide' : 'Reveal');
+        }
+
+        $('#revealBtn').on('click', toggleReveal);
+        $('#fsRevealBtn').on('click', toggleReveal);
+        $('#regenCodeBtn').on('click', regenCode);
+
+        function openQrFullscreen() { $('#qrFullscreen').show(); }
+        function closeQrFullscreen() { $('#qrFullscreen').hide(); }
+        function openCodeFullscreen() { $('#codeFullscreen').show(); }
+        function closeCodeFullscreen() { $('#codeFullscreen').hide(); }
+
+        $(function () {
+            startSession();
+
+            $('#qrFsOpenBtn').on('click', openQrFullscreen);
+            $('#qrFsCloseBtn').on('click', closeQrFullscreen);
+
+            $('#codeFsOpenBtn').on('click', openCodeFullscreen);
+            $('#codeFsCloseBtn').on('click', closeCodeFullscreen);
+
+            $('#qrFullscreen').on('click', function (e) {
+                if (e.target === this) closeQrFullscreen();
+            });
+            $('#codeFullscreen').on('click', function (e) {
+                if (e.target === this) closeCodeFullscreen();
             });
 
-            // Initialize display once
-            updateDisplay();
-        })();
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeQrFullscreen();
+                    closeCodeFullscreen();
+                }
+            });
+        });
     </script>
 }

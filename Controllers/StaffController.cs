@@ -56,6 +56,71 @@ namespace SHAPEE.Controllers
             return View(section);
         }
 
+        // generate a simple code for the attendance code (can be used for join code also)
+        private static string GenerateSimpleCode()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var rnd = new Random();
+            return new string(Enumerable.Range(0, 5)
+                .Select(_ => chars[rnd.Next(chars.Length)])
+                .ToArray());
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        public IActionResult StartAttendanceSession(string sectionId)
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            if (section == null) return NotFound();
+
+            section.CurrentQrToken = Guid.NewGuid().ToString("N");
+            section.CurrentQrExpiry = DateTime.UtcNow.AddSeconds(120);
+            section.IsAttendanceSessionActive = true;
+
+            if (string.IsNullOrEmpty(section.AttendanceCode))
+                section.AttendanceCode = GenerateSimpleCode();
+
+            db.SaveChanges();
+
+            return Json(new
+            {
+                success = true,
+                token = section.CurrentQrToken,
+                manualCode = section.AttendanceCode
+            });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        public IActionResult RefreshQrToken(string sectionId)
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            if (section == null || !section.IsAttendanceSessionActive) return BadRequest();
+
+            section.CurrentQrToken = Guid.NewGuid().ToString("N");
+            section.CurrentQrExpiry = DateTime.UtcNow.AddSeconds(120);
+            db.SaveChanges();
+
+            return Json(new { success = true, token = section.CurrentQrToken });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        public IActionResult RegenerateManualCode(string sectionId)
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            if (section == null || !section.IsAttendanceSessionActive) return BadRequest();
+
+            section.AttendanceCode = GenerateSimpleCode();
+            db.SaveChanges();
+
+            return Json(new { success = true, manualCode = section.AttendanceCode });
+        }
+
+
         public IActionResult AttendanceManagement(string sectionId)
         {
             if (string.IsNullOrEmpty(sectionId))
