@@ -1,62 +1,10 @@
 ﻿@model IEnumerable<Student>
-@using System.Text.Json
 @{
-    ViewData["Title"] = "User Management";
     var students = Model?.ToList() ?? new List<Student>();
     var studentCount = students.Count;
 }
 
-<!-- Success/Error Messages -->
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-}
-
-<!-- Header -->
-<div class="bg-white border-bottom px-4 py-3 mb-4">
-    <h1 class="h3 mb-0 text-gray-800">User Management</h1>
-</div>
-
-<!-- Navigation Tabs -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white p-2">
-        <ul class="nav nav-pills" id="userManagementTabs" role="tablist">
-            <li class="nav-item flex-fill">
-                <a class="nav-link active rounded-pill text-center" id="students-tab" data-toggle="tab" href="#students" role="tab">
-                    <i class="fas fa-user-graduate mr-1"></i> Students
-                </a>
-            </li>
-            <li class="nav-item flex-fill">
-                <a class="nav-link rounded-pill text-center" id="staff-tab" data-toggle="tab" href="#staff" role="tab">
-                    <i class="fas fa-chalkboard-teacher mr-1"></i> Staff
-                </a>
-            </li>
-            <li class="nav-item flex-fill">
-                <a class="nav-link rounded-pill text-center" id="admins-tab" data-toggle="tab" href="#admins" role="tab">
-                    <i class="fas fa-user-shield mr-1"></i> Admins
-                </a>
-            </li>
-        </ul>
-    </div>
-</div>
-
-<div class="tab-content" id="userManagementTabContent">
-    <!-- Students Tab -->
+<div class="card shadow-sm">
     <div class="tab-pane fade show active" id="students" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
@@ -79,10 +27,10 @@
             <!-- Filters Section -->
             <div class="card-body bg-light border-bottom">
                 <form id="filterForm"
-                    data-ajax="true"
-                    data-ajax-method="GET"
-                    data-ajax-url="/Admin/UserManagement"
-                    data-ajax-update="#studentData">
+                      data-ajax="true"
+                      data-ajax-method="GET"
+                      data-ajax-url="/Admin/StudentManagement"
+                      data-ajax-update="#studentData">
                     <div class="row g-3">
                         <div class="col-12 col-md-3">
                             <div class="input-group">
@@ -126,39 +74,9 @@
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <div id="studentData">
-                        <partial name="_User" />
+                        <partial name="_Student" />
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Staff Tab -->
-    <div class="tab-pane fade" id="staff" role="tabpanel">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 font-weight-semibold text-gray-800">
-                    <i class="fas fa-chalkboard-teacher mr-2"></i>Staff Management
-                </h5>
-            </div>
-            <div class="card-body text-center py-5">
-                <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
-                <p class="text-muted mb-0">Staff management coming soon...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admins Tab -->
-    <div class="tab-pane fade" id="admins" role="tabpanel">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 font-weight-semibold text-gray-800">
-                    <i class="fas fa-user-shield mr-2"></i>Admin Management
-                </h5>
-            </div>
-            <div class="card-body text-center py-5">
-                <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
-                <p class="text-muted mb-0">Admin management coming soon...</p>
             </div>
         </div>
     </div>
