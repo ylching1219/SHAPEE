@@ -465,6 +465,15 @@ public class Attendance
 
     public bool IsFlaged { get; set; }
 
+    [MaxLength(45)]
+    public string? IpAddress { get; set; }
+
+    [MaxLength(200)]
+    public string? UserAgent { get; set; }
+
+    [MaxLength(200)]
+    public string? FlagReason { get; set; }
+
 }
 
 public class CalendarEvent
