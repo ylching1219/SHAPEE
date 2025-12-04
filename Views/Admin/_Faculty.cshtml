@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Faculty>
+﻿@model FacultyManageVM
+
 
 <table class="table table-hover mb-0" id="studentsTable">
     <thead class="bg-light">
@@ -10,7 +11,7 @@
         </tr>
     </thead>
     <tbody id="studentsTableBody">
-        @if (Model.Count() == 0)
+        @if (Model.Faculties.Count() == 0)
         {
             <tr>
                 <td colspan="9" class="text-center py-5">
@@ -21,7 +22,7 @@
         }
         else
         {
-            @foreach (var f in Model)
+            @foreach (var f in Model.Faculties)
             {
                 <tr class="border-bottom">
                     <td class="px-4 py-3">
@@ -36,9 +37,10 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                <a class="dropdown-item" href="@Url.Action("FacultyManagement", "Admin", new { editId = f.Id })">
                                     <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                 </a>
+
                                 @* <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
                                                         <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
                                                     </a> *@

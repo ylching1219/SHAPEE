@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+namespace SHAPEE.Models
+#nullable disable warnings
 
-namespace SHAPEE.ViewModels
 {
     // Required by the Login action
     public class LoginVM
@@ -40,5 +41,24 @@ namespace SHAPEE.ViewModels
         [Compare("NewPassword", ErrorMessage = "The passwords do not match.")]
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; }
+    }
+
+    public class FacultyVM 
+    {
+        [Required(ErrorMessage = "Faculty Id is required.")]
+        public string FacultyId { get; set; }
+
+        [Required(ErrorMessage = "Faculty Name is required.")]
+        public string FacultyName { get; set; }
+
+        [Required(ErrorMessage = "Cost Per Credit Hour is required.")]
+       
+        public decimal CostPerCreditHour { get; set; }
+    }
+
+    public class FacultyManageVM
+    {
+        public List<Faculty> Faculties { get; set; } = [];
+        public Faculty? EditFaculty { get; set; }
     }
 }

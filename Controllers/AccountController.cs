@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using SHAPEE.ViewModels;
 using SHAPEE.Models;
 
 namespace SHAPEE.Controllers;

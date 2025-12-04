@@ -336,11 +336,15 @@ namespace SHAPEE.Controllers
             return View();
         }
 
-
-        public IActionResult FacultyManagement(string? sort, string? name)
+        //YL
+        public IActionResult FacultyManagement(string? sort, string? name,string? editId)
         {
             ViewData["Title"] = "Faculty Management";
+            Faculty? editFaculty = null;
 
+            if (!string.IsNullOrEmpty(editId)) {
+                editFaculty = db.Faculties.FirstOrDefault(f => f.Id == editId);
+            }
             name = name?.Trim() ?? "";
 
 
@@ -358,17 +362,45 @@ namespace SHAPEE.Controllers
 
             var faculties = facultiesQuery.ToList();
 
-
+            var vm = new FacultyManageVM {
+                Faculties = faculties,
+                EditFaculty = editFaculty
+            };
 
             if (Request.IsAjax())
             {
-                return PartialView("_Faculty", faculties);
+                return PartialView("_Faculty", vm);
             }
 
-            return View(faculties);
+            return View(vm); 
         }
 
-        public IActionResult RoomManagement() {
+        public IActionResult AddFaculty()
+        {
+            return View();
+        }
+
+       
+
+        public IActionResult SaveFaculty(FacultyVM vm)
+        {
+            return View();
+        }
+        public IActionResult DeleteFaculty(int id)
+        {
+            var faculty = db.Faculties.Find(id);
+            if (faculty == null)
+            {
+                return NotFound();
+            }
+            return View(faculty);
+        }   
+
+        
+
+        //JS
+        public IActionResult RoomManagement()
+        {
 
             var rooms = db.Rooms
                 .OrderBy(r => r.RoomId)

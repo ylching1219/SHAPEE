@@ -1,5 +1,4 @@
-﻿@model IEnumerable<Faculty>
-@using System.Text.Json
+﻿@model FacultyManageVM
 @{
     ViewData["Title"] = "Faculty Management";
 }
@@ -40,10 +39,10 @@
             <div class="card-header bg-white border-bottom py-3">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
                     <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
-                        Faculties (<span id="facultyCount">@Model.Count()</span>)
+                        Faculties (<span id="facultyCount">@Model.Faculties.Count()</span>)
                     </h5>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditStudentModal" onclick="prepareAddModal()">
+                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" id="addData">
                             <i class="fas fa-user-plus mr-1"></i> Add Faculty
                         </button>
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
@@ -92,7 +91,7 @@
                                 <i class="fas fa-undo"></i>
                             </button>
                         </div>
-                       
+
                     </div>
                 </form>
             </div>
@@ -110,89 +109,63 @@
 
 </div>
 
-<!-- Add/Edit Faculty Modal -->
-<div class="modal fade" id="addEditFacultyModal" tabindex="-1" role="dialog" aria-labelledby="addEditFacultyModalLabel">
+
+
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-semibold" id="addEditFacultyModalLabel">Add New Faculty</h5>
-                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Faculty</h5>
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close" >
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="facultyForm" method="post" asp-controller="Admin" asp-action="Create">
-               
-                <div class="modal-body">
-                    <input type="hidden" id="facultyId" name="Id" value="" />
-                    <input type="hidden" name="Discriminator" value="Student" />
+            <div id="AddEditData">
+                <form id="addEditForm" method="post" asp-controller="Admin" asp-action="InsertFaculty">
+                    <div class="modal-body">
 
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="FacultyId" class="font-weight-medium">Faculty ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="FacultyId" name="FacultyId"
+                                   value="@(Model.EditFaculty?.Id != null ? Model.EditFaculty.Id : "")"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
                             <div class="form-group">
-                                <label for="firstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                                <label for="FacultyName" class="font-weight-medium">Faculty Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="FacultyName" name="FacultyName"
+                                       value="@(Model.EditFaculty?.Name != null ? Model.EditFaculty.Name : "")"
+                                       required>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="lastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="lastName" name="LastName" required>
-                            </div>
+
+                        <div class="form-group">
+                            <label for="CostPerCreditHour" class="font-weight-medium">Cost Per Credit Hour<span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="CostPerCreditHour" name="CostPerCreditHour" " step="0.01"
+                                   value="@Model.EditFaculty?.CostPerCreditHour"
+                                   required>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="studentEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="studentEmail" name="Email" required>
                     </div>
-
-                    <div class="form-group">
-                        <label for="contactNumber" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="contactNumber" name="Contact" placeholder="+60 12-345-6789">
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn closeBtn" type="button" data-dismiss="modal" closeBtn>
+                            <i class="fas fa-times mr-1"></i> Cancel
+                        </button>
+                        <button class="btn btn-primary" type="submit" id="saveStudentBtn">
+                            <i class="fas fa-save mr-1"></i> Add Faculty
+                        </button>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
-                                <select class="form-control" id="program" name="Program" required>
-                                    <option value="">Select Program</option>
-                                    <option value="Computer Science">Computer Science</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Arts">Arts</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="yearLevel" name="YearLevel" min="1" max="4" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="statusGroup" style="display:none;">
-                        <label for="status" class="font-weight-medium">Status</label>
-                        <select class="form-control" id="status" name="Status">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Suspended">Suspended</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i> Cancel
-                    </button>
-                    <button class="btn btn-primary" type="submit" id="saveStudentBtn">
-                        <i class="fas fa-save mr-1"></i> Save Student
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>"
+           
         </div>
     </div>
 </div>
+
+
+
+
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
@@ -232,142 +205,28 @@
 
 @section Scripts {
     <script>
+        $(document).ready(function () {
+        const url = new URL(window.location.href);
+        const editId = url.searchParams.get("editId");
 
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-
-            // Modal elements
-            const modalTitle = document.getElementById('addEditStudentModalLabel');
-            const form = document.getElementById('studentForm');
-            const statusGroup = document.getElementById('statusGroup');
-
-            // Prepare Add Modal
-            window.prepareAddModal = function() {
-                modalTitle.innerText = 'Add New Student';
-                form.setAttribute('action', '@Url.Action("Create", "Admin")');
-                form.reset();
-                document.getElementById('studentId').value = '';
-                statusGroup.style.display = 'none';
-            };
-
-            // Prepare Edit Modal
-            window.prepareEditModal = function(element) {
-                const row = element.closest('tr');
-                const studentData = JSON.parse(row.getAttribute('data-student'));
-
-                modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
-                form.setAttribute('action', '@Url.Action("Edit", "Admin")');
-
-                document.getElementById('studentId').value = studentData.Id;
-                document.getElementById('firstName').value = studentData.FirstName;
-                document.getElementById('lastName').value = studentData.LastName;
-                document.getElementById('studentEmail').value = studentData.Email;
-                document.getElementById('contactNumber').value = studentData.Contact || '';
-                document.getElementById('program').value = studentData.Program;
-                document.getElementById('yearLevel').value = studentData.YearLevel;
-                document.getElementById('status').value = studentData.Status.trim();
-
-                statusGroup.style.display = 'block';
-            };
-
-            // Prepare Delete Modal
-            window.prepareDeleteModal = function(element) {
-                const row = element.closest('tr');
-                const studentName = row.getAttribute('data-student-name');
-                const studentData = JSON.parse(row.getAttribute('data-student'));
-
-                document.getElementById('studentToDeleteName').innerText = studentName;
-                document.getElementById('deleteStudentId').value = studentData.Id;
-            };
-
-            // Toggle Suspend/Activate
-            window.toggleSuspend = function(studentId, element) {
-                if (confirm('Are you sure you want to change this student\'s status?')) {
-                    const formData = new FormData();
-                    formData.append('id', studentId);
-                    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-                    fetch('@Url.Action("Suspend", "Admin")', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Error: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error);
-                    });
-                }
-            };
-
-            // Search and Filter functionality
-            const searchInput = document.getElementById('searchInput');
-            const statusFilter = document.getElementById('statusFilter');
-            const programFilter = document.getElementById('programFilter');
-            const yearFilter = document.getElementById('yearFilter');
-
-            searchInput.addEventListener('keyup', filterTable);
-            statusFilter.addEventListener('change', filterTable);
-            programFilter.addEventListener('change', filterTable);
-            yearFilter.addEventListener('change', filterTable);
-
-            function filterTable() {
-                const searchValue = searchInput.value.toLowerCase();
-                const statusValue = statusFilter.value.toLowerCase();
-                const programValue = programFilter.value.toLowerCase();
-                const yearValue = yearFilter.value;
-
-                const rows = document.querySelectorAll('#studentsTableBody tr');
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    // Skip "no students" row
-                    if (row.cells.length === 1) return;
-
-                    const name = row.cells[0].textContent.toLowerCase();
-                    const id = row.cells[1].textContent.toLowerCase();
-                    const email = row.cells[2].textContent.toLowerCase();
-                    const program = row.cells[4].textContent.toLowerCase();
-                    const year = row.cells[5].textContent;
-                    const status = row.cells[7].textContent.toLowerCase();
-
-                    const matchesSearch = name.includes(searchValue) || id.includes(searchValue) || email.includes(searchValue);
-                    const matchesStatus = !statusValue || status.includes(statusValue);
-                    const matchesProgram = !programValue || program.includes(programValue);
-                    const matchesYear = !yearValue || year.includes('year ' + yearValue);
-
-                    if (matchesSearch && matchesStatus && matchesProgram && matchesYear) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                document.getElementById('studentCount').textContent = visibleCount;
+        if (editId) {
+            // Check TempData server-side
+            @if (Model.EditFaculty != null)
+            {
+                <text>
+                     $('#addEditModal').modal('show');
+                    $("#addEditModalLabel").text("Edit Faculty");
+                    $("#saveStudentBtn").html('<i class="fas fa-save mr-1"></i> Update Faculty');
+                    $("#FacultyId").prop("readonly", true);
+                </text>
             }
+        }
 
-            // Auto-dismiss alerts after 5 seconds
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(alert => {
-                    const closeBtn = alert.querySelector('.close');
-                    if (closeBtn) {
-                        closeBtn.click();
-                    }
-                });
-            }, 5000);
+             $(".closeBtn").on("click", function() {
+                  window.location.href = '/Admin/FacultyManagement'; 
+        });
 
-            // Export CSV functionality
-            document.getElementById('exportCsvBtn').addEventListener('click', function() {
-                alert('Export CSV functionality to be implemented');
-            });
         });
     </script>
+
 }
