@@ -34,7 +34,7 @@ namespace SHAPEE.Controllers
                 .ThenBy(c => c.StartTime)
                 .ToList();
 
-            return View(sections); // Views/Staff/ClassSelection.cshtml
+            return View(sections); 
         }
 
         public IActionResult MarkAttendance(string sectionId)
@@ -44,7 +44,6 @@ namespace SHAPEE.Controllers
 
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // ensure the section belongs to this staff
             var section = db.ClassSections
                 .Include(c => c.Course)
                 .Include(c => c.Room)
@@ -54,7 +53,7 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection");
 
-            return View(section);   // pass ClassSection model to MarkAttendance
+            return View(section);
         }
 
         public IActionResult AttendanceManagement(string sectionId)
@@ -73,9 +72,9 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
 
-            ViewData["Section"] = section;   // used only to display class info
+            ViewData["Section"] = section; 
             ViewData["Title"] = "Attendance Management";
-            return View();                   // still uses dummy rows inside the view
+            return View(); 
         }
 
 
