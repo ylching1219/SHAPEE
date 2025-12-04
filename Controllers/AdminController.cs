@@ -122,8 +122,8 @@ namespace SHAPEE.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string firstName, string lastName, string gender,
-           string email, string contact, string facultyId, string programName,
-           int yearLevel, int semester)
+                   string email, string contact, string facultyId, string programName,
+                   int yearLevel, int semester)
         {
             try
             {
@@ -152,13 +152,27 @@ namespace SHAPEE.Controllers
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
 
-                string newId = (lastStudent != null && lastStudent.Id.StartsWith("R"))
-                    ? $"R{(int.Parse(lastStudent.Id.Substring(1)) + 1):D4}"
-                    : "R0001";
+                var yearPrefix = DateTime.Now.Year.ToString().Substring(2); // "25"
+
+                string newId;
+
+                if (lastStudent != null && lastStudent.Id.StartsWith(yearPrefix))
+                {
+                    // get the number part after the year prefix
+                    int lastNumber = int.Parse(lastStudent.Id.Substring(2));
+
+                    newId = $"{yearPrefix}{(lastNumber + 1):D5}";
+                }
+                else
+                {
+                    // first ID of the year
+                    newId = $"{yearPrefix}00001";
+                }
+
 
                 // Find Program by CODE (not Name) since form sends code
                 var program = await db.Programs
-                    .FirstOrDefaultAsync(p => p.Id == programName);
+                    .FirstOrDefaultAsync(p => p.Name == programName);
 
                 if (program == null)
                 {
