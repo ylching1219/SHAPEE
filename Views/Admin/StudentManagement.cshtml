@@ -4,6 +4,27 @@
     var studentCount = students.Count;
 }
 
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
 <div class="card shadow-sm">
     <div class="tab-pane fade show active" id="students" role="tabpanel">
         <div class="card shadow-sm">
@@ -101,14 +122,14 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="firstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="firstName" name="FirstName" required>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
                                 <div class="invalid-feedback">Please enter first name.</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="lastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="lastName" name="LastName" required>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
                                 <div class="invalid-feedback">Please enter last name.</div>
                             </div>
                         </div>
@@ -116,7 +137,7 @@
 
                     <div class="form-group">
                         <label for="gender" class="font-weight-medium">Gender <span class="text-danger">*</span></label>
-                        <select class="form-control" id="gender" name="Gender" required>
+                        <select class="form-control" id="gender" name="gender" required>
                             <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -126,18 +147,18 @@
 
                     <div class="form-group">
                         <label for="studentEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="studentEmail" name="Email" required>
+                        <input type="email" class="form-control" id="studentEmail" name="email" required>
                         <div class="invalid-feedback">Please enter a valid email.</div>
                     </div>
 
                     <div class="form-group">
                         <label for="contactNumber" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="contactNumber" name="Contact" placeholder="+60 12-345-6789">
+                        <input type="tel" class="form-control" id="contactNumber" name="contact" placeholder="+60 12-345-6789">
                     </div>
 
                     <div class="form-group">
                         <label for="faculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
-                        <select class="form-control" id="faculty" name="FacultyId" required>
+                        <select class="form-control" id="faculty" name="facultyId" required>
                             <option value="">Select Faculty</option>
                             <option value="FOCS">Faculty of Computer Science (FOCS)</option>
                             <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
@@ -149,7 +170,7 @@
 
                     <div class="form-group">
                         <label for="program" class="font-weight-medium">Program <span class="text-danger">*</span></label>
-                        <select class="form-control" id="program" name="ProgramName" required disabled>
+                        <select class="form-control" id="program" name="programName" required disabled>
                             <option value="">Select Faculty First</option>
                         </select>
                         <div class="invalid-feedback">Please select a program.</div>
@@ -159,7 +180,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
-                                <select class="form-control" id="yearLevel" name="YearLevel" required>
+                                <select class="form-control" id="yearLevel" name="yearLevel" required>
                                     <option value="">Year</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -172,7 +193,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="semester" class="font-weight-medium">Semester <span class="text-danger">*</span></label>
-                                <select class="form-control" id="semester" name="Semester" required>
+                                <select class="form-control" id="semester" name="semester" required>
                                     <option value="">Semester</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -185,7 +206,7 @@
 
                     <div class="form-group" id="statusGroup" style="display:none;">
                         <label for="status" class="font-weight-medium">Status</label>
-                        <select class="form-control" id="status" name="Status">
+                        <select class="form-control" id="status" name="status">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                             <option value="Suspended">Suspended</option>
@@ -284,12 +305,12 @@
             facultySelect.addEventListener('change', function() {
                 const selectedFaculty = this.value;
                 programSelect.innerHTML = '<option value="">Select Program</option>';
-
+                
                 if (selectedFaculty && programsByFaculty[selectedFaculty]) {
                     programSelect.disabled = false;
                     programsByFaculty[selectedFaculty].forEach(program => {
                         const option = document.createElement('option');
-                        option.value = program.code;
+                        option.value = program.name;
                         option.textContent = `${program.code} - ${program.name}`;
                         programSelect.appendChild(option);
                     });
@@ -297,7 +318,8 @@
                     programSelect.disabled = true;
                     programSelect.innerHTML = '<option value="">Select Faculty First</option>';
                 }
-
+                
+                // Reset program selection
                 programSelect.value = '';
             });
 
@@ -337,12 +359,14 @@
                 modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
                 form.setAttribute('action', '@Url.Action("Edit", "Admin")');
 
+                // Populate form fields
                 document.getElementById('studentId').value = studentData.Id;
                 document.getElementById('firstName').value = studentData.FirstName;
                 document.getElementById('lastName').value = studentData.LastName;
                 document.getElementById('gender').value = studentData.Gender || '';
                 document.getElementById('studentEmail').value = studentData.Email;
                 document.getElementById('contactNumber').value = studentData.Contact || '';
+                document.getElementById('program').value = studentData.Program;
                 document.getElementById('yearLevel').value = studentData.YearLevel;
                 document.getElementById('semester').value = studentData.Semester || '1';
                 document.getElementById('status').value = (studentData.Status || '').trim();
@@ -350,7 +374,7 @@
                 // Find faculty for the program
                 let foundFaculty = '';
                 for (const [faculty, programs] of Object.entries(programsByFaculty)) {
-                    if (programs.some(p => p.code === studentData.ProgramCode)) {
+                    if (programs.some(p => p.name === studentData.Program)) {
                         foundFaculty = faculty;
                         break;
                     }
@@ -361,13 +385,16 @@
                     facultySelect.value = foundFaculty;
                     facultySelect.dispatchEvent(new Event('change'));
 
+                    // Set program after dropdown is populated
                     setTimeout(() => {
-                        programSelect.value = studentData.ProgramCode;
+                        programSelect.value = studentData.Program;
                     }, 0);
                 }
 
+                // Show status field for edit
                 statusGroup.style.display = 'block';
 
+                // Remove validation states
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
                     input.classList.remove('is-invalid');

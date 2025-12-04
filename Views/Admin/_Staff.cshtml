@@ -48,7 +48,7 @@
                     staff.Status
                 });
                 // Generate program code (e.g., DCSY2S1)
-                <tr data-student='@staffJson' data-staff-name="@staff.FullName" class="border-bottom">
+                <tr data-staff='@staffJson' data-staff-name="@staff.FullName" class="border-bottom">
                     <td class="px-4 py-3 text-muted">@staff.Id</td>
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@staff.FullName</div>
@@ -79,14 +79,14 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStudentModal">
+                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditStaffModal">
                                     <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                 </a>
                                 <a class="dropdown-item" href="#" onclick="toggleSuspend('@staff.Id', this); return false;">
                                     <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStaffModal">
                                     <i class="fas fa-trash mr-2"></i> Delete
                                 </a>
                             </div>

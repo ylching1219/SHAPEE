@@ -22,7 +22,7 @@ namespace SHAPEE.Controllers
 
         public IActionResult StudentManagement(string? name, string? filter1, string? filter2, string? filter3)
         {
-            ViewData["Title"] = "User Management";
+            ViewData["Title"] = "Student Management";
 
             var programs = db.Programs
                 .OrderBy(p => p.Id)
@@ -70,6 +70,44 @@ namespace SHAPEE.Controllers
             return View(result);
         }
 
+        public IActionResult StaffManagement(string? name, string? filter1, string? filter2, string? filter3)
+        {
+            ViewData["Title"] = "Staff Management";
+
+            var filteredStaff = db.Staffs
+                .AsQueryable();
+
+            name = name?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(name))
+            {
+                filteredStaff = filteredStaff
+                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+            }
+
+            filter1 = filter1?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter1))
+            {
+                filteredStaff = filteredStaff.Where(s => s.Status == filter1);
+            }
+
+            filter2 = filter2?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter2))
+            {
+                filteredStaff = filteredStaff.Where(s => s.Gender == filter2);
+            }
+
+            var result = filteredStaff
+                .OrderBy(s => s.Id)
+                .ToList();
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Student", result);
+            }
+
+            return View(result);
+        }
+
         private string GenerateRandomPassword(int length = 8)
         {
             const string valid = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -81,11 +119,11 @@ namespace SHAPEE.Controllers
         }
 
 
-        // POST: Admin/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string firstName, string lastName, string gender,
-            string email, string contact, string programName, int yearLevel)
+           string email, string contact, string facultyId, string programName,
+           int yearLevel, int semester)
         {
             try
             {
@@ -93,27 +131,34 @@ namespace SHAPEE.Controllers
                 if (string.IsNullOrWhiteSpace(firstName) ||
                     string.IsNullOrWhiteSpace(lastName) ||
                     string.IsNullOrWhiteSpace(email) ||
-                    string.IsNullOrWhiteSpace(gender))
+                    string.IsNullOrWhiteSpace(gender) ||
+                    string.IsNullOrWhiteSpace(programName) ||
+                    yearLevel <= 0 ||
+                    semester <= 0)
                 {
                     TempData["ErrorMessage"] = "Please fill in all required fields.";
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Check duplicate email
-                if (await db.Students.AnyAsync(s => s.Email == email))
+                if (await db.Students.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
                 // Generate Student ID
-                var lastStudent = await db.Students.OrderByDescending(s => s.Id).FirstOrDefaultAsync();
+                var lastStudent = await db.Students
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefaultAsync();
+
                 string newId = (lastStudent != null && lastStudent.Id.StartsWith("R"))
-                    ? $"R{(int.Parse(lastStudent.Id.Substring(1)) + 1).ToString("D4")}"
+                    ? $"R{(int.Parse(lastStudent.Id.Substring(1)) + 1):D4}"
                     : "R0001";
 
-                // Find Program
-                var program = await db.Programs.FirstOrDefaultAsync(p => p.Name == programName);
+                // Find Program by CODE (not Name) since form sends code
+                var program = await db.Programs
+                    .FirstOrDefaultAsync(p => p.Id == programName);
 
                 if (program == null)
                 {
@@ -137,20 +182,16 @@ namespace SHAPEE.Controllers
                     Contact = contact?.Trim(),
                     ProgramId = program.Id,
                     YearLevel = yearLevel,
-                    Semester = 1,
+                    Semester = semester, // Use the submitted semester
                     DateJoin = DateOnly.FromDateTime(DateTime.Now),
-
-                    // Required User fields
                     Hash = passwordHash,
-                    LoginAttempts = 3,
-                    Status = "Active",
-                    // Discriminator will automatically be "Student"
+                    LoginAttempts = 0,
+                    Status = "Active"
                 };
 
                 db.Students.Add(student);
                 await db.SaveChangesAsync();
 
-                // OPTIONAL – show the generated password to admin (for giving to student)
                 TempData["SuccessMessage"] =
                     $"Student '{student.FirstName} {student.LastName}' created successfully! " +
                     $"Generated password: {rawPassword}";
