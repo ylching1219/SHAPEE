@@ -82,14 +82,6 @@ namespace SHAPEE.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<string>("FlagReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
                     b.Property<bool>("IsFlaged")
                         .HasColumnType("bit");
 
@@ -107,10 +99,6 @@ namespace SHAPEE.Migrations
 
                     b.Property<string>("StudentId")
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("AttendanceId");
 
