@@ -263,6 +263,14 @@ public class ClassSection
     //1 class section have many attendance records
     public List<Attendance> Attendances { get; set; } = [];
 
+    //storing the qr token and expiry time
+    [MaxLength(100)]
+    public string? CurrentQrToken { get; set; }
+
+    public DateTime? CurrentQrExpiry { get; set; }
+
+    public bool IsAttendanceSessionActive { get; set; } = false;
+
 }
 
 public class TutorialGroup
@@ -464,6 +472,15 @@ public class Attendance
     public string Status { get; set; }
 
     public bool IsFlaged { get; set; }
+
+    [MaxLength(45)]
+    public string? IpAddress { get; set; }
+
+    [MaxLength(200)]
+    public string? UserAgent { get; set; }
+
+    [MaxLength(200)]
+    public string? FlagReason { get; set; }
 
 }
 

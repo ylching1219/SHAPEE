@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SHAPEE.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -275,7 +275,10 @@ namespace SHAPEE.Migrations
                     TutorialGroupId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     RoomId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     AttendanceCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    JoinCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true)
+                    JoinCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    CurrentQrToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CurrentQrExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsAttendanceSessionActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -421,7 +424,10 @@ namespace SHAPEE.Migrations
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    IsFlaged = table.Column<bool>(type: "bit", nullable: false)
+                    IsFlaged = table.Column<bool>(type: "bit", nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    FlagReason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {

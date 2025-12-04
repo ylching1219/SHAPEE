@@ -1,0 +1,261 @@
+@using SHAPEE.Models
+@{
+    ViewData["Title"] = "Attendance Management";
+    var currentSection = ViewData["Section"] as ClassSection;
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Attendance Registry</h1>
+        @if (currentSection != null)
+        {
+            <p class="text-muted small mt-2 mb-0">
+                <strong>@currentSection.Course?.CourseCode - @currentSection.Course?.Name</strong>
+                (@currentSection.SectionId) · @currentSection.Day
+                @currentSection.StartTime.ToString("HH:mm")–@currentSection.EndTime.ToString("HH:mm")
+                · Room @currentSection.Room?.RoomId · Semester @currentSection.SemesterId
+            </p>
+        }
+        else
+        {
+            <p class="text-muted small mt-2 mb-0">
+                Select a class from the class selection page to view its attendance.
+            </p>
+        }
+    </div>
+    <div class="mt-3 mt-sm-0">
+        <a class="btn btn-sm btn-outline-secondary mr-2"
+           href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })">
+            <i class="fas fa-arrow-left fa-sm"></i> Back to Class Selection
+        </a>
+        <button class="btn btn-sm btn-primary">
+            <i class="fas fa-download fa-sm text-white-50"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+@if (currentSection == null)
+{
+    <div class="alert alert-info">
+        No class selected. Please go back to the class selection page and choose a class.
+    </div>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">30</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Average Present</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">27</div>
+                            <div class="small text-muted">90% over last 5 sessions</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Absences</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">8</div>
+                            <div class="small text-muted">This semester</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Flagged Scans</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">3</div>
+                            <div class="small text-muted">Suspicious IP / device</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-secret fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters + table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Attendance Records</h6>
+        </div>
+        <div class="card-body">
+            <!-- Filter row -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">Date</label>
+                    <input type="date" class="form-control" value="2025-09-01" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">Student</label>
+                    <input type="text" class="form-control" placeholder="Search by ID or name" />
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="small font-weight-bold">Status</label>
+                    <select class="form-control">
+                        <option>All Statuses</option>
+                        <option>Present</option>
+                        <option>Late</option>
+                        <option>Absent</option>
+                        <option>Excused</option>
+                        <option>Flagged</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end mb-2">
+                    <button class="btn btn-primary w-100">
+                        <i class="fas fa-search fa-sm"></i> Filter
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 15%;">Student ID</th>
+                            <th style="width: 25%;">Name</th>
+                            <th style="width: 18%;">Registered At</th>
+                            <th style="width: 15%;">Status (Edit)</th>
+                            <th style="width: 10%;">Security</th>
+                            <th style="width: 5%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dummy row 1 -->
+                        <tr>
+                            <td>2025-09-01</td>
+                            <td>22WMR01234</td>
+                            <td>Koh Kai Minn</td>
+                            <td>10:01:15 AM</td>
+                            <td>
+                                <select class="form-control form-control-sm border-left-success">
+                                    <option selected>Present</option>
+                                    <option>Late</option>
+                                    <option>Absent</option>
+                                    <option>Excused</option>
+                                </select>
+                            </td>
+                            <td class="text-center text-success small">
+                                <i class="fas fa-check-circle"></i> OK
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Dummy row 2 (flagged) -->
+                        <tr class="table-danger">
+                            <td>2025-09-01</td>
+                            <td>22WMR09876</td>
+                            <td>Low Jwen Siong</td>
+                            <td>10:01:20 AM</td>
+                            <td>
+                                <select class="form-control form-control-sm border-left-warning">
+                                    <option>Present</option>
+                                    <option selected>Late</option>
+                                    <option>Absent</option>
+                                    <option>Excused</option>
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-user-secret"></i> Suspicious IP
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Dummy row 3 -->
+                        <tr>
+                            <td>2025-09-01</td>
+                            <td>22WMR05555</td>
+                            <td>Lee Kai Sheng</td>
+                            <td>10:02:05 AM</td>
+                            <td>
+                                <select class="form-control form-control-sm border-left-danger">
+                                    <option>Present</option>
+                                    <option>Late</option>
+                                    <option selected>Absent</option>
+                                    <option>Excused</option>
+                                </select>
+                            </td>
+                            <td class="text-center small">
+                                <span class="badge badge-secondary">
+                                    <i class="fas fa-info-circle"></i> Manual Edit
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <div class="small text-muted">
+                    Showing dummy data for UI demo. Later this will be populated from `Attendance` entity.
+                </div>
+                <nav aria-label="Page navigation example" class="d-none d-md-block">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+}
