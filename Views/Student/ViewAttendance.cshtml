@@ -1,5 +1,52 @@
 ﻿@{
     ViewData["Title"] = "View Attendance";
+    var sectionId = ViewData["SectionId"] as string;
+    var qrToken = ViewData["QrToken"] as string;
+}
+
+@if (TempData["AttendanceMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["AttendanceMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(sectionId))
+{
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Quick Attendance</h6>
+            <span class="badge badge-info">Section: @sectionId</span>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-action="SubmitAttendance" asp-controller="Student" class="form-inline">
+                <input type="hidden" name="sectionId" value="@sectionId" />
+                <input type="hidden" name="qrToken" value="@qrToken" />
+
+                <button type="submit" class="btn btn-success mr-3"
+                        @(string.IsNullOrEmpty(qrToken) ? "disabled" : "")>
+                    <i class="fas fa-qrcode"></i> Confirm via QR
+                </button>
+
+                <div class="form-group mr-2">
+                    <label for="manualCodeInput" class="sr-only">Manual Code</label>
+                    <input type="text" class="form-control" id="manualCodeInput"
+                           name="manualCode" placeholder="Enter code (e.g. A 7 X 9)" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-keyboard"></i> Submit Code
+                </button>
+            </form>
+
+            <small class="text-muted d-block mt-2">
+                This section was opened from a QR code. You can confirm directly or use the backup code.
+            </small>
+        </div>
+    </div>
 }
 
 @section Styles {

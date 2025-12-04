@@ -380,11 +380,17 @@
         var remaining = totalSeconds;
 
         function buildSmallQrUrl(token) {
-            return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(token);
+            var url = '@Url.Action("ScanAttendance", "Student", null, Request.Scheme)' +
+                    '?sectionId=' + encodeURIComponent(sectionId) +
+                    '&token=' + encodeURIComponent(token);
+            return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(url);
         }
 
         function buildLargeQrUrl(token) {
-            return "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(token);
+            var url = '@Url.Action("ScanAttendance", "Student", null, Request.Scheme)' +
+                    '?sectionId=' + encodeURIComponent(sectionId) +
+                    '&token=' + encodeURIComponent(token);
+            return "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(url);
         }
 
         function updateCountdown() {
