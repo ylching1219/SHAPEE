@@ -82,6 +82,14 @@ namespace SHAPEE.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<string>("FlagReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
                     b.Property<bool>("IsFlaged")
                         .HasColumnType("bit");
 
@@ -99,6 +107,10 @@ namespace SHAPEE.Migrations
 
                     b.Property<string>("StudentId")
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("AttendanceId");
 
@@ -187,6 +199,13 @@ namespace SHAPEE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<DateTime?>("CurrentQrExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentQrToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Day")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -194,6 +213,9 @@ namespace SHAPEE.Migrations
 
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsAttendanceSessionActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JoinCode")
                         .HasMaxLength(10)
