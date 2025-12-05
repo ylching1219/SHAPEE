@@ -4,6 +4,27 @@
     var staffCount = staff.Count;
 }
 
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
 <div class="card shadow-sm">
     <!-- Card Header -->
     <div class="card-header bg-white border-bottom py-3">
@@ -24,7 +45,7 @@
 
     <!-- Filters Section -->
     <div class="card-body bg-light border-bottom">
-        <form id="staffFilterForm"
+        <form id="filterForm"
               data-ajax="true"
               data-ajax-method="GET"
               data-ajax-url="/Admin/StaffManagement"
@@ -37,11 +58,11 @@
                                 <i class="fas fa-search text-muted"></i>
                             </span>
                         </div>
-                        <input type="text" class="form-control" id="staffSearchInput" name="name" placeholder="Search staff by name/ID...">
+                        <input type="text" class="form-control" id="searchInput" name="name" placeholder="Search staff by name...">
                     </div>
                 </div>
                 <div class="col-12 col-md-3">
-                    <select class="form-control" id="staffStatusFilter" name="filter1">
+                    <select class="form-control" id="statusFilter" name="filter1">
                         <option value="">All Status</option>
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
@@ -49,14 +70,14 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <select class="form-control" id="staffGenderFilter" name="filter2">
+                    <select class="form-control" id="genderFilter" name="filter2">
                         <option value="">All Genders</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <select class="form-control" id="staffFacultyFilter" name="filter3">
+                    <select class="form-control" id="facultyFilter" name="filter3">
                         <option value="">All Faculties</option>
                         <option value="FOCS">FOCS</option>
                         <option value="FAFB">FAFB</option>
@@ -97,14 +118,14 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="staffFirstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="staffFirstName" name="FirstName" required>
+                                <input type="text" class="form-control" id="staffFirstName" name="firstName" required>
                                 <div class="invalid-feedback">Please enter first name.</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="staffLastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="staffLastName" name="LastName" required>
+                                <input type="text" class="form-control" id="staffLastName" name="lastName" required>
                                 <div class="invalid-feedback">Please enter last name.</div>
                             </div>
                         </div>
@@ -112,7 +133,7 @@
 
                     <div class="form-group">
                         <label for="staffGender" class="font-weight-medium">Gender <span class="text-danger">*</span></label>
-                        <select class="form-control" id="staffGender" name="Gender" required>
+                        <select class="form-control" id="staffGender" name="gender" required>
                             <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -122,18 +143,18 @@
 
                     <div class="form-group">
                         <label for="staffEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="staffEmail" name="Email" required>
+                        <input type="email" class="form-control" id="staffEmail" name="email" required>
                         <div class="invalid-feedback">Please enter a valid email.</div>
                     </div>
 
                     <div class="form-group">
                         <label for="staffContact" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="staffContact" name="Contact" placeholder="+60 12-345-6789">
+                        <input type="tel" class="form-control" id="staffContact" name="contact" placeholder="+60 12-345-6789">
                     </div>
 
                     <div class="form-group">
                         <label for="staffFaculty" class="font-weight-medium">Faculty <span class="text-danger">*</span></label>
-                        <select class="form-control" id="staffFaculty" name="FacultyId" required>
+                        <select class="form-control" id="staffFaculty" name="facultyId" required>
                             <option value="">Select Faculty</option>
                             <option value="FOCS">Faculty of Computer Science (FOCS)</option>
                             <option value="FAFB">Faculty of Accountancy, Finance & Business (FAFB)</option>
@@ -143,27 +164,9 @@
                         <div class="invalid-feedback">Please select a faculty.</div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="staffDepartment" class="font-weight-medium">Department</label>
-                        <input type="text" class="form-control" id="staffDepartment" name="Department" placeholder="e.g., Software Engineering">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="staffPosition" class="font-weight-medium">Position <span class="text-danger">*</span></label>
-                        <select class="form-control" id="staffPosition" name="Position" required>
-                            <option value="">Select Position</option>
-                            <option value="Lecturer">Lecturer</option>
-                            <option value="Senior Lecturer">Senior Lecturer</option>
-                            <option value="Associate Professor">Associate Professor</option>
-                            <option value="Professor">Professor</option>
-                            <option value="Teaching Assistant">Teaching Assistant</option>
-                        </select>
-                        <div class="invalid-feedback">Please select a position.</div>
-                    </div>
-
                     <div class="form-group" id="staffStatusGroup" style="display:none;">
                         <label for="staffStatus" class="font-weight-medium">Status</label>
-                        <select class="form-control" id="staffStatus" name="Status">
+                        <select class="form-control" id="staffStatus" name="status">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                             <option value="Suspended">Suspended</option>
@@ -218,3 +221,118 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const modalTitle = document.getElementById('addEditStaffModalLabel');
+            const form = document.getElementById('staffForm');
+            const statusGroup = document.getElementById('staffStatusGroup');
+
+            // Prepare Add Staff Modal
+            window.prepareAddStaffModal = function() {
+                modalTitle.innerText = 'Add New Staff';
+                form.setAttribute('action', '@Url.Action("CreateStaff", "Admin")');
+                form.reset();
+                document.getElementById('staffId').value = '';
+                statusGroup.style.display = 'none';
+
+                form.classList.remove('was-validated');
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-valid');
+                });
+            };
+
+            // Form validation
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+
+            // Prepare Edit Modal
+            window.prepareEditModal = function(element) {
+                const row = element.closest('tr');
+                const staffData = JSON.parse(row.getAttribute('data-staff'));
+
+                modalTitle.innerText = 'Edit Staff: ' + staffData.FirstName + ' ' + staffData.LastName;
+                form.setAttribute('action', '@Url.Action("EditStaff", "Admin")');
+
+                // Populate form fields
+                document.getElementById('staffId').value = staffData.Id;
+                document.getElementById('staffFirstName').value = staffData.FirstName;
+                document.getElementById('staffLastName').value = staffData.LastName;
+                document.getElementById('staffGender').value = staffData.Gender || '';
+                document.getElementById('staffEmail').value = staffData.Email;
+                document.getElementById('staffContact').value = staffData.Contact || '';
+                document.getElementById('staffFaculty').value = staffData.FacultyId || '';
+                document.getElementById('staffStatus').value = (staffData.Status || '').trim();
+
+                // Show status field for edit
+                statusGroup.style.display = 'block';
+
+                // Remove validation states
+                form.classList.remove('was-validated');
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-valid');
+                });
+            };
+
+            // Prepare Delete Modal
+            window.prepareDeleteModal = function(element) {
+                const row = element.closest('tr');
+                const staffName = row.getAttribute('data-staff-name');
+                const staffData = JSON.parse(row.getAttribute('data-staff'));
+
+                document.getElementById('staffToDeleteName').innerText = staffName;
+                document.getElementById('deleteStaffId').value = staffData.Id;
+            };
+
+            // Toggle Suspend/Activate
+            window.toggleSuspend = function(staffId, element) {
+                if (confirm('Are you sure you want to change this staff\'s status?')) {
+                    const formData = new FormData();
+                    formData.append('id', staffId);
+                    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                    fetch('@Url.Action("SuspendStaff", "Admin")', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            };
+
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
+
+            // Export CSV functionality
+            document.getElementById('exportStaffCsvBtn').addEventListener('click', function() {
+                alert('Export CSV functionality to be implemented');
+            });
+        });
+    </script>
+}

@@ -96,13 +96,19 @@ namespace SHAPEE.Controllers
                 filteredStaff = filteredStaff.Where(s => s.Gender == filter2);
             }
 
+            filter3 = filter3?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(filter3))
+            {
+                filteredStaff = filteredStaff.Where(s => s.FacultyId == filter3);
+            }
+
             var result = filteredStaff
                 .OrderBy(s => s.Id)
                 .ToList();
 
             if (Request.IsAjax())
             {
-                return PartialView("_Student", result);
+                return PartialView("_Staff", result);
             }
 
             return View(result);
@@ -118,10 +124,10 @@ namespace SHAPEE.Controllers
                 .ToArray());
         }
 
-
+        //Add Student
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string firstName, string lastName, string gender,
+        public async Task<IActionResult> CreateStudent(string firstName, string lastName, string gender,
                    string email, string contact, string facultyId, string programName,
                    int yearLevel, int semester)
         {
@@ -222,10 +228,10 @@ namespace SHAPEE.Controllers
 
 
 
-        // POST: Admin/Edit
+        //Edit Student
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, string firstName, string lastName, string gender,
+        public async Task<IActionResult> EditStudent(string id, string firstName, string lastName, string gender,
             string email, string contact, string programName, int yearLevel, string status)
         {
             try
@@ -320,10 +326,10 @@ namespace SHAPEE.Controllers
             }
         }
 
-        // POST: Admin/Delete
+        //Delete Student
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> DeleteStudent(string id)
         {
             try
             {
@@ -350,10 +356,10 @@ namespace SHAPEE.Controllers
             }
         }
 
-        // POST: Admin/Suspend
+        //Suspend Student
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Suspend(string id)
+        public async Task<IActionResult> SuspendStudent(string id)
         {
             try
             {
@@ -378,6 +384,224 @@ namespace SHAPEE.Controllers
                 await db.SaveChangesAsync();
 
                 return Json(new { success = true, message = $"Student status updated to {student.Status}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        //Add Staff
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateStaff(string firstName, string lastName, string gender,
+                   string email, string contact, string facultyId)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName) ||
+                    string.IsNullOrWhiteSpace(lastName) ||
+                    string.IsNullOrWhiteSpace(email) ||
+                    string.IsNullOrWhiteSpace(gender) ||
+                    string.IsNullOrWhiteSpace(facultyId))
+                {
+                    TempData["ErrorMessage"] = "Please fill in all required fields.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                // Check duplicate email
+                if (await db.Staffs.AnyAsync(s => s.Email == email.Trim().ToLower()))
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                // Generate Staff ID
+                var lastStaff = await db.Staffs
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefaultAsync();
+
+                string newId = (lastStaff != null && lastStaff.Id.StartsWith("S"))
+                    ? $"S{(int.Parse(lastStaff.Id.Substring(1)) + 1):D4}"
+                    : "S0001";
+
+                // Generate random password + hash
+                string rawPassword = GenerateRandomPassword(8);
+                var passwordHasher = new PasswordHasher<User>();
+                string passwordHash = passwordHasher.HashPassword(null, rawPassword);
+
+                // Create Staff
+                var staff = new Staff
+                {
+                    Id = newId,
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    Gender = gender.Trim(),
+                    Email = email.Trim().ToLower(),
+                    Contact = contact?.Trim(),
+                    FacultyId = facultyId.Trim(),
+                    DateJoin = DateOnly.FromDateTime(DateTime.Now),
+                    Hash = passwordHash,
+                    LoginAttempts = 0,
+                    Status = "Active"
+                };
+
+                db.Staffs.Add(staff);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] =
+                    $"Staff '{staff.FirstName} {staff.LastName}' created successfully! " +
+                    $"Generated password: {rawPassword}";
+
+                return RedirectToAction(nameof(StaffManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Error creating staff: {ex.InnerException?.Message ?? ex.Message}";
+                return RedirectToAction(nameof(StaffManagement));
+            }
+        }
+
+        //Edit Staff
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditStaff(string id, string firstName, string lastName, string gender,
+            string email, string contact, string facultyId)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["ErrorMessage"] = "First name is required.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["ErrorMessage"] = "Email is required.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                if (string.IsNullOrWhiteSpace(gender))
+                {
+                    TempData["ErrorMessage"] = "Gender is required.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                // Check if student exists
+                var existingStaff = await db.Staffs.FindAsync(id);
+                if (existingStaff == null)
+                {
+                    TempData["ErrorMessage"] = "Staff not found.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                // Check for duplicate email (excluding current staff)
+                var duplicateEmail = await db.Staffs
+                    .AnyAsync(s => s.Email == email && s.Id != id);
+
+                if (duplicateEmail)
+                {
+                    TempData["ErrorMessage"] = "Email already exists for another staff.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                // Update student properties
+                existingStaff.FirstName = firstName.Trim();
+                existingStaff.LastName = lastName.Trim();
+                existingStaff.Gender = gender.Trim();
+                existingStaff.Email = email.Trim().ToLower();
+                existingStaff.Contact = contact?.Trim();
+                existingStaff.FacultyId = facultyId.Trim();
+
+                // Save changes to database
+                db.Staffs.Update(existingStaff);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Staff '{existingStaff.FullName}' updated successfully!";
+                return RedirectToAction(nameof(StaffManagement));
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Check if student still exists
+                if (!await db.Staffs.AnyAsync(s => s.Id == id))
+                {
+                    TempData["ErrorMessage"] = "Staff no longer exists.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Concurrency error. The staff was updated by another user. Please try again.";
+                }
+                return RedirectToAction(nameof(StaffManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating student: {ex.Message}";
+                return RedirectToAction(nameof(StaffManagement));
+            }
+        }
+
+        //Delete Staff
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteStaff(string id)
+        {
+            try
+            {
+                var staff = await db.Staffs.FindAsync(id);
+
+                if (staff == null)
+                {
+                    TempData["ErrorMessage"] = "Staff not found.";
+                    return RedirectToAction(nameof(StaffManagement));
+                }
+
+                var staffName = staff.FullName;
+
+                db.Staffs.Remove(staff);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Staff '{staffName}' deleted successfully!";
+                return RedirectToAction(nameof(StaffManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting staff: {ex.Message}";
+                return RedirectToAction(nameof(StaffManagement));
+            }
+        }
+
+        //Suspend Staff
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SuspendStaff(string id)
+        {
+            try
+            {
+                var staff = await db.Staffs.FindAsync(id);
+
+                if (staff == null)
+                {
+                    return Json(new { success = false, message = "Staff not found." });
+                }
+
+                // Toggle status between Active and Suspended
+                if (staff.Status?.Trim().Equals("Suspended", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    staff.Status = "Active";
+                }
+                else
+                {
+                    staff.Status = "Suspended";
+                }
+
+                db.Staffs.Update(staff);
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Staff status updated to {staff.Status}." });
             }
             catch (Exception ex)
             {
