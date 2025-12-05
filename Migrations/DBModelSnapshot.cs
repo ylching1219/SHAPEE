@@ -594,11 +594,10 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Block")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<int>("Floor")
+                    b.Property<int?>("Floor")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")

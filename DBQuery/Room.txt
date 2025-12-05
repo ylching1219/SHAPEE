@@ -1,6 +1,5 @@
 K101	Classroom	K	1	Available
 K203	Classroom	K	2	Available
-B001	Lab	B	1	Available
 PA202	Classroom	PA	2	Maintenance
 L201	Classroom	L	2	Available
 DK 3	Lecture Hall	NULL	NULL	Occupied

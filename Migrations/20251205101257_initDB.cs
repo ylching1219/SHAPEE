@@ -75,8 +75,8 @@ namespace SHAPEE.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Block = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    Floor = table.Column<int>(type: "int", nullable: false),
+                    Block = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    Floor = table.Column<int>(type: "int", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
