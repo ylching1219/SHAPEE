@@ -69,9 +69,10 @@
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                                 <option value="Suspended">Suspended</option>
+                                <option value="Locked">Locked</option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-3">
+                        <div class="col-12 col-md-2">
                             <select class="form-control" id="genderFilter" name="filter2">
                                 <option value="">All Genders</option>
                                 <option value="Male">Male</option>
@@ -86,6 +87,11 @@
                                     <option value="@p.Id">@p.Name</option>
                                 }
                             </select>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
                         </div>
                     </div>
                 </form>
