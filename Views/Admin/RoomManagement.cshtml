@@ -1,11 +1,11 @@
 ﻿@model IEnumerable<Room>
 @using System.Text.Json
-@* @{
+@{
     ViewData["Title"] = "Room Management";
-} *@
+}
 
 <!-- Success/Error Messages -->
-@* @if (TempData["SuccessMessage"] != null)
+@if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
@@ -23,7 +23,7 @@
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
-} *@
+}
 
 <!-- Header -->
 <div class="bg-white border-bottom px-4 py-3 mb-4">
@@ -53,48 +53,45 @@
 
             <!-- Filters Section -->
             <div class="card-body bg-light border-bottom">
-                <div class="row g-3">
-                    <div class="col-12 col-md-3">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
+                <form id="sortForm" data-ajax="true"
+                      data-ajax-url="/Admin/RoomManagement"
+                      data-ajax-method="GET"
+                      data-ajax-update="#roomData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="input-group">
                                 <span class="input-group-text bg-white">
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search rooms...">
                             </div>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search rooms...">
                         </div>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <select class="form-control" id="typeFilter">
-                            <option value="">All Types</option>
-                            <option value="Classroom">Classroom</option>
-                            <option value="Lab">Lab</option>
-                            <option value="Lecture Hall">Lecture Hall</option>
-                            <option value="Conference">Conference</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <select class="form-control" id="blockFilter">
-                            <option value="">All Blocks</option>
-                            <option value="A">Block A</option>
-                            <option value="B">Block B</option>
-                            <option value="C">Block C</option>
-                            <option value="D">Block D</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <select class="form-control" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="Available">Available</option>
-                            <option value="Occupied">Occupied</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <form id="sortForm" data-ajax="true"
-                              data-ajax-url="/Admin/RoomManagement"
-                              data-ajax-method="GET"
-                              data-ajax-update="#roomData">
+                        <div class="col-12 col-md-2">
+                            <select class="form-control" id="typeFilter">
+                                <option value="">All Types</option>
+                                <option value="Classroom">Classroom</option>
+                                <option value="Lab">Lab</option>
+                                <option value="Lecture Hall">Lecture Hall</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <select class="form-control" id="blockFilter">
+                                <option value="">All Blocks</option>
+                                <option value="A">Block A</option>
+                                <option value="B">Block B</option>
+                                <option value="C">Block C</option>
+                                <option value="D">Block D</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <select class="form-control" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="Available">Available</option>
+                                <option value="Occupied">Occupied</option>
+                                <option value="Maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
                             <select class="form-control" name="sort" id="roomSort">
                                 <option value="">Sort By</option>
                                 <option value="1">Room ID (Ascending)</option>
@@ -102,9 +99,14 @@
                                 <option value="3">Block (A-Z)</option>
                                 <option value="4">Floor (Low-High)</option>
                             </select>
-                        </form>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!-- Rooms Table -->
@@ -146,7 +148,6 @@
                             <option value="Classroom">Classroom</option>
                             <option value="Lab">Lab</option>
                             <option value="Lecture Hall">Lecture Hall</option>
-                            <option value="Conference">Conference</option>
                         </select>
                     </div>
 

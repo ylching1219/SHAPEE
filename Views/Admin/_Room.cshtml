@@ -30,7 +30,6 @@
                     "Classroom" => "fa-chalkboard-teacher",
                     "Lab" => "fa-flask",
                     "Lecture Hall" => "fa-building",
-                    "Conference" => "fa-users",
                     _ => "fa-door-open"
                 };
 
@@ -72,21 +71,19 @@
                         </span>
                     </td>
                     <td class="align-middle text-center">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-outline-primary"
-                                    data-toggle="modal"
-                                    data-target="#addEditRoomModal"
-                                    onclick="prepareEditModal(this)"
-                                    title="Edit Room">
-                                <i class="fas fa-edit"></i>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger"
-                                    data-toggle="modal"
-                                    data-target="#deleteRoomModal"
-                                    onclick="prepareDeleteModal(this)"
-                                    title="Delete Room">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditRoomModal">
+                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteRoomModal">
+                                    <i class="fas fa-trash mr-2"></i> Delete
+                                </a>
+                            </div>
                         </div>
                     </td>
                 </tr>
