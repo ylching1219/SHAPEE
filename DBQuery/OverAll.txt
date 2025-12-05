@@ -265,3 +265,97 @@ INSERT INTO [dbo].[Users] VALUES
 ('203001', '2030-01-07', '2030-04-30', 0),
 ('203005', '2030-05-06', '2030-08-30', 0),
 ('203009', '2030-09-02', '2030-12-20', 0);
+
+--Course
+INSERT INTO [dbo].[Courses] (Id, Name, CreditHours) VALUES
+-- Accounting & Finance
+('BF101', 'Principles of Accounting', 3),
+('BF102', 'Business Mathematics', 3),
+('BF201', 'Financial Management', 3),
+('BF202', 'Business Statistics', 3),
+
+-- Civil Engineering
+('EN101', 'Engineering Drawing', 2),
+('EN201', 'Mechanics and Materials', 4),
+('SC101', 'Introduction to Physics', 3),
+
+-- Electrical Engineering
+('EN301', 'Circuit Theory', 3),
+('EN302', 'Electronics', 3),
+('SC102', 'Applied Physics', 3),
+
+-- Applied Science (Chemistry & Physics)
+('SC201', 'General Chemistry', 3),
+('SC202', 'Organic Chemistry', 3),
+('SC203', 'Applied Mathematics', 4),
+
+-- Computer Science & IT
+('PR101', 'Programming Fundamentals', 3),
+('PR102', 'Object-Oriented Programming', 3),
+('PR201', 'Data Structures and Algorithms', 4),
+('IT202', 'Database Systems', 3),
+('IT302', 'Web Application Development', 4),
+('IT303', 'Mobile Application Development', 4),
+
+-- General / Electives
+('GS101', 'English for Academic Purposes', 2),
+('GS102', 'Critical Thinking', 2),
+('GS103', 'Cultural Studies', 2);
+
+
+--ProgramCourse
+-- Accounting Programs
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
+('BAC', 'BF101', 1, 1),
+('BAC', 'BF102', 1, 2),
+('BAC', 'BF201', 2, 1),
+('BAC', 'BF202', 2, 2),
+('BFN', 'BF101', 1, 1),
+('BFN', 'BF202', 1, 2),
+('BFN', 'BF201', 2, 1),
+('DFI', 'BF201', 1, 1),
+('DAC', 'BF101', 1, 1),
+('DAC', 'BF102', 1, 2);
+
+-- Civil Engineering Programs
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
+('BCE', 'EN101', 1, 1),
+('BCE', 'EN201', 1, 2),
+('BCE', 'SC101', 1, 1),
+('DCE', 'EN101', 1, 1),
+('DCE', 'EN201', 1, 2);
+
+-- Electrical Engineering Programs
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
+('BEE', 'EN101', 1, 1),
+('BEE', 'EN201', 1, 2),
+('BEE', 'SC101', 1, 1),
+('DEE', 'EN101', 1, 1),
+('DEE', 'EN201', 1, 2),
+('DEE', 'SC101', 1, 1);
+
+-- Applied Science Programs (Chemistry & Physics)
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
+('BCH', 'SC101', 1, 1),
+('BCH', 'SC102', 1, 2),
+('BCH', 'SC201', 2, 1),
+('BPH', 'SC101', 1, 1),
+('BPH', 'SC201', 2, 1),
+('DPH', 'SC101', 1, 1),
+('DPH', 'SC201', 2, 1),
+('DCH', 'SC102', 1, 2),
+('DCH', 'SC201', 2, 1);
+
+-- Computer Science & IT Programs
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
+('BCS', 'PR101', 1, 1),
+('BCS', 'PR102', 1, 2),
+('BCS', 'IT202', 2, 1),
+('BIT', 'PR101', 1, 1),
+('BIT', 'PR201', 2, 1),
+('BIT', 'IT302', 2, 2),
+('DCS', 'PR101', 1, 1),
+('DCS', 'PR102', 1, 2),
+('DFT', 'PR101', 1, 1),
+('DFT', 'IT302', 2, 2),
+('DFT', 'IT303', 2, 1);

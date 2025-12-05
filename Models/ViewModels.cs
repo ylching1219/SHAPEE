@@ -43,7 +43,8 @@ namespace SHAPEE.Models
         public string ConfirmPassword { get; set; }
     }
 
-    public class FacultyVM 
+    //YL
+    public class FacultyVM
     {
         [Required(ErrorMessage = "Faculty Id is required.")]
         public string FacultyId { get; set; }
@@ -52,7 +53,7 @@ namespace SHAPEE.Models
         public string FacultyName { get; set; }
 
         [Required(ErrorMessage = "Cost Per Credit Hour is required.")]
-       
+
         public decimal CostPerCreditHour { get; set; }
     }
 
@@ -61,6 +62,20 @@ namespace SHAPEE.Models
         public List<Faculty> Faculties { get; set; } = [];
         public Faculty? EditFaculty { get; set; }
     }
+
+    public class CourseManageVM
+    {
+        public List<Course> Courses { get; set; } = [];
+        public Course? EditCourse { get; set; }
+    }
+
+    public class ProgramManageVM
+    {
+        public List<Program> Program { get; set; } = [];
+        public Program? EditProgram { get; set; }
+    }
+
+
 
     public class ClassSelectionItemVM
     {

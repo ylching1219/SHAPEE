@@ -635,12 +635,6 @@ namespace SHAPEE.Controllers
             }
         }
 
-        public IActionResult CourseManagement()
-        {
-            ViewData["Title"] = "Course Management";
-            return View();
-        }
-
         //Add Admin
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -847,12 +841,13 @@ namespace SHAPEE.Controllers
         }
 
         //YL
-        public IActionResult FacultyManagement(string? sort, string? name,string? editId)
+        public IActionResult FacultyManagement(string? sort, string? name, string? editId)
         {
             ViewData["Title"] = "Faculty Management";
             Faculty? editFaculty = null;
 
-            if (!string.IsNullOrEmpty(editId)) {
+            if (!string.IsNullOrEmpty(editId))
+            {
                 editFaculty = db.Faculties.FirstOrDefault(f => f.Id == editId);
             }
             name = name?.Trim() ?? "";
@@ -872,7 +867,8 @@ namespace SHAPEE.Controllers
 
             var faculties = facultiesQuery.ToList();
 
-            var vm = new FacultyManageVM {
+            var vm = new FacultyManageVM
+            {
                 Faculties = faculties,
                 EditFaculty = editFaculty
             };
@@ -882,15 +878,13 @@ namespace SHAPEE.Controllers
                 return PartialView("_Faculty", vm);
             }
 
-            return View(vm); 
+            return View(vm);
         }
 
         public IActionResult AddFaculty()
         {
             return View();
         }
-
-       
 
         public IActionResult SaveFaculty(FacultyVM vm)
         {
@@ -904,9 +898,47 @@ namespace SHAPEE.Controllers
                 return NotFound();
             }
             return View(faculty);
-        }   
+        }
 
-        
+        public IActionResult ProgramManagement(string? filter, string? name, string? editId) 
+        {
+            ViewData["Title"] = "Program Management";
+
+            name = name?.Trim() ?? "";
+
+            var programQuery = db.Programs
+                .Include(p => p.Faculty)
+                .Where(p => p.Name.Contains(name))
+                .AsQueryable();
+
+            Console.WriteLine("filter :" + filter);
+            if (!string.IsNullOrEmpty(filter))
+            {
+                programQuery = programQuery.
+                    Where(p=>p.FacultyId == filter)
+                    .AsQueryable();
+            }
+            var faculty = db.Faculties.OrderBy(f => f.Id).ToList();
+            ViewBag.faculty = faculty;
+
+            var program = programQuery.ToList();
+            var vm = new ProgramManageVM
+            {
+                Program = program
+            };
+            if (Request.IsAjax())
+            {
+                return PartialView("_Program", vm);
+            }
+            return View(vm);
+        }
+
+        public IActionResult CourseManagement()
+        {
+            return View();
+        }
+
+
 
         //JS
         public IActionResult RoomManagement()

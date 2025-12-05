@@ -167,6 +167,10 @@ $("#facultyFilter").on("change", function () {
     }, 0);
 });
 
+$("#facultyFilter").on("change", function () {
+    $("#filterForm").submit();
+});
+
 
 
 

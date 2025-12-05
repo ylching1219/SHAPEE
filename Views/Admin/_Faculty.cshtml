@@ -1,7 +1,7 @@
 ﻿@model FacultyManageVM
 
 
-<table class="table table-hover mb-0" id="studentsTable">
+<table class="table table-hover mb-0" id="facultyTable">
     <thead class="bg-light">
         <tr>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Faculty Code</th>
@@ -10,7 +10,7 @@
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
         </tr>
     </thead>
-    <tbody id="studentsTableBody">
+    <tbody id="facultyTableBody">
         @if (Model.Faculties.Count() == 0)
         {
             <tr>
