@@ -16,6 +16,8 @@ namespace SHAPEE.Controllers
             return View();
         }
 
+        
+        //===============KOH KAI MINN================
         // student main attendance page
         public IActionResult ViewAttendance(string? sectionId, string? token)
         {
