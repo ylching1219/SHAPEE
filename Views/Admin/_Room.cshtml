@@ -36,21 +36,21 @@
 
                 var roomJson = JsonSerializer.Serialize(new
                 {
-                    room.RoomId,
+                    room.Id,
                     room.Type,
                     room.Block,
                     room.Floor,
                     room.Status
                 });
 
-                <tr data-room='@roomJson' data-room-id="@room.RoomId">
+                <tr data-room='@roomJson' data-room-id="@room.Id">
                     <td class="align-middle">
                         <div class="d-flex align-items-center">
                             <div class="icon-circle bg-primary text-white mr-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
                                 <i class="fas @typeIcon fa-sm"></i>
                             </div>
                             <div>
-                                <div class="font-weight-bold text-gray-800">@room.RoomId</div>
+                                <div class="font-weight-bold text-gray-800">@room.Id</div>
                             </div>
                         </div>
                     </td>

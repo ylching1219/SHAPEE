@@ -145,7 +145,7 @@ public class Faculty
 public class ResetPassToken
 {
     [Key, MaxLength(50)]
-    public string TokenId { get; set; }
+    public string Id { get; set; } 
 
     // FK to User
     public string UserId { get; set; }
@@ -183,7 +183,7 @@ public class Program
 public class Course
 {
     [Key, MaxLength(10)]
-    public string CourseCode { get; set; }
+    public string Id { get; set; }
 
     [MaxLength(100)]
     public string Name { get; set; }
@@ -204,8 +204,7 @@ public class ProgramCourse //Define the program have what course in each year an
     public Program Program { get; set; }
 
     //FK to Course
-    public string CourseCode { get; set; }
-    [ForeignKey("CourseCode")]
+    public string CourseId { get; set; }
     public Course Course { get; set; }
 
     public int YearLevel { get; set; }
@@ -218,8 +217,7 @@ public class ClassSection
     public string SectionId { get; set; }
 
     //FK to Course -- 1 class section belong to 1 course
-    public string CourseCode { get; set; }
-    [ForeignKey("CourseCode")]
+    public string CourseId { get; set; } 
     public Course Course { get; set; }
 
     //FK to Staff -- 1 class section belong to 1 staff
@@ -276,7 +274,7 @@ public class ClassSection
 public class TutorialGroup
 {
     [Key, MaxLength(50)]
-    public string GroupId { get; set; }
+    public string Id { get; set; } 
 
     //FK to Program -- 1 tutorial group belong to 1 program
     public string ProgramId { get; set; }
@@ -296,14 +294,14 @@ public class TutorialGroup
 public class Enrollment
 {
     [Key]
-    public int EnrollmentId { get; set; }
+    public int Id { get; set; } 
 
     //FK to Student--1 enrollment belong to 1 student
-    public string StudentId { get; set; }
+    public string? StudentId { get; set; }
     public Student Student { get; set; }
 
     //FK to ClassSection --1 enrollment belong to 1 class section
-    public string SectionId { get; set; }
+    public string ClassSectionId { get; set; } 
     public ClassSection ClassSection { get; set; }
 
     [MaxLength(20)]
@@ -322,7 +320,7 @@ public class Enrollment
 public class Room
 {
     [Key, MaxLength(50)]
-    public string RoomId { get; set; }
+    public string Id { get; set; } 
 
     [MaxLength(100)]
     public string Type { get; set; }
@@ -340,7 +338,7 @@ public class Room
 public class Announcement
 {
     [Key, MaxLength(50)]
-    public string AnnouncementId { get; set; }
+    public string Id { get; set; }
     [MaxLength(100)]
     public string Title { get; set; }
 
@@ -358,7 +356,7 @@ public class Announcement
 public class LeaveApplication
 {
     [Key]
-    public int LeaveId { get; set; }
+    public int Id { get; set; } 
 
     //FK to User -- 1 leave application belong to 1 user (staff or student)
     public string? UserId { get; set; }
@@ -390,7 +388,7 @@ public class LeaveApplication
 public class Semester
 {
     [Key, MaxLength(10)]
-    public string SemesterId { get; set; } //202501 /202505 / 202509
+    public string Id { get; set; } //202501 /202505 / 202509
 
     public DateOnly StartDate { get; set; }
 
@@ -408,7 +406,7 @@ public class Semester
 public class Invoice
 {
     [Key, MaxLength(50)]
-    public string InvoiceId { get; set; }
+    public string Id { get; set; }
 
     //FK to Student -- 1 invoice belong to 1 student
     public string? StudentId { get; set; }
@@ -432,7 +430,7 @@ public class Invoice
 public class PaymentTransaction
 {
     [Key, MaxLength(50)]
-    public string TransactionId { get; set; }
+    public string Id { get; set; }
 
     //FK to Invoice -- 1 payment belong to 1 invoice
     public string InvoiceId { get; set; }
@@ -454,10 +452,10 @@ public class PaymentTransaction
 public class Attendance
 {
     [Key, MaxLength(50)]
-    public string AttendanceId { get; set; }
+    public string Id { get; set; }
 
     //FK to ClassSection -- 1 attendance record belong to 1 class section
-    public string SectionId { get; set; }
+    public string ClassSectionId { get; set; }
     public ClassSection ClassSection { get; set; }
 
     //FK to Student -- 1 attendance record belong to 1 student
@@ -487,7 +485,7 @@ public class Attendance
 public class CalendarEvent
 {
     [Key, MaxLength(50)]
-    public string EventId { get; set; }
+    public string Id { get; set; }
 
     [MaxLength(100)]
     public string Title { get; set; }
@@ -507,11 +505,10 @@ public class CalendarEvent
 public class Material
 {
     [Key, MaxLength(50)]
-    public string MaterialId { get; set; }
+    public string Id { get; set; }
 
     //FK to Course -- 1 material belong to 1 course
-    public string CourseCode { get; set; }
-    [ForeignKey("CourseCode")]
+    public string CourseId { get; set; }
     public Course Course { get; set; }
 
     [MaxLength(100)]
@@ -524,16 +521,16 @@ public class Material
     public string MaterialType { get; set; } //Lecture Notes, Assignment, Reference
 
     //1 material have many tasks
-    public List<CourseTask> Tasks { get; set; } = [];
+    public List<TaskMaterial> Tasks { get; set; } = [];
 }
 
 public class CourseTask
 {
     [Key, MaxLength(50)]
-    public string TaskId { get; set; }
+    public string Id { get; set; }
 
     //FK to ClassSection -- 1 task belong to 1 class section
-    public string SectionId { get; set; }
+    public string ClassSectionId { get; set; } 
     public ClassSection ClassSection { get; set; }
 
     [MaxLength(100)]
@@ -545,20 +542,34 @@ public class CourseTask
     public DateTime DueDate { get; set; }
 
     //1 task have many materials
-    public List<Material> Materials { get; set; } = [];
+    public List<TaskMaterial> Materials { get; set; } = [];
 
     //1 task have many submissions
     public List<Submission> Submissions { get; set; } = [];
 
 }
 
+public class TaskMaterial
+{
+    [Key, MaxLength(50)]
+    public string Id { get; set; }
+
+    //Fk to Material
+    public string? MaterialId { get; set; }
+    public Material Material { get; set; } 
+
+    //Fk to Course Task
+    public string? CourseTaskId { get; set; }
+    public CourseTask CourseTask { get; set; }
+}
+
 public class Submission
 {
     [Key, MaxLength(50)]
-    public string SubmissionId { get; set; }
+    public string Id { get; set; }
 
     //FK to Task -- 1 submission belong to 1 task
-    public string TaskId { get; set; }
+    public string CourseTaskId { get; set; }
     public CourseTask CourseTask { get; set; }
 
     //FK to Student -- 1 submission belong to 1 student
@@ -579,7 +590,7 @@ public class Submission
 public class ChatMessage
 {
     [Key, MaxLength(50)]
-    public string MessageId { get; set; }
+    public string Id { get; set; }
 
     //FK to User -- 1 message belong to 1 user (sender)
     public string? SenderId { get; set; }
@@ -600,7 +611,7 @@ public class ChatMessage
 public class SupportTicket
 {
     [Key, MaxLength(50)]
-    public string TicketId { get; set; }
+    public string Id { get; set; }
 
     //FK to User -- 1 ticket belong to 1 user
     public string? UserId { get; set; }
@@ -628,10 +639,10 @@ public class TicketMessage
 {
 
     [Key, MaxLength(50)]
-    public string MessageId { get; set; }
+    public string Id { get; set; }
 
     //FK to SupportTicket -- 1 message belong to 1 support ticket
-    public string TicketId { get; set; }
+    public string SupportTicketId { get; set; } 
     public SupportTicket SupportTicket { get; set; }
 
     //FK to User -- 1 message belong to 1 user (sender)

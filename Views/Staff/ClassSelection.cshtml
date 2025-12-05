@@ -47,12 +47,12 @@ else
                         {
                             <tr>
                                 <td>@s.SectionId</td>
-                                <td>@s.Course?.CourseCode - @s.Course?.Name</td>
+                                <td>@s.Course?.Id - @s.Course?.Name</td>
                                 <td>
                                     @s.Day,
                                     @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")
                                 </td>
-                                <td>@s.Room?.RoomId</td>
+                                <td>@s.Room?.Id</td>
                                 <td>@s.SemesterId</td>
                                 <td>
                                     <a class="btn btn-sm btn-primary"

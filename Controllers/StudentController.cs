@@ -66,7 +66,7 @@ namespace SHAPEE.Controllers
 
             // prevent duplicate attendance
             bool already = db.Attendances.Any(a =>
-                a.SectionId == sectionId &&
+                a.ClassSectionId == sectionId &&
                 a.StudentId == studentId &&
                 a.Date == today);
 
@@ -79,7 +79,7 @@ namespace SHAPEE.Controllers
             var windowStart = now.AddMinutes(-10);
 
             int othersFromSameIp = db.Attendances
-                .Where(a => a.SectionId == sectionId
+                .Where(a => a.ClassSectionId == sectionId
                             && a.Date == today
                             && a.IpAddress == ip
                             && a.StudentId != studentId
@@ -93,8 +93,8 @@ namespace SHAPEE.Controllers
             //create attendance
             var att = new Attendance
             {
-                AttendanceId = Guid.NewGuid().ToString("N"),
-                SectionId = sectionId,  // FK property
+                Id = Guid.NewGuid().ToString("N"),
+                ClassSectionId = sectionId,  // FK property
                 ClassSection = section, // Navigation
                 StudentId = studentId,
                 Date = today,

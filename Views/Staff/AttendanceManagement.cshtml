@@ -10,10 +10,10 @@
         @if (currentSection != null)
         {
             <p class="text-muted small mt-2 mb-0">
-                <strong>@currentSection.Course?.CourseCode - @currentSection.Course?.Name</strong>
+                <strong>@currentSection.Course?.Id - @currentSection.Course?.Name</strong>
                 (@currentSection.SectionId) · @currentSection.Day
                 @currentSection.StartTime.ToString("HH:mm")–@currentSection.EndTime.ToString("HH:mm")
-                · Room @currentSection.Room?.RoomId · Semester @currentSection.SemesterId
+                · Room @currentSection.Room?.Id · Semester @currentSection.SemesterId
             </p>
         }
         else

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SHAPEE.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,7 +15,7 @@ namespace SHAPEE.Migrations
                 name: "Announcements",
                 columns: table => new
                 {
-                    AnnouncementId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Content = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -24,14 +24,14 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Announcements", x => x.AnnouncementId);
+                    table.PrimaryKey("PK_Announcements", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "CalendarEvents",
                 columns: table => new
                 {
-                    EventId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -40,20 +40,20 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CalendarEvents", x => x.EventId);
+                    table.PrimaryKey("PK_CalendarEvents", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
-                    CourseCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreditHours = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Courses", x => x.CourseCode);
+                    table.PrimaryKey("PK_Courses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -73,7 +73,7 @@ namespace SHAPEE.Migrations
                 name: "Rooms",
                 columns: table => new
                 {
-                    RoomId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Block = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Floor = table.Column<int>(type: "int", nullable: false),
@@ -81,41 +81,41 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Rooms", x => x.RoomId);
+                    table.PrimaryKey("PK_Rooms", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Semesters",
                 columns: table => new
                 {
-                    SemesterId = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     StartDate = table.Column<DateOnly>(type: "date", nullable: false),
                     EndDate = table.Column<DateOnly>(type: "date", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Semesters", x => x.SemesterId);
+                    table.PrimaryKey("PK_Semesters", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Materials",
                 columns: table => new
                 {
-                    MaterialId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CourseCode = table.Column<string>(type: "nvarchar(10)", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CourseId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FileUrl = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     MaterialType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Materials", x => x.MaterialId);
+                    table.PrimaryKey("PK_Materials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Materials_Courses_CourseCode",
-                        column: x => x.CourseCode,
+                        name: "FK_Materials_Courses_CourseId",
+                        column: x => x.CourseId,
                         principalTable: "Courses",
-                        principalColumn: "CourseCode",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -145,7 +145,7 @@ namespace SHAPEE.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProgramId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                    CourseCode = table.Column<string>(type: "nvarchar(10)", nullable: false),
+                    CourseId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false)
                 },
@@ -153,10 +153,10 @@ namespace SHAPEE.Migrations
                 {
                     table.PrimaryKey("PK_ProgramCourses", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ProgramCourses_Courses_CourseCode",
-                        column: x => x.CourseCode,
+                        name: "FK_ProgramCourses_Courses_CourseId",
+                        column: x => x.CourseId,
                         principalTable: "Courses",
-                        principalColumn: "CourseCode",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ProgramCourses_Programs_ProgramId",
@@ -170,7 +170,7 @@ namespace SHAPEE.Migrations
                 name: "TutorialGroups",
                 columns: table => new
                 {
-                    GroupId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ProgramId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false),
@@ -178,7 +178,7 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TutorialGroups", x => x.GroupId);
+                    table.PrimaryKey("PK_TutorialGroups", x => x.Id);
                     table.ForeignKey(
                         name: "FK_TutorialGroups_Programs_ProgramId",
                         column: x => x.ProgramId,
@@ -229,14 +229,14 @@ namespace SHAPEE.Migrations
                         name: "FK_Users_TutorialGroups_TutorialGroupId",
                         column: x => x.TutorialGroupId,
                         principalTable: "TutorialGroups",
-                        principalColumn: "GroupId");
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "ChatMessages",
                 columns: table => new
                 {
-                    MessageId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     SenderId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     ReceiverId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     Content = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
@@ -245,7 +245,7 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChatMessages", x => x.MessageId);
+                    table.PrimaryKey("PK_ChatMessages", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ChatMessages_Users_ReceiverId",
                         column: x => x.ReceiverId,
@@ -263,7 +263,7 @@ namespace SHAPEE.Migrations
                 columns: table => new
                 {
                     SectionId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CourseCode = table.Column<string>(type: "nvarchar(10)", nullable: false),
+                    CourseId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     StaffId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     SemesterId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
@@ -284,28 +284,28 @@ namespace SHAPEE.Migrations
                 {
                     table.PrimaryKey("PK_ClassSections", x => x.SectionId);
                     table.ForeignKey(
-                        name: "FK_ClassSections_Courses_CourseCode",
-                        column: x => x.CourseCode,
+                        name: "FK_ClassSections_Courses_CourseId",
+                        column: x => x.CourseId,
                         principalTable: "Courses",
-                        principalColumn: "CourseCode",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ClassSections_Rooms_RoomId",
                         column: x => x.RoomId,
                         principalTable: "Rooms",
-                        principalColumn: "RoomId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ClassSections_Semesters_SemesterId",
                         column: x => x.SemesterId,
                         principalTable: "Semesters",
-                        principalColumn: "SemesterId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ClassSections_TutorialGroups_TutorialGroupId",
                         column: x => x.TutorialGroupId,
                         principalTable: "TutorialGroups",
-                        principalColumn: "GroupId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ClassSections_Users_StaffId",
@@ -319,7 +319,7 @@ namespace SHAPEE.Migrations
                 name: "Invoices",
                 columns: table => new
                 {
-                    InvoiceId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     SemesterId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(8,2)", precision: 8, scale: 2, nullable: false),
@@ -329,12 +329,12 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Invoices", x => x.InvoiceId);
+                    table.PrimaryKey("PK_Invoices", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Invoices_Semesters_SemesterId",
                         column: x => x.SemesterId,
                         principalTable: "Semesters",
-                        principalColumn: "SemesterId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Invoices_Users_StudentId",
@@ -347,7 +347,7 @@ namespace SHAPEE.Migrations
                 name: "LeaveApplications",
                 columns: table => new
                 {
-                    LeaveId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     StartDate = table.Column<DateOnly>(type: "date", nullable: false),
@@ -361,7 +361,7 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LeaveApplications", x => x.LeaveId);
+                    table.PrimaryKey("PK_LeaveApplications", x => x.Id);
                     table.ForeignKey(
                         name: "FK_LeaveApplications_Users_UserId",
                         column: x => x.UserId,
@@ -373,7 +373,7 @@ namespace SHAPEE.Migrations
                 name: "ResetPassTokens",
                 columns: table => new
                 {
-                    TokenId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     ExpiryAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -381,7 +381,7 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ResetPassTokens", x => x.TokenId);
+                    table.PrimaryKey("PK_ResetPassTokens", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ResetPassTokens_Users_UserId",
                         column: x => x.UserId,
@@ -394,7 +394,7 @@ namespace SHAPEE.Migrations
                 name: "SupportTickets",
                 columns: table => new
                 {
-                    TicketId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     Subject = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
@@ -405,7 +405,7 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SupportTickets", x => x.TicketId);
+                    table.PrimaryKey("PK_SupportTickets", x => x.Id);
                     table.ForeignKey(
                         name: "FK_SupportTickets_Users_UserId",
                         column: x => x.UserId,
@@ -417,9 +417,8 @@ namespace SHAPEE.Migrations
                 name: "Attendances",
                 columns: table => new
                 {
-                    AttendanceId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    SectionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ClassSectionSectionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ClassSectionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -431,10 +430,10 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attendances", x => x.AttendanceId);
+                    table.PrimaryKey("PK_Attendances", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Attendances_ClassSections_ClassSectionSectionId",
-                        column: x => x.ClassSectionSectionId,
+                        name: "FK_Attendances_ClassSections_ClassSectionId",
+                        column: x => x.ClassSectionId,
                         principalTable: "ClassSections",
                         principalColumn: "SectionId",
                         onDelete: ReferentialAction.Cascade);
@@ -449,32 +448,31 @@ namespace SHAPEE.Migrations
                 name: "CourseTasks",
                 columns: table => new
                 {
-                    TaskId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    SectionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ClassSectionSectionId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ClassSectionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CourseTasks", x => x.TaskId);
+                    table.PrimaryKey("PK_CourseTasks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CourseTasks_ClassSections_ClassSectionSectionId",
-                        column: x => x.ClassSectionSectionId,
+                        name: "FK_CourseTasks_ClassSections_ClassSectionId",
+                        column: x => x.ClassSectionId,
                         principalTable: "ClassSections",
-                        principalColumn: "SectionId");
+                        principalColumn: "SectionId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Enrollments",
                 columns: table => new
                 {
-                    EnrollmentId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    StudentId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                    SectionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ClassSectionSectionId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    ClassSectionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     EnrollmentDate = table.Column<DateOnly>(type: "date", nullable: false),
@@ -482,25 +480,25 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Enrollments", x => x.EnrollmentId);
+                    table.PrimaryKey("PK_Enrollments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Enrollments_ClassSections_ClassSectionSectionId",
-                        column: x => x.ClassSectionSectionId,
+                        name: "FK_Enrollments_ClassSections_ClassSectionId",
+                        column: x => x.ClassSectionId,
                         principalTable: "ClassSections",
-                        principalColumn: "SectionId");
+                        principalColumn: "SectionId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Enrollments_Users_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "PaymentTransactions",
                 columns: table => new
                 {
-                    TransactionId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     InvoiceId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     AmountPaid = table.Column<decimal>(type: "decimal(8,2)", precision: 8, scale: 2, nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -509,12 +507,12 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentTransactions", x => x.TransactionId);
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
                     table.ForeignKey(
                         name: "FK_PaymentTransactions_Invoices_InvoiceId",
                         column: x => x.InvoiceId,
                         principalTable: "Invoices",
-                        principalColumn: "InvoiceId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -522,21 +520,21 @@ namespace SHAPEE.Migrations
                 name: "TicketMessages",
                 columns: table => new
                 {
-                    MessageId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TicketId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SupportTicketTicketId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SupportTicketId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     SenderId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     Content = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     SentAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TicketMessages", x => x.MessageId);
+                    table.PrimaryKey("PK_TicketMessages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TicketMessages_SupportTickets_SupportTicketTicketId",
-                        column: x => x.SupportTicketTicketId,
+                        name: "FK_TicketMessages_SupportTickets_SupportTicketId",
+                        column: x => x.SupportTicketId,
                         principalTable: "SupportTickets",
-                        principalColumn: "TicketId");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TicketMessages_Users_SenderId",
                         column: x => x.SenderId,
@@ -545,36 +543,11 @@ namespace SHAPEE.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CourseTaskMaterial",
-                columns: table => new
-                {
-                    MaterialsMaterialId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                    TasksTaskId = table.Column<string>(type: "nvarchar(50)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CourseTaskMaterial", x => new { x.MaterialsMaterialId, x.TasksTaskId });
-                    table.ForeignKey(
-                        name: "FK_CourseTaskMaterial_CourseTasks_TasksTaskId",
-                        column: x => x.TasksTaskId,
-                        principalTable: "CourseTasks",
-                        principalColumn: "TaskId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CourseTaskMaterial_Materials_MaterialsMaterialId",
-                        column: x => x.MaterialsMaterialId,
-                        principalTable: "Materials",
-                        principalColumn: "MaterialId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Submissions",
                 columns: table => new
                 {
-                    SubmissionId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TaskId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CourseTaskTaskId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CourseTaskId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     FileUrl = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -583,12 +556,13 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Submissions", x => x.SubmissionId);
+                    table.PrimaryKey("PK_Submissions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Submissions_CourseTasks_CourseTaskTaskId",
-                        column: x => x.CourseTaskTaskId,
+                        name: "FK_Submissions_CourseTasks_CourseTaskId",
+                        column: x => x.CourseTaskId,
                         principalTable: "CourseTasks",
-                        principalColumn: "TaskId");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Submissions_Users_StudentId",
                         column: x => x.StudentId,
@@ -596,10 +570,33 @@ namespace SHAPEE.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TaskMaterial",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    MaterialId = table.Column<string>(type: "nvarchar(50)", nullable: true),
+                    CourseTaskId = table.Column<string>(type: "nvarchar(50)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TaskMaterial", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TaskMaterial_CourseTasks_CourseTaskId",
+                        column: x => x.CourseTaskId,
+                        principalTable: "CourseTasks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_TaskMaterial_Materials_MaterialId",
+                        column: x => x.MaterialId,
+                        principalTable: "Materials",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_Attendances_ClassSectionSectionId",
+                name: "IX_Attendances_ClassSectionId",
                 table: "Attendances",
-                column: "ClassSectionSectionId");
+                column: "ClassSectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attendances_StudentId",
@@ -617,9 +614,9 @@ namespace SHAPEE.Migrations
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClassSections_CourseCode",
+                name: "IX_ClassSections_CourseId",
                 table: "ClassSections",
-                column: "CourseCode");
+                column: "CourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClassSections_RoomId",
@@ -642,19 +639,14 @@ namespace SHAPEE.Migrations
                 column: "TutorialGroupId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CourseTaskMaterial_TasksTaskId",
-                table: "CourseTaskMaterial",
-                column: "TasksTaskId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CourseTasks_ClassSectionSectionId",
+                name: "IX_CourseTasks_ClassSectionId",
                 table: "CourseTasks",
-                column: "ClassSectionSectionId");
+                column: "ClassSectionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_ClassSectionSectionId",
+                name: "IX_Enrollments_ClassSectionId",
                 table: "Enrollments",
-                column: "ClassSectionSectionId");
+                column: "ClassSectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_StudentId",
@@ -677,9 +669,9 @@ namespace SHAPEE.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Materials_CourseCode",
+                name: "IX_Materials_CourseId",
                 table: "Materials",
-                column: "CourseCode");
+                column: "CourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_InvoiceId",
@@ -687,9 +679,9 @@ namespace SHAPEE.Migrations
                 column: "InvoiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProgramCourses_CourseCode",
+                name: "IX_ProgramCourses_CourseId",
                 table: "ProgramCourses",
-                column: "CourseCode");
+                column: "CourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProgramCourses_ProgramId",
@@ -707,9 +699,9 @@ namespace SHAPEE.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Submissions_CourseTaskTaskId",
+                name: "IX_Submissions_CourseTaskId",
                 table: "Submissions",
-                column: "CourseTaskTaskId");
+                column: "CourseTaskId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Submissions_StudentId",
@@ -722,14 +714,24 @@ namespace SHAPEE.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TaskMaterial_CourseTaskId",
+                table: "TaskMaterial",
+                column: "CourseTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TaskMaterial_MaterialId",
+                table: "TaskMaterial",
+                column: "MaterialId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TicketMessages_SenderId",
                 table: "TicketMessages",
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TicketMessages_SupportTicketTicketId",
+                name: "IX_TicketMessages_SupportTicketId",
                 table: "TicketMessages",
-                column: "SupportTicketTicketId");
+                column: "SupportTicketId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TutorialGroups_ProgramId",
@@ -768,9 +770,6 @@ namespace SHAPEE.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
-                name: "CourseTaskMaterial");
-
-            migrationBuilder.DropTable(
                 name: "Enrollments");
 
             migrationBuilder.DropTable(
@@ -789,16 +788,19 @@ namespace SHAPEE.Migrations
                 name: "Submissions");
 
             migrationBuilder.DropTable(
-                name: "TicketMessages");
+                name: "TaskMaterial");
 
             migrationBuilder.DropTable(
-                name: "Materials");
+                name: "TicketMessages");
 
             migrationBuilder.DropTable(
                 name: "Invoices");
 
             migrationBuilder.DropTable(
                 name: "CourseTasks");
+
+            migrationBuilder.DropTable(
+                name: "Materials");
 
             migrationBuilder.DropTable(
                 name: "SupportTickets");

@@ -22,24 +22,9 @@ namespace SHAPEE.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("CourseTaskMaterial", b =>
-                {
-                    b.Property<string>("MaterialsMaterialId")
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TasksTaskId")
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("MaterialsMaterialId", "TasksTaskId");
-
-                    b.HasIndex("TasksTaskId");
-
-                    b.ToTable("CourseTaskMaterial");
-                });
-
             modelBuilder.Entity("SHAPEE.Models.Announcement", b =>
                 {
-                    b.Property<string>("AnnouncementId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -64,18 +49,18 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("AnnouncementId");
+                    b.HasKey("Id");
 
                     b.ToTable("Announcements");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Attendance", b =>
                 {
-                    b.Property<string>("AttendanceId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("ClassSectionSectionId")
+                    b.Property<string>("ClassSectionId")
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
@@ -96,10 +81,6 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("SectionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -112,9 +93,9 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.HasKey("AttendanceId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ClassSectionSectionId");
+                    b.HasIndex("ClassSectionId");
 
                     b.HasIndex("StudentId");
 
@@ -123,7 +104,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.CalendarEvent", b =>
                 {
-                    b.Property<string>("EventId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -148,14 +129,14 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("EventId");
+                    b.HasKey("Id");
 
                     b.ToTable("CalendarEvents");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.ChatMessage", b =>
                 {
-                    b.Property<string>("MessageId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -176,7 +157,7 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("MessageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ReceiverId");
 
@@ -195,7 +176,7 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<string>("CourseCode")
+                    b.Property<string>("CourseId")
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
 
@@ -252,7 +233,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("SectionId");
 
-                    b.HasIndex("CourseCode");
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("RoomId");
 
@@ -267,7 +248,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.Course", b =>
                 {
-                    b.Property<string>("CourseCode")
+                    b.Property<string>("Id")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
@@ -279,18 +260,19 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("CourseCode");
+                    b.HasKey("Id");
 
                     b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.CourseTask", b =>
                 {
-                    b.Property<string>("TaskId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("ClassSectionSectionId")
+                    b.Property<string>("ClassSectionId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Description")
@@ -301,31 +283,28 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("SectionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("TaskId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ClassSectionSectionId");
+                    b.HasIndex("ClassSectionId");
 
                     b.ToTable("CourseTasks");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Enrollment", b =>
                 {
-                    b.Property<int>("EnrollmentId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnrollmentId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ClassSectionSectionId")
+                    b.Property<string>("ClassSectionId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateOnly>("EnrollmentDate")
@@ -335,17 +314,12 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("SectionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("StudentId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Type")
@@ -353,9 +327,9 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.HasKey("EnrollmentId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ClassSectionSectionId");
+                    b.HasIndex("ClassSectionId");
 
                     b.HasIndex("StudentId");
 
@@ -384,7 +358,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.Invoice", b =>
                 {
-                    b.Property<string>("InvoiceId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -408,7 +382,7 @@ namespace SHAPEE.Migrations
                         .HasPrecision(8, 2)
                         .HasColumnType("decimal(8,2)");
 
-                    b.HasKey("InvoiceId");
+                    b.HasKey("Id");
 
                     b.HasIndex("SemesterId");
 
@@ -419,11 +393,11 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.LeaveApplication", b =>
                 {
-                    b.Property<int>("LeaveId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeaveId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateOnly>("ApplicationDate")
                         .HasColumnType("date");
@@ -461,7 +435,7 @@ namespace SHAPEE.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("LeaveId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
@@ -470,11 +444,11 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.Material", b =>
                 {
-                    b.Property<string>("MaterialId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("CourseCode")
+                    b.Property<string>("CourseId")
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
 
@@ -493,16 +467,16 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("MaterialId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CourseCode");
+                    b.HasIndex("CourseId");
 
                     b.ToTable("Materials");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.PaymentTransaction", b =>
                 {
-                    b.Property<string>("TransactionId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -527,7 +501,7 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("TransactionId");
+                    b.HasKey("Id");
 
                     b.HasIndex("InvoiceId");
 
@@ -564,7 +538,7 @@ namespace SHAPEE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CourseCode")
+                    b.Property<string>("CourseId")
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
 
@@ -580,7 +554,7 @@ namespace SHAPEE.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseCode");
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("ProgramId");
 
@@ -589,7 +563,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.ResetPassToken", b =>
                 {
-                    b.Property<string>("TokenId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -606,7 +580,7 @@ namespace SHAPEE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("TokenId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
@@ -615,7 +589,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.Room", b =>
                 {
-                    b.Property<string>("RoomId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -637,14 +611,14 @@ namespace SHAPEE.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("RoomId");
+                    b.HasKey("Id");
 
                     b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Semester", b =>
                 {
-                    b.Property<string>("SemesterId")
+                    b.Property<string>("Id")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
@@ -657,18 +631,19 @@ namespace SHAPEE.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
-                    b.HasKey("SemesterId");
+                    b.HasKey("Id");
 
                     b.ToTable("Semesters");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Submission", b =>
                 {
-                    b.Property<string>("SubmissionId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("CourseTaskTaskId")
+                    b.Property<string>("CourseTaskId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Feedback")
@@ -690,13 +665,9 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("TaskId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("Id");
 
-                    b.HasKey("SubmissionId");
-
-                    b.HasIndex("CourseTaskTaskId");
+                    b.HasIndex("CourseTaskId");
 
                     b.HasIndex("StudentId");
 
@@ -705,7 +676,7 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.SupportTicket", b =>
                 {
-                    b.Property<string>("TicketId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -738,16 +709,37 @@ namespace SHAPEE.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("TicketId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("SupportTickets");
                 });
 
+            modelBuilder.Entity("SHAPEE.Models.TaskMaterial", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CourseTaskId")
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MaterialId")
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseTaskId");
+
+                    b.HasIndex("MaterialId");
+
+                    b.ToTable("TaskMaterial");
+                });
+
             modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>
                 {
-                    b.Property<string>("MessageId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -762,25 +754,22 @@ namespace SHAPEE.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("SupportTicketTicketId")
+                    b.Property<string>("SupportTicketId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("TicketId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("MessageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("SenderId");
 
-                    b.HasIndex("SupportTicketTicketId");
+                    b.HasIndex("SupportTicketId");
 
                     b.ToTable("TicketMessages");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
-                    b.Property<string>("GroupId")
+                    b.Property<string>("Id")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -797,7 +786,7 @@ namespace SHAPEE.Migrations
                     b.Property<int>("YearLevel")
                         .HasColumnType("int");
 
-                    b.HasKey("GroupId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ProgramId");
 
@@ -934,26 +923,11 @@ namespace SHAPEE.Migrations
                     b.HasDiscriminator().HasValue("Student");
                 });
 
-            modelBuilder.Entity("CourseTaskMaterial", b =>
-                {
-                    b.HasOne("SHAPEE.Models.Material", null)
-                        .WithMany()
-                        .HasForeignKey("MaterialsMaterialId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SHAPEE.Models.CourseTask", null)
-                        .WithMany()
-                        .HasForeignKey("TasksTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("SHAPEE.Models.Attendance", b =>
                 {
                     b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany("Attendances")
-                        .HasForeignKey("ClassSectionSectionId")
+                        .HasForeignKey("ClassSectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -985,7 +959,7 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany()
-                        .HasForeignKey("CourseCode")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1028,7 +1002,9 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany()
-                        .HasForeignKey("ClassSectionSectionId");
+                        .HasForeignKey("ClassSectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("ClassSection");
                 });
@@ -1037,13 +1013,13 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
                         .WithMany("Enrollments")
-                        .HasForeignKey("ClassSectionSectionId");
+                        .HasForeignKey("ClassSectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Enrollments")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StudentId");
 
                     b.Navigation("ClassSection");
 
@@ -1080,7 +1056,7 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany()
-                        .HasForeignKey("CourseCode")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1113,7 +1089,7 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.Course", "Course")
                         .WithMany("ProgramCourses")
-                        .HasForeignKey("CourseCode")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1143,7 +1119,9 @@ namespace SHAPEE.Migrations
                 {
                     b.HasOne("SHAPEE.Models.CourseTask", "CourseTask")
                         .WithMany("Submissions")
-                        .HasForeignKey("CourseTaskTaskId");
+                        .HasForeignKey("CourseTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SHAPEE.Models.Student", "Student")
                         .WithMany("Submissions")
@@ -1163,6 +1141,21 @@ namespace SHAPEE.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SHAPEE.Models.TaskMaterial", b =>
+                {
+                    b.HasOne("SHAPEE.Models.CourseTask", "CourseTask")
+                        .WithMany("Materials")
+                        .HasForeignKey("CourseTaskId");
+
+                    b.HasOne("SHAPEE.Models.Material", "Material")
+                        .WithMany("Tasks")
+                        .HasForeignKey("MaterialId");
+
+                    b.Navigation("CourseTask");
+
+                    b.Navigation("Material");
+                });
+
             modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>
                 {
                     b.HasOne("SHAPEE.Models.User", "Sender")
@@ -1171,7 +1164,9 @@ namespace SHAPEE.Migrations
 
                     b.HasOne("SHAPEE.Models.SupportTicket", "SupportTicket")
                         .WithMany("TicketMessages")
-                        .HasForeignKey("SupportTicketTicketId");
+                        .HasForeignKey("SupportTicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Sender");
 
@@ -1227,6 +1222,8 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.CourseTask", b =>
                 {
+                    b.Navigation("Materials");
+
                     b.Navigation("Submissions");
                 });
 
@@ -1235,6 +1232,11 @@ namespace SHAPEE.Migrations
                     b.Navigation("Programs");
 
                     b.Navigation("Staffs");
+                });
+
+            modelBuilder.Entity("SHAPEE.Models.Material", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Program", b =>

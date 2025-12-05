@@ -458,7 +458,7 @@ namespace SHAPEE.Controllers
         {
 
             var rooms = db.Rooms
-                .OrderBy(r => r.RoomId)
+                .OrderBy(r => r.Id)
                 .ToList();
 
             return View(rooms);
