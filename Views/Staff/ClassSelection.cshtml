@@ -1,5 +1,5 @@
 @using SHAPEE.Models
-@model IEnumerable<ClassSection>
+@model IEnumerable<ClassSelectionItemVM>
 
 @{
     var mode = (ViewData["Mode"] as string ?? "take").ToLower();
@@ -20,7 +20,9 @@
 @if (!Model.Any())
 {
     <div class="alert alert-info">
-        You currently have no classes assigned. Please contact the administrator if this is unexpected.
+        @(isView
+            ? "You currently have no classes assigned. Please contact the administrator if this is unexpected."
+            : "You have no classes today.")
     </div>
 }
 else
@@ -43,23 +45,23 @@ else
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var s in Model)
+                        @foreach (var item in Model)
                         {
+                            var s = item.Section;
                             <tr>
                                 <td>@s.SectionId</td>
                                 <td>@s.Course?.Id - @s.Course?.Name</td>
-                                <td>
-                                    @s.Day,
-                                    @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")
-                                </td>
+                                <td>@s.Day, @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")</td>
                                 <td>@s.Room?.Id</td>
                                 <td>@s.SemesterId</td>
                                 <td>
-                                    <a class="btn btn-sm btn-primary"
-                                       href="@Url.Action(
-                                                isView ? "AttendanceManagement" : "MarkAttendance",
-                                                "Staff",
-                                                new { sectionId = s.SectionId })">
+                                    <a class="btn btn-sm btn-primary @( !item.CanStart && !isView ? "disabled" : "" )"
+                                       title="@( !item.CanStart && !isView ? item.DisabledReason : "" )"
+                                       href="@( isView
+                                                ? Url.Action("AttendanceManagement", "Staff", new { sectionId = s.SectionId })
+                                                : item.CanStart
+                                                    ? Url.Action("MarkAttendance", "Staff", new { sectionId = s.SectionId })
+                                                    : "#" )">
                                         <i class="fas @(isView ? "fa-eye" : "fa-play-circle")"></i>
                                         @(isView ? "View Attendance" : "Start Session")
                                     </a>

@@ -40,40 +40,61 @@ namespace SHAPEE.Controllers
             var now = DateTime.Now;
             var today = DateOnly.FromDateTime(now);
 
-            if (string.IsNullOrEmpty(sectionId))
-                return BadRequest("Section is required.");
+            ClassSection? section = null;
+            if (!string.IsNullOrEmpty(qrToken) && !string.IsNullOrEmpty(sectionId))
+            {
+                section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
+                if (section == null) return BadRequest("Invalid section ID.");
+            }
+            else if (!string.IsNullOrEmpty(manualCode))
+            {
+                section = db.ClassSections.FirstOrDefault(s =>
+                    s.AttendanceCode == manualCode &&
+                    s.IsAttendanceSessionActive);
+                if (section == null)
+                    return BadRequest("Invalid attendance code or no active session found for this code.");
+                sectionId = section.SectionId; 
+            }
+            else
+            {
+                return BadRequest("Either QR token or attendance code is required.");
+            }
 
-            //load class section and verify it exists
-            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
-            if (section == null)
-                return BadRequest("Invalid section ID.");
+            //check enrollment
+            bool enrolled = db.Enrollments.Any(e =>
+                e.StudentId == studentId &&
+                e.ClassSectionId == sectionId &&
+                e.Type == "Enrolled" &&
+                e.Status == "Approved");
+            if (!enrolled) return BadRequest("You are not enrolled in this class section or your enrollment is not approved.");
 
+            //check session is active
             if (!section.IsAttendanceSessionActive)
                 return BadRequest("Attendance session is not active.");
 
-            // validate QR (token and expiry)
+            //check whether is Qr or manual code
             bool validQr = !string.IsNullOrEmpty(qrToken)
-                           && qrToken == section.CurrentQrToken
-                           && section.CurrentQrExpiry.HasValue
-                           && section.CurrentQrExpiry.Value >= now;
+                        && qrToken == section.CurrentQrToken
+                        && section.CurrentQrExpiry is not null
+                        && section.CurrentQrExpiry.Value >= now;
 
-            // validate manual code
             bool validCode = !string.IsNullOrEmpty(manualCode)
-                             && manualCode == section.AttendanceCode;
+                            && manualCode == section.AttendanceCode;
 
             if (!validQr && !validCode)
                 return BadRequest("Invalid or expired token/code.");
 
-            // prevent duplicate attendance
+            var sourceLabel = validQr ? "QR" : "MANUAL";
+
+            //prevent duplicate att
             bool already = db.Attendances.Any(a =>
                 a.ClassSectionId == sectionId &&
                 a.StudentId == studentId &&
                 a.Date == today);
-
             if (already)
                 return BadRequest("You have already marked attendance for this class today.");
 
-            // suspicious IP check
+            //sus ip checking
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             var ua = Request.Headers["User-Agent"].ToString();
             var windowStart = now.AddMinutes(-10);
@@ -90,23 +111,24 @@ namespace SHAPEE.Controllers
 
             bool isFlagged = othersFromSameIp >= 1;
 
-            //create attendance
+            //create attendance record
             var att = new Attendance
             {
                 Id = Guid.NewGuid().ToString("N"),
-                ClassSectionId = sectionId,  // FK property
-                ClassSection = section, // Navigation
+                ClassSectionId = sectionId,
+                ClassSection = section,
                 StudentId = studentId,
                 Date = today,
                 RegisteredAt = now,
                 Status = "Present",
                 IpAddress = ip,
-                UserAgent = ua,
+                UserAgent = $"{sourceLabel}||{ua}", // tag the source for live scans
                 IsFlaged = isFlagged,
                 FlagReason = isFlagged ? "Multiple students using same IP in short time window." : null
             };
+
             db.Attendances.Add(att);
-            
+
             try
             {
                 db.SaveChanges();
