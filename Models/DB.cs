@@ -326,9 +326,9 @@ public class Room
     public string Type { get; set; }
 
     [MaxLength(10)]
-    public string Block { get; set; }
+    public string? Block { get; set; }
 
-    public int Floor { get; set; }
+    public int? Floor { get; set; }
 
     [MaxLength(20)]
     public string Status { get; set; } //Available, Under Maintenance
@@ -394,7 +394,7 @@ public class Semester
 
     public DateOnly EndDate { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     //1 semester have many class sections
     public List<ClassSection> ClassSections { get; set; } = [];
@@ -419,7 +419,7 @@ public class Invoice
     [Precision(8, 2)]
     public decimal TotalAmount { get; set; }
 
-    public bool IsPaid { get; set; }
+    public bool IsPaid { get; set; } = false;
 
     public DateTime DueDate { get; set; }
 
