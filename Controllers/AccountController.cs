@@ -23,9 +23,18 @@ public class AccountController(DB db, Helper hp) : Controller
     {
         var u = db.Users.Find(vm.Id);
 
-        if (u != null && u.Status == "Locked")
+        if (u != null)
         {
-            ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration.");
+            if (u.Status == "Locked") 
+            { 
+                ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration.");
+                return View(vm);
+            }
+           
+        }
+        else
+        {
+            ModelState.AddModelError("", "This ID is not registered yet. Please contact Administration.");
             return View(vm);
         }
 
@@ -63,7 +72,7 @@ public class AccountController(DB db, Helper hp) : Controller
         u.Status = "Active";
         db.SaveChanges();
 
-        hp.SignIn(u.Id,u.FullName, u.Role, vm.RememberMe);
+        hp.SignIn(u.Id, u.FullName, u.Role, vm.RememberMe);
 
         // Redirection based on role
         if (!string.IsNullOrEmpty(returnURL))
@@ -73,10 +82,10 @@ public class AccountController(DB db, Helper hp) : Controller
 
         return u.Role switch
         {
-            "Admin"   => RedirectToAction("Dashboard", "Admin"),
-            "Staff"   => RedirectToAction("Dashboard", "Staff"),
+            "Admin" => RedirectToAction("Dashboard", "Admin"),
+            "Staff" => RedirectToAction("Dashboard", "Staff"),
             "Student" => RedirectToAction("Dashboard", "Student"),
-            _         => RedirectToAction("Index", "Home"),
+            _ => RedirectToAction("Index", "Home"),
         };
     }
 
@@ -99,20 +108,20 @@ public class AccountController(DB db, Helper hp) : Controller
     //    {
     //        string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
 
-        //            u.ResetToken = token;
-        //            u.TokenExpiry = DateTime.UtcNow.AddHours(1);
-        //            db.SaveChanges();
+    //            u.ResetToken = token;
+    //            u.TokenExpiry = DateTime.UtcNow.AddHours(1);
+    //            db.SaveChanges();
 
-        //            string resetLink = Url.Action("ResetPassword", "Account",
-        //                new { token = token, userId = u.Id }, Request.Scheme);
+    //            string resetLink = Url.Action("ResetPassword", "Account",
+    //                new { token = token, userId = u.Id }, Request.Scheme);
 
-        //            TempData["DevResetLink"] = resetLink;
-        //        }
+    //            TempData["DevResetLink"] = resetLink;
+    //        }
 
     //    ViewData["Title"] = "Password Reset Request Sent";
     //    return View("ForgotPasswordConfirmation");
     //}
-    
+
     // GET: Account/ResetPassword - Validates token and displays the reset form (A3)
     [HttpGet]
     public IActionResult ResetPassword(string token, string userId)
