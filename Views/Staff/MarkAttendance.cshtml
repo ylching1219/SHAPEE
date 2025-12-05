@@ -15,10 +15,7 @@
         </p>
     </div>
     <div>
-        <a href="#" class="btn btn-sm btn-secondary shadow-sm mr-2">
-            <i class="fas fa-redo fa-sm text-white-50"></i> Restart Session
-        </a>
-        <a href="#" class="btn btn-sm btn-danger shadow-sm">
+        <a href="#" class="btn btn-sm btn-danger shadow-sm" id="stopSessionBtn">
             <i class="fas fa-stop-circle fa-sm text-white-50"></i> End Session
         </a>
     </div>
@@ -136,188 +133,10 @@
                                 <th style="width: 20%;">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="liveScanTableBody">
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
+                        <tbody id="liveScanBody">
+                            <tr class="text-muted">
+                                <td colspan="4" class="text-center">Waiting for scans...</td>
                             </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:45</td>
-                                <td>Ching Yong Le</td>
-                                <td><span class="badge badge-primary">QR Scan</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <tr>
-                                <td>10:05:22</td>
-                                <td>Lee Kai Sheng</td>
-                                <td><span class="badge badge-info">Manual Code</span></td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            </tr>
-                            <!-- many more rows will scroll inside this area -->
                         </tbody>
                     </table>
                 </div>
@@ -372,15 +191,15 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         var baseAttendanceUrl = '@Url.Action("ViewAttendance", "Student")';
-
         var sectionId = $('#sectionId').val();
         var visible = false;
         var realCode = '';
         var timer = null;
-
+        var html5QrScanner = null;
         var totalSeconds = 120;
         var remaining = totalSeconds;
 
+        //build QR URLs
         function buildSmallQrUrl(token) {
             var url = baseAttendanceUrl +
                     '?sectionId=' + encodeURIComponent(sectionId) +
@@ -395,6 +214,9 @@
             return "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(url);
         }
 
+
+        //AJAX func
+        //update countdown timer
         function updateCountdown() {
             $('#timerCount').text(remaining);
             $('#fsTimerCount').text(remaining);
@@ -404,6 +226,7 @@
             $('#qrProgressBar').css('width', pct + '%');
         }
 
+        //start countdown timer
         function startTimer() {
             if (timer) clearInterval(timer);
             remaining = totalSeconds;
@@ -418,7 +241,8 @@
                 updateCountdown();
             }, 1000);
         }
-
+        
+        //start attendance session
         function startSession() {
             $.post('@Url.Action("StartAttendanceSession","Staff")',
                 { sectionId: sectionId },
@@ -439,6 +263,7 @@
                 });
         }
 
+        //refresh QR token
         function refreshQr() {
             $.post('@Url.Action("RefreshQrToken","Staff")',
                 { sectionId: sectionId },
@@ -453,6 +278,7 @@
                 });
         }
 
+        //regenerate attendacne code
         function regenCode() {
             $.post('@Url.Action("RegenerateManualCode","Staff")',
                 { sectionId: sectionId },
@@ -466,6 +292,54 @@
                 });
         }
 
+        //render live scans section
+        function renderLiveScans(items) {
+            var $tbody = $('#liveScanBody');
+            if (!items || items.length === 0) {
+                $tbody.html('<tr class="text-muted"><td colspan="4" class="text-center">No attendance yet.</td></tr>');
+                return;
+            }
+
+            var rows = items.map(function (x) {
+                var sourceBadge = x.source === 'QR Scan'
+                    ? '<span class="badge badge-primary">QR Scan</span>'
+                    : '<span class="badge badge-info">Manual Code</span>';
+
+                var statusBadge = x.status === 'Present'
+                    ? '<span class="badge badge-success">Present</span>'
+                    : '<span class="badge badge-secondary">' + x.status + '</span>';
+
+                return (
+                    '<tr>' +
+                        '<td>' + x.time + '</td>' +
+                        '<td>' + x.studentName + '</td>' +
+                        '<td>' + sourceBadge + '</td>' +
+                        '<td>' + statusBadge + '</td>' +
+                    '</tr>'
+                );
+            });
+
+            $tbody.html(rows.join(''));
+        }
+    
+        //poll live scans
+        function pollLiveScans() {
+            $.get('@Url.Action("LiveAttendanceRecord", "Staff")', { sectionId: sectionId })
+                .done(function (res) {
+                    if (res && res.success) {
+                        renderLiveScans(res.items);
+                    }
+                })
+                .fail(function () {
+                    // fail silently; will retry on next tick
+                });
+        }
+
+        // start live sscan every 5 seconds
+        pollLiveScans();
+        setInterval(pollLiveScans, 5000);
+
+        //toggle reveal button
         function toggleReveal() {
             visible = !visible;
             var text = visible ? realCode : '•••••';
@@ -484,6 +358,7 @@
         function openCodeFullscreen() { $('#codeFullscreen').show(); }
         function closeCodeFullscreen() { $('#codeFullscreen').hide(); }
 
+        
         $(function () {
             startSession();
 
@@ -505,6 +380,67 @@
                     closeQrFullscreen();
                     closeCodeFullscreen();
                 }
+            });
+
+            //end session (using sweetalrt)
+            $('#stopSessionBtn').on('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'End attendance session?',
+                    text: 'This will stop QR generation and show the session summary.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, end it',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    //stop the timer if running
+                    if (timer) {
+                        clearInterval(timer);
+                        timer = null;
+                    }
+
+                    //stop QR scanner if running
+                    if (typeof html5QrScanner !== 'undefined' && html5QrScanner) {
+                        html5QrScanner.stop().catch(() => { });
+                        html5QrScanner = null;
+                    }
+
+                    //AJAX request
+                    //stop attendance session
+                    $.post('@Url.Action("StopAttendanceSession", "Staff")',
+                        { sectionId: sectionId },
+                        function (response) {
+                            if (response.success) {
+                                //show success alert
+                                Swal.fire({
+                                    title: 'Session ended',
+                                    text: 'Redirecting to summary...',
+                                    icon: 'success',
+                                    showConfirmButton: false,
+                                    timer: 1200
+                                });
+                                setTimeout(function () {
+                                    window.location.href = response.redirectUrl;
+                                }, 1200);
+                            } else {
+                                //show error alert
+                                Swal.fire({
+                                    title: 'Failed to stop session',
+                                    text: response.message || 'Unknown error',
+                                    icon: 'error'
+                                });
+                            }
+                        }).fail(function () {
+                            Swal.fire({
+                                title: 'Failed to stop session',
+                                text: 'Please try again.',
+                                icon: 'error'
+                            });
+                        });
+                });
             });
         });
     </script>

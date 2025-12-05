@@ -61,4 +61,25 @@ namespace SHAPEE.Models
         public List<Faculty> Faculties { get; set; } = [];
         public Faculty? EditFaculty { get; set; }
     }
+
+    public class ClassSelectionItemVM
+    {
+        public ClassSection Section { get; set; }
+        public bool CanStart { get; set; }
+        public string? DisabledReason { get; set; }
+    }
+
+    public class SessionSummaryVM
+    {
+        public ClassSection Section { get; set; }
+        public int TotalEnrolled { get; set; }
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int FlaggedCount { get; set; }
+        public double AttendancePercentage { get; set; }
+        public List<Student> PresentStudents { get; set; } = [];
+        public List<Student> AbsentStudents { get; set; } = [];
+        public List<Attendance> FlaggedAttendances { get; set; } = [];
+        public DateOnly Today { get; set; }
+    }
 }

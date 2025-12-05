@@ -32,11 +32,6 @@
             <h6 class="font-weight-bold mb-2">Enter Attendance Code</h6>
             <form method="post" asp-action="SubmitAttendance" asp-controller="Student" class="form-inline">
                 <div class="form-group mr-2 mb-2">
-                    <label for="sectionIdInput" class="sr-only">Section ID</label>
-                    <input type="text" class="form-control" id="sectionIdInput"
-                           name="sectionId" placeholder="Section ID (e.g. SEC001)" required />
-                </div>
-                <div class="form-group mr-2 mb-2">
                     <label for="manualCodeInput" class="sr-only">Manual Code</label>
                     <input type="text" class="form-control" id="manualCodeInput"
                            name="manualCode" placeholder="Enter code (e.g. A 7 X 9)" required />
@@ -48,6 +43,9 @@
         </div>
     </div>
 </div>
+
+<!-- Add this message container right after the TempData message section -->
+<div id="dynamicMessageContainer" style="display:none;"></div>
 
 @if (TempData["AttendanceMessage"] != null)
 {
@@ -448,7 +446,40 @@
         const codePanel = document.getElementById('codePanel');
 
         let html5QrScanner = null;
-        
+
+        //show success or error msg
+        function showMessage(message, isSuccess = true) {
+            const messageContainer = document.getElementById('dynamicMessageContainer');
+            if (!messageContainer) return;
+            
+            const alertClass = isSuccess ? 'alert-success' : 'alert-danger';
+            messageContainer.innerHTML = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            messageContainer.style.display = 'block';
+            
+            //scroll to msg
+            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            //autohide after 5 seconds for success msg
+            if (isSuccess) {
+                setTimeout(() => {
+                    const alert = messageContainer.querySelector('.alert');
+                    if (alert) {
+                        alert.classList.remove('show');
+                        setTimeout(() => {
+                            messageContainer.style.display = 'none';
+                        }, 150);
+                    }
+                }, 5000);
+            }
+        }
+
         //scan qr code
         btnScanQr.addEventListener('click', function () {
             qrPanel.style.display = 'block';
@@ -464,27 +495,37 @@
                                 const label = (d.label || '').toLowerCase();
                                 if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
                                     cameraId = d.id;
-                                break;
-                            }
-                        }
-                        //start scanning
-                            html5QrScanner.start(
-                                cameraId,
-                                { 
-                                    fps: 10, 
-                                    qrbox: { width: 250, height: 250 },
-                                    aspectRatio: 1.0
-                                },
-                                onQrSuccess,
-                                onQrError
-                            ).catch(err => {
-                                alert("Failed to start camera: " + err.message);
-                            });
-                        }
-                    }).catch(err => {
-                        alert("Unable to access camera: " + err.message);
+                        break;
+                    }
+                }
+                //start scanning
+                    html5QrScanner.start(
+                        cameraId,
+                        { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        },
+                        onQrSuccess
+                    ).catch(err => {
+                        showMessage("Failed to start camera: " + err.message, false);
                     });
                 }
+            }).catch(err => {
+                showMessage("Unable to access camera: " + err.message, false);
+            });
+        }
+});
+
+        //enter code button
+        btnEnterCode.addEventListener('click', function () {
+            codePanel.style.display = 'block';
+            qrPanel.style.display = 'none';
+            //stop QR scanner if running
+            if (html5QrScanner) {
+                html5QrScanner.stop().catch(() => { });
+                html5QrScanner = null;
+            }
         });
 
         function onQrSuccess(decodedText, decodedResult) {
@@ -520,7 +561,7 @@
                 }
 
                 if (!sectionId || !token) {
-                    alert("Invalid QR code format. Expected: sectionId and token parameters.");
+                    showMessage("Invalid QR code format. Expected: sectionId and token parameters.", false);
                     return;
                 }
 
@@ -541,27 +582,50 @@
                     })
                 }).then(r => {
                     if (!r.ok) {
-                        return r.text().then(t => { throw new Error(t); });
+                        return r.text().then(t => { 
+                            //try to parse error message
+                            let errorMsg = t;
+                            try {
+                                //if response is HTML, try to extract error
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(t, 'text/html');
+                                const bodyText = doc.body.textContent || doc.body.innerText || '';
+                                if (bodyText.includes('BadRequest')) {
+                                    errorMsg = bodyText.split('BadRequest')[1]?.trim() || 'Invalid request';
+                                }
+                            } catch (e) {
+                                //use raw text if parsing fails
+                            }
+                            throw new Error(errorMsg);
+                        });
                     }
                     return r.text();
                 }).then(response => {
-                    alert("Attendance recorded successfully!");
+                    //success - reload page to show TempData message
                     qrPanel.style.display = 'none';
-                    // reload page to show updated attendance
-                    window.location.reload();
+                    showMessage("Attendance recorded successfully!", true);
+                    //reload after a short delay to show the success message
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 }).catch(err => {
-                    alert("Failed to record attendance: " + err.message);
-                    // reset scanner
+                    //extract clean error message
+                    let errorMsg = err.message;
+                    if (errorMsg.includes('BadRequest')) {
+                        errorMsg = errorMsg.split('BadRequest')[1]?.trim() || 'Failed to record attendance';
+                    }
+                    showMessage(errorMsg || "Failed to record attendance. Please try again.", false);
+                    //reset scanner UI
                     qrPanel.style.display = 'none';
+                    const qrReaderDiv = document.getElementById('qrReader');
+                    qrReaderDiv.innerHTML = ''; //clear the loading message
                 });
 
             } catch (e) {
-                alert("Error processing QR code: " + e.message);
+                showMessage("Error processing QR code: " + e.message, false);
                 qrPanel.style.display = 'none';
             }
         }
 
-        function onQrError(err) {
-        }
     </script>
 }
