@@ -126,7 +126,7 @@
 
                         <div class="form-group">
                             <label for="FacultyId" class="font-weight-medium">Faculty ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="FacultyId" name="FacultyId"
+                            <input type="text" class="form-control" id="FacultyId" name="facultyId"
                                    value="@(Model.EditFaculty?.Id != null ? Model.EditFaculty.Id : "")"
                                    required>
                         </div>
@@ -134,7 +134,7 @@
                         <div class="form-group">
                             <div class="form-group">
                                 <label for="FacultyName" class="font-weight-medium">Faculty Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="FacultyName" name="FacultyName"
+                                <input type="text" class="form-control" id="FacultyName" name="facultyName"
                                        value="@(Model.EditFaculty?.Name != null ? Model.EditFaculty.Name : "")"
                                        required>
                             </div>
@@ -142,7 +142,7 @@
 
                         <div class="form-group">
                             <label for="CostPerCreditHour" class="font-weight-medium">Cost Per Credit Hour<span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="CostPerCreditHour" name="CostPerCreditHour" step="0.01"
+                            <input type="number" class="form-control" id="CostPerCreditHour" name="costPerCreditHour" step="0.01"
                                    value="@Model.EditFaculty?.CostPerCreditHour"
                                    required>
                         </div>
@@ -205,28 +205,29 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-        const url = new URL(window.location.href);
-        const editId = url.searchParams.get("editId");
+               $(document).ready(function () {
+            const url = new URL(window.location.href);
+            const editId = url.searchParams.get("editId");
 
-        if (editId) {
-            // Check TempData server-side
-            @if (Model.EditFaculty != null)
-            {
-                <text>
-                     $('#addEditModal').modal('show');
-                    $("#addEditModalLabel").text("Edit Faculty");
-                    $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Faculty');
-                    $("#FacultyId").prop("readonly", true);
-                </text>
+            if (editId) {
+                @if (Model.EditFaculty != null)
+                {
+                        <text>
+                            $('#addEditModal').modal('show');
+                            $("#addEditModalLabel").text("Edit Faculty");
+                            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Faculty');
+                            $("#FacultyId").prop("readonly", true);
+
+                            $("#addEditForm").attr("action", "/Admin/EditFaculty");
+                        </text>
+                }
             }
-        }
 
-             $(".closeBtn").on("click", function() {
-                  window.location.href = '/Admin/FacultyManagement'; 
+            $(".closeBtn").on("click", function () {
+                window.location.href = '/Admin/FacultyManagement';
+            });
         });
 
-        });
     </script>
 
 }

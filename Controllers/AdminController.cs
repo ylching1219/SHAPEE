@@ -936,6 +936,59 @@ namespace SHAPEE.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFaculty(string facultyId, string facultyName, decimal costPerCreditHour)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(facultyName))
+                {
+                    TempData["ErrorMessage"] = "Faculty Name is required.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                if (costPerCreditHour <= 0)
+                {
+                    TempData["ErrorMessage"] = "Cost Per Credit Hour must be greater than 0.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                // Fetch faculty
+                var faculty = await db.Faculties.FindAsync(facultyId);
+
+                if (faculty == null)
+                {
+                    TempData["ErrorMessage"] = "Faculty not found.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                // DUPLICATE NAME CHECK (exclude current faculty)
+                var duplicateName = await db.Faculties
+                    .AnyAsync(f => f.Name == facultyName && f.Id != facultyId);
+
+                if (duplicateName)
+                {
+                    TempData["ErrorMessage"] = "Faculty Name already exists.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                // Update
+                faculty.Name = facultyName.Trim();
+                faculty.CostPerCreditHour = costPerCreditHour;
+
+                db.Faculties.Update(faculty);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Faculty updated successfully!";
+                return RedirectToAction(nameof(FacultyManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error updating faculty: " + ex.Message;
+                return RedirectToAction(nameof(FacultyManagement));
+            }
+        }
 
 
         public IActionResult SaveFaculty(FacultyVM vm)
