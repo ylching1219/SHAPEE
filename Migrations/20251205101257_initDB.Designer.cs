@@ -12,7 +12,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251205000732_initDB")]
+    [Migration("20251205101257_initDB")]
     partial class initDB
     {
         /// <inheritdoc />
@@ -597,11 +597,10 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Block")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<int>("Floor")
+                    b.Property<int?>("Floor")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
