@@ -16,6 +16,9 @@ namespace SHAPEE.Controllers
             return View();    
         }
 
+
+        //===============KOH KAI MINN================
+
         public IActionResult ClassSelection(string mode = "take")
         {
             ViewData["Title"] = mode == "view"
