@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using static SHAPEE.Models.DB;
@@ -23,6 +24,12 @@ namespace SHAPEE.Controllers
         public IActionResult StudentManagement(string? name, string? filter1, string? filter2, string? filter3)
         {
             ViewData["Title"] = "Student Management";
+
+            var faculties = db.Faculties
+                .Include(f => f.Programs)
+                .OrderBy(f => f.Name)
+                .ToList();
+            ViewBag.Faculties = faculties;
 
             var programs = db.Programs
                 .OrderBy(p => p.Id)
@@ -840,6 +847,8 @@ namespace SHAPEE.Controllers
             }
         }
 
+
+
         //YL
         public IActionResult FacultyManagement(string? sort, string? name, string? editId)
         {
@@ -881,10 +890,53 @@ namespace SHAPEE.Controllers
             return View(vm);
         }
 
-        public IActionResult AddFaculty()
+        [HttpPost]
+        public async Task<IActionResult> AddFaculty(string facultyId, string facultyName, decimal costPerCreditHour)
         {
-            return View();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(facultyId) ||
+                    string.IsNullOrWhiteSpace(facultyName) ||
+                    costPerCreditHour <= 0)
+                {
+                    TempData["ErrorMessage"] = "Please fill in all required fields.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                facultyId = facultyId.Trim().ToUpper();
+                facultyName = facultyName.Trim();
+
+                bool exists = await db.Faculties.AnyAsync(f =>
+                    f.Id == facultyId || f.Name == facultyName);
+
+                if (exists)
+                {
+                    TempData["ErrorMessage"] = "Faculty ID or Faculty Name already exists.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                var faculty = new Faculty
+                {
+                    Id = facultyId,
+                    Name = facultyName,
+                    CostPerCreditHour = costPerCreditHour
+                };
+
+                db.Faculties.Add(faculty);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Faculty '{facultyName}' added successfully!";
+                return RedirectToAction(nameof(FacultyManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Error adding faculty: {ex.InnerException?.Message ?? ex.Message}";
+                return RedirectToAction(nameof(FacultyManagement));
+            }
         }
+
+
 
         public IActionResult SaveFaculty(FacultyVM vm)
         {

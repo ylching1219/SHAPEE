@@ -276,33 +276,26 @@
             const form = document.getElementById('studentForm');
             const statusGroup = document.getElementById('statusGroup');
 
-            // Faculty-Program mapping
-            const programsByFaculty = {
-                'FOCS': [
-                    { code: 'BCS', name: 'Bachelor of Computer Science (Hons)' },
-                    { code: 'BIT', name: 'Bachelor of Information Technology (Hons)' },
-                    { code: 'DFT', name: 'Diploma in Information Technology' },
-                    { code: 'DCS', name: 'Diploma in Computer Science' }
-                ],
-                'FAFB': [
-                    { code: 'BAC', name: 'Bachelor of Accountancy (Hons)' },
-                    { code: 'BFN', name: 'Bachelor of Finance (Hons)' },
-                    { code: 'DAC', name: 'Diploma in Accountancy' },
-                    { code: 'DFI', name: 'Diploma in Finance' }
-                ],
-                'FAS': [
-                    { code: 'BCH', name: 'Bachelor of Applied Science (Hons) in Chemistry' },
-                    { code: 'BPH', name: 'Bachelor of Applied Science (Hons) in Physics' },
-                    { code: 'DCH', name: 'Diploma in Chemistry' },
-                    { code: 'DPH', name: 'Diploma in Physics' }
-                ],
-                'FOET': [
-                    { code: 'BCE', name: 'Bachelor of Civil Engineering (Hons)' },
-                    { code: 'BEE', name: 'Bachelor of Electrical Engineering (Hons)' },
-                    { code: 'DCE', name: 'Diploma in Civil Engineering' },
-                    { code: 'DEE', name: 'Diploma in Electrical Engineering' }
-                ]
-            };
+            // Build Faculty-Program mapping from server data
+            const programsByFaculty = {};
+
+            @foreach (var faculty in ViewBag.Faculties)
+            {
+                    <text>
+                    programsByFaculty['@faculty.Id'] = [
+                        @foreach (var program in faculty.Programs)
+                        {
+                                <text>
+                                {
+                                    id: '@program.Id',
+                                    code: '@program.Id',
+                                    name: '@Html.Raw(Json.Serialize(program.Name))'.replace(/^"|"$/g, '')
+                                },
+                                </text>
+                        }
+                    ];
+                    </text>
+            }
 
             // Faculty dropdown change handler
             const facultySelect = document.getElementById('faculty');
@@ -311,7 +304,7 @@
             facultySelect.addEventListener('change', function() {
                 const selectedFaculty = this.value;
                 programSelect.innerHTML = '<option value="">Select Program</option>';
-                
+
                 if (selectedFaculty && programsByFaculty[selectedFaculty]) {
                     programSelect.disabled = false;
                     programsByFaculty[selectedFaculty].forEach(program => {
@@ -324,7 +317,7 @@
                     programSelect.disabled = true;
                     programSelect.innerHTML = '<option value="">Select Faculty First</option>';
                 }
-                
+
                 // Reset program selection
                 programSelect.value = '';
             });
