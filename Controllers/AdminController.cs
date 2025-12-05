@@ -114,6 +114,32 @@ namespace SHAPEE.Controllers
             return View(result);
         }
 
+        public IActionResult AdminManagement(string? name)
+        {
+            ViewData["Title"] = "Admin Management";
+
+            var filteredAdmin = db.Admins
+                .AsQueryable();
+
+            name = name?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(name))
+            {
+                filteredAdmin = filteredAdmin
+                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+            }
+
+            var result = filteredAdmin
+                .OrderBy(s => s.Id)
+                .ToList();
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Admin", result);
+            }
+
+            return View(result);
+        }
+
         private string GenerateRandomPassword(int length = 8)
         {
             const string valid = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -422,9 +448,9 @@ namespace SHAPEE.Controllers
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
 
-                string newId = (lastStaff != null && lastStaff.Id.StartsWith("S"))
-                    ? $"S{(int.Parse(lastStaff.Id.Substring(1)) + 1):D4}"
-                    : "S0001";
+                string newId = (lastStaff != null && lastStaff.Id.StartsWith("STF"))
+                    ? $"STF{(int.Parse(lastStaff.Id.Substring(1)) + 1):D4}"
+                    : "STF0001";
 
                 // Generate random password + hash
                 string rawPassword = GenerateRandomPassword(8);
@@ -491,7 +517,7 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StaffManagement));
                 }
 
-                // Check if student exists
+                // Check if staff exists
                 var existingStaff = await db.Staffs.FindAsync(id);
                 if (existingStaff == null)
                 {
@@ -509,7 +535,7 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StaffManagement));
                 }
 
-                // Update student properties
+                // Update staff properties
                 existingStaff.FirstName = firstName.Trim();
                 existingStaff.LastName = lastName.Trim();
                 existingStaff.Gender = gender.Trim();
@@ -526,7 +552,7 @@ namespace SHAPEE.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                // Check if student still exists
+                // Check if staff still exists
                 if (!await db.Staffs.AnyAsync(s => s.Id == id))
                 {
                     TempData["ErrorMessage"] = "Staff no longer exists.";
@@ -613,6 +639,211 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "Course Management";
             return View();
+        }
+
+        //Add Admin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAdmin(string firstName, string lastName,
+                   string email, string contact)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName) ||
+                    string.IsNullOrWhiteSpace(lastName) ||
+                    string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["ErrorMessage"] = "Please fill in all required fields.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                // Check duplicate email
+                if (await db.Admins.AnyAsync(s => s.Email == email.Trim().ToLower()))
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                // Generate admin ID
+                var lastAdmin = await db.Admins
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefaultAsync();
+
+                string newId = (lastAdmin != null && lastAdmin.Id.StartsWith("Admin"))
+                    ? $"Admin{(int.Parse(lastAdmin.Id.Substring(1)) + 1):D2}"
+                    : "Admin01";
+
+                // Generate random password + hash
+                string rawPassword = GenerateRandomPassword(8);
+                var passwordHasher = new PasswordHasher<User>();
+                string passwordHash = passwordHasher.HashPassword(null, rawPassword);
+
+                // Create admin
+                var admin = new Admin
+                {
+                    Id = newId,
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    Email = email.Trim().ToLower(),
+                    Contact = contact?.Trim(),
+                    Hash = passwordHash,
+                    LoginAttempts = 0,
+                    Status = "Active"
+                };
+
+                db.Admins.Add(admin);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] =
+                    $"Admin '{admin.FirstName} {admin.LastName}' created successfully! " +
+                    $"Generated password: {rawPassword}";
+
+                return RedirectToAction(nameof(AdminManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Error creating admin: {ex.InnerException?.Message ?? ex.Message}";
+                return RedirectToAction(nameof(AdminManagement));
+            }
+        }
+
+        //Edit Admin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAdmin(string id, string firstName, string lastName,
+            string email, string contact)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["ErrorMessage"] = "First name is required.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["ErrorMessage"] = "Email is required.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                // Check if admin exists
+                var existingAdmin = await db.Admins.FindAsync(id);
+                if (existingAdmin == null)
+                {
+                    TempData["ErrorMessage"] = "Staff not found.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                // Check for duplicate email (excluding current staff)
+                var duplicateEmail = await db.Admins
+                    .AnyAsync(s => s.Email == email && s.Id != id);
+
+                if (duplicateEmail)
+                {
+                    TempData["ErrorMessage"] = "Email already exists for another staff.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                // Update admin properties
+                existingAdmin.FirstName = firstName.Trim();
+                existingAdmin.LastName = lastName.Trim();
+                existingAdmin.Email = email.Trim().ToLower();
+                existingAdmin.Contact = contact?.Trim();
+
+                // Save changes to database
+                db.Admins.Update(existingAdmin);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Admin '{existingAdmin.FullName}' updated successfully!";
+                return RedirectToAction(nameof(AdminManagement));
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Check if admin still exists
+                if (!await db.Admins.AnyAsync(s => s.Id == id))
+                {
+                    TempData["ErrorMessage"] = "Admin no longer exists.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Concurrency error. The admin was updated by another user. Please try again.";
+                }
+                return RedirectToAction(nameof(AdminManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating student: {ex.Message}";
+                return RedirectToAction(nameof(AdminManagement));
+            }
+        }
+
+        //Delete Admin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAdmin(string id)
+        {
+            try
+            {
+                var admin = await db.Admins.FindAsync(id);
+
+                if (admin == null)
+                {
+                    TempData["ErrorMessage"] = "Staff not found.";
+                    return RedirectToAction(nameof(AdminManagement));
+                }
+
+                var adminName = admin.FullName;
+
+                db.Admins.Remove(admin);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Admin '{adminName}' deleted successfully!";
+                return RedirectToAction(nameof(AdminManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting staff: {ex.Message}";
+                return RedirectToAction(nameof(AdminManagement));
+            }
+        }
+
+        //Suspend Admin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SuspendAdmin(string id)
+        {
+            try
+            {
+                var admin = await db.Admins.FindAsync(id);
+
+                if (admin == null)
+                {
+                    return Json(new { success = false, message = "Admin not found." });
+                }
+
+                // Toggle status between Active and Suspended
+                if (admin.Status?.Trim().Equals("Suspended", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    admin.Status = "Active";
+                }
+                else
+                {
+                    admin.Status = "Suspended";
+                }
+
+                db.Admins.Update(admin);
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Admin status updated to {admin.Status}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         //YL

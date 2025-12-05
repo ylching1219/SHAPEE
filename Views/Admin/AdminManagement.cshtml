@@ -1,0 +1,290 @@
+﻿@model IEnumerable<Admin>
+@{
+    var admin = Model?.ToList() ?? new List<Admin>();
+    var adminCount = admin.Count;
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <!-- Card Header -->
+    <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                Admins (<span id="adminCount">@adminCount</span>)
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditAdminModal" onclick="prepareAddAdminModal()">
+                    <i class="fas fa-user-plus mr-1"></i> Add Admin
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="exportAdminCsvBtn">
+                    <i class="fas fa-download mr-1"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card-body bg-light border-bottom">
+        <form id="filterForm"
+              data-ajax="true"
+              data-ajax-method="GET"
+              data-ajax-url="/Admin/AdminManagement"
+              data-ajax-update="#adminData">
+            <div class="row g-3">
+                <div class="col-12 col-md-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                        <input type="text" class="form-control" id="searchInput" name="name" placeholder="Search admin by name...">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Admin Table -->
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <div id="adminData">
+                <partial name="_Admin" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Admin Modal -->
+<div class="modal fade" id="addEditAdminModal" tabindex="-1" role="dialog" aria-labelledby="addEditAdminModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditAdminModalLabel">Add New Admin</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="adminForm" method="post" asp-controller="Admin" asp-action="CreateAdmin">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" id="adminId" name="Id" value="" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="adminFirstName" class="font-weight-medium">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="adminFirstName" name="firstName" required>
+                                <div class="invalid-feedback">Please enter first name.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="adminLastName" class="font-weight-medium">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="adminLastName" name="lastName" required>
+                                <div class="invalid-feedback">Please enter last name.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminEmail" class="font-weight-medium">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="adminEmail" name="email" required>
+                        <div class="invalid-feedback">Please enter a valid email.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminContact" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="adminContact" name="contact" placeholder="+60 12-345-6789">
+                    </div>
+
+                    <div class="form-group" id="adminStatusGroup" style="display:none;">
+                        <label for="adminStatus" class="font-weight-medium">Status</label>
+                        <select class="form-control" id="adminStatus" name="status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button class="btn btn-primary" type="submit" id="saveAdminBtn">
+                        <i class="fas fa-save mr-1"></i> Save Admin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Admin Confirmation Modal -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" role="dialog" aria-labelledby="deleteAdminModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="adminToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteAdminForm" method="post" asp-controller="Admin" asp-action="DeleteAdmin" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteAdminId" name="Id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const modalTitle = document.getElementById('addEditAdminModalLabel');
+            const form = document.getElementById('adminForm');
+            const statusGroup = document.getElementById('adminStatusGroup');
+
+            // Prepare Add Admin Modal
+            window.prepareAddAdminModal = function() {
+                modalTitle.innerText = 'Add New Admin';
+                form.setAttribute('action', '@Url.Action("CreateAdmin", "Admin")');
+                form.reset();
+                document.getElementById('adminId').value = '';
+                statusGroup.style.display = 'none';
+
+                form.classList.remove('was-validated');
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-valid');
+                });
+            };
+
+            // Form validation
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+
+            // Prepare Edit Modal
+            window.prepareEditModal = function(element) {
+                const row = element.closest('tr');
+                const adminData = JSON.parse(row.getAttribute('data-admin'));
+
+                modalTitle.innerText = 'Edit Admin: ' + adminData.FirstName + ' ' + adminData.LastName;
+                form.setAttribute('action', '@Url.Action("EditAdmin", "Admin")');
+
+                // Populate form fields
+                document.getElementById('adminId').value = adminData.Id;
+                document.getElementById('adminFirstName').value = adminData.FirstName;
+                document.getElementById('adminLastName').value = adminData.LastName;
+                document.getElementById('adminEmail').value = adminData.Email;
+                document.getElementById('adminContact').value = adminData.Contact || '';
+                document.getElementById('adminStatus').value = (adminData.Status || '').trim();
+
+                // Show status field for edit
+                statusGroup.style.display = 'block';
+
+                // Remove validation states
+                form.classList.remove('was-validated');
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-valid');
+                });
+            };
+
+            // Prepare Delete Modal
+            window.prepareDeleteModal = function(element) {
+                const row = element.closest('tr');
+                const adminName = row.getAttribute('data-admin-name');
+                const adminData = JSON.parse(row.getAttribute('data-admin'));
+
+                document.getElementById('adminToDeleteName').innerText = adminName;
+                document.getElementById('deleteAdminId').value = adminData.Id;
+            };
+
+            // Toggle Suspend/Activate
+            window.toggleSuspend = function(adminId, element) {
+                if (confirm('Are you sure you want to change this admin\'s status?')) {
+                    const formData = new FormData();
+                    formData.append('id', adminId);
+                    formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                    fetch('@Url.Action("SuspendAdmin", "Admin")', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            };
+
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
+
+            // Export CSV functionality
+            document.getElementById('exportAdminCsvBtn').addEventListener('click', function() {
+                alert('Export CSV functionality to be implemented');
+            });
+        });
+    </script>
+}
