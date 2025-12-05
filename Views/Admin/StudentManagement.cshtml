@@ -113,7 +113,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="studentForm" method="post" asp-controller="Admin" asp-action="Create">
+            <form id="studentForm" method="post" asp-controller="Admin" asp-action="CreateStudent">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <input type="hidden" id="studentId" name="Id" value="" />
@@ -250,7 +250,7 @@
                 <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Cancel
                 </button>
-                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteStudent" style="display:inline;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="deleteStudentId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
@@ -326,7 +326,7 @@
             // Prepare Add Modal
             window.prepareAddModal = function() {
                 modalTitle.innerText = 'Add New Student';
-                form.setAttribute('action', '@Url.Action("Create", "Admin")');
+                form.setAttribute('action', '@Url.Action("CreateStudent", "Admin")');
                 form.reset();
                 document.getElementById('studentId').value = '';
                 statusGroup.style.display = 'none';
@@ -357,7 +357,7 @@
                 const studentData = JSON.parse(row.getAttribute('data-student'));
 
                 modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
-                form.setAttribute('action', '@Url.Action("Edit", "Admin")');
+                form.setAttribute('action', '@Url.Action("EditStudent", "Admin")');
 
                 // Populate form fields
                 document.getElementById('studentId').value = studentData.Id;
@@ -419,7 +419,7 @@
                     formData.append('id', studentId);
                     formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-                    fetch('@Url.Action("Suspend", "Admin")', {
+                    fetch('@Url.Action("SuspendStudent", "Admin")', {
                         method: 'POST',
                         body: formData
                     })

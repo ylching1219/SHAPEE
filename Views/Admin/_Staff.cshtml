@@ -9,6 +9,7 @@
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Gender</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Email</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Contact</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Faculty</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date Joined</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
@@ -45,9 +46,9 @@
                     staff.Email,
                     staff.Contact,
                     staff.Gender,
-                    staff.Status
+                    staff.Status,
+                    FacultyId = staff.FacultyId
                 });
-                // Generate program code (e.g., DCSY2S1)
                 <tr data-staff='@staffJson' data-staff-name="@staff.FullName" class="border-bottom">
                     <td class="px-4 py-3 text-muted">@staff.Id</td>
                     <td class="px-4 py-3">
@@ -69,6 +70,19 @@
                     </td>
                     <td class="px-4 py-3 text-muted">@staff.Email</td>
                     <td class="px-4 py-3 text-muted">@(staff.Contact ?? "N/A")</td>
+                    <td class="px-4 py-3">
+                        @{
+                            var facultyName = staff.FacultyId switch
+                            {
+                                "FOCS" => "Faculty of Computing & Information Technology",
+                                "FAFB" => "Faculty of Accountancy, Finance & Business",
+                                "FAS" => "Faculty of Applied Sciences",
+                                "FOET" => "Faculty of Engineering & Technology",
+                                _ => staff.FacultyId ?? "N/A"
+                            };
+                        }
+                        <span class="badge badge-info badge-pill">@facultyName</span>
+                    </td>
                     <td class="px-4 py-3 text-muted">@staff.DateJoin.ToString("dd/MM/yyyy")</td>
                     <td class="px-4 py-3">
                         <span class="badge @statusClass badge-pill">@statusRaw</span>

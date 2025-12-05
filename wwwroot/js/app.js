@@ -161,6 +161,12 @@ $("#statusFilter").on("change", function () {
     }, 0);
 });
 
+$("#facultyFilter").on("change", function () {
+    setTimeout(() => {
+        $("#statusFilter").submit();
+    }, 0);
+});
+
 
 
 
