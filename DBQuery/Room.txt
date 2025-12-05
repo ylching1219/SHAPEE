@@ -67,14 +67,14 @@ CC005	Lab	CC	1	Available
 G101	Classroom	G	1	Maintenance
 W204	Classroom	W	2	Occupied
 D103	Lab	D	2	Available
-DK AB D	Lecture Hall	NULL	NULL	Maintenance
+DK ABD	Lecture Hall	NULL	NULL	Maintenance
 R105	Classroom	R	1	Available
 QA201	Classroom	QA	2	Occupied
 K305	Classroom	K	3	Available
 B004	Lab	B	1	Maintenance
 S102	Classroom	S	1	Occupied
 L204	Classroom	L	2	Available
-DK AB A	Lecture Hall	NULL	NULL	Available
+DK ABA	Lecture Hall	NULL	NULL	Available
 H303	Classroom	H	3	Maintenance
 Q104	Classroom	Q	1	Available
 CC102	Lab	CC	2	Occupied
@@ -93,7 +93,7 @@ S201	Classroom	S	2	Available
 L302	Classroom	L	3	Maintenance
 H105	Classroom	H	1	Occupied
 Q204	Classroom	Q	2	Available
-DK AB B	Lecture Hall	NULL	NULL	Available
+DK ABB	Lecture Hall	NULL	NULL	Available
 PA305	Classroom	PA	3	Occupied
 J101	Classroom	J	1	Available
 CC001	Lab	CC	1	Maintenance
