@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using System.Reflection;
@@ -849,7 +850,7 @@ namespace SHAPEE.Controllers
 
 
 
-        //YL
+     
         public IActionResult FacultyManagement(string? sort, string? name, string? editId)
         {
             ViewData["Title"] = "Faculty Management";
@@ -869,7 +870,7 @@ namespace SHAPEE.Controllers
             var facultiesQuery =
                 (sort == "1") ? filteredFaculties.OrderByDescending(f => f.Id) :
                 (sort == "2") ? filteredFaculties.OrderBy(f => f.Name) :
-                (sort == "3") ? filteredFaculties.OrderByDescending(f => f.Id) :
+                (sort == "3") ? filteredFaculties.OrderByDescending(f => f.Name) :
                 (sort == "4") ? filteredFaculties.OrderBy(f => f.CostPerCreditHour) :
                 (sort == "5") ? filteredFaculties.OrderByDescending(f => f.CostPerCreditHour) :
                                      filteredFaculties.OrderBy(f => f.Id);
@@ -1005,10 +1006,16 @@ namespace SHAPEE.Controllers
             return View(faculty);
         }
 
+        //YL
         public IActionResult ProgramManagement(string? filter, string? name, string? editId) 
         {
             ViewData["Title"] = "Program Management";
+            SHAPEE.Models.Program? editProgram = null;
 
+            if (!string.IsNullOrEmpty(editId))
+            {
+                editProgram = db.Programs.FirstOrDefault(p => p.Id == editId);
+            }
             name = name?.Trim() ?? "";
 
             var programQuery = db.Programs
@@ -1016,7 +1023,6 @@ namespace SHAPEE.Controllers
                 .Where(p => p.Name.Contains(name))
                 .AsQueryable();
 
-            Console.WriteLine("filter :" + filter);
             if (!string.IsNullOrEmpty(filter))
             {
                 programQuery = programQuery.
@@ -1024,13 +1030,17 @@ namespace SHAPEE.Controllers
                     .AsQueryable();
             }
             var faculty = db.Faculties.OrderBy(f => f.Id).ToList();
-            ViewBag.faculty = faculty;
+            ViewBag.Faculty = faculty;
 
-            var program = programQuery.ToList();
+            var programList = programQuery.ToList();
             var vm = new ProgramManageVM
             {
-                Program = program
+                Program = programList,
+                EditProgram = editProgram,
+           
+               
             };
+
             if (Request.IsAjax())
             {
                 return PartialView("_Program", vm);
@@ -1038,9 +1048,43 @@ namespace SHAPEE.Controllers
             return View(vm);
         }
 
-        public IActionResult CourseManagement()
+        public IActionResult CourseManagement(string? sort, string? name, string? editId)
         {
-            return View();
+            ViewData["Title"] = "Course Management";
+           Course? editCourse = null;
+
+            if (!string.IsNullOrEmpty(editId))
+            {
+                editCourse = db.Courses.FirstOrDefault(p => p.Id == editId);
+            }
+            name = name?.Trim() ?? "";
+
+            var courseQuery = db.Courses
+                
+                .Where(p => p.Name.Contains(name))
+                .AsQueryable();
+
+             courseQuery =
+                  (sort == "1") ? courseQuery.OrderByDescending(f => f.Id) :
+                  (sort == "2") ? courseQuery.OrderBy(f => f.Name) :
+                  (sort == "3") ? courseQuery.OrderByDescending(f => f.Name) :
+                  (sort == "4") ? courseQuery.OrderBy(f => f.CreditHours) :
+                  (sort == "5") ? courseQuery.OrderByDescending(f => f.CreditHours) :
+                                       courseQuery.OrderBy(f => f.Id);
+
+
+            var courseList = courseQuery.ToList();
+            var vm = new CourseManageVM
+            {
+                Courses = courseList,
+                EditCourse = editCourse
+            };
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Course", vm);
+            }
+            return View(vm);
         }
 
 

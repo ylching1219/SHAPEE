@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 namespace SHAPEE.Models
 #nullable disable warnings
 
@@ -43,7 +44,6 @@ namespace SHAPEE.Models
         public string ConfirmPassword { get; set; }
     }
 
-    //YL
     public class FacultyVM
     {
         [Required(ErrorMessage = "Faculty Id is required.")]
@@ -62,6 +62,9 @@ namespace SHAPEE.Models
         public List<Faculty> Faculties { get; set; } = [];
         public Faculty? EditFaculty { get; set; }
     }
+
+    //YL
+
 
     public class CourseManageVM
     {

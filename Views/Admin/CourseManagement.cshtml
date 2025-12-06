@@ -1,7 +1,5 @@
-﻿@model FacultyManageVM
-@{
-    ViewData["Title"] = "Faculty Management";
-}
+﻿@model CourseManageVM
+
 
 <!-- Success/Error Messages -->
 @if (TempData["SuccessMessage"] != null)
@@ -26,24 +24,24 @@
 
 <!-- Header -->
 <div class="bg-white border-bottom px-4 py-3 mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Faculty Management</h1>
+    <h1 class="h3 mb-0 text-gray-800">Course Management</h1>
 </div>
 
 
 
-<div class="tab-content" id="FacultyManagementTabContent">
+<div class="tab-content" id="CourseManagementTabContent">
     <!-- Students Tab -->
-    <div class="tab-pane fade show active" id="faculties" role="tabpanel">
+    <div class="tab-pane fade show active" id="courses" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
             <div class="card-header bg-white border-bottom py-3">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
                     <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
-                        Faculties (<span id="facultyCount">@Model.Faculties.Count()</span>)
+                        Programs
                     </h5>
                     <div class="d-flex gap-2">
                         <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" id="addData">
-                            <i class="fas fa-user-plus mr-1"></i> Add Faculty
+                            <i class="fas fa-user-plus mr-1"></i> Add Program
                         </button>
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
                             <i class="fas fa-download mr-1"></i> Export CSV
@@ -57,8 +55,8 @@
                 <form id="filterForm"
                       data-ajax="true"
                       data-ajax-method="GET"
-                      data-ajax-url="/Admin/FacultyManagement"
-                      data-ajax-update="#facultyData">
+                      data-ajax-url="/Admin/CourseManagement"
+                      data-ajax-update="#courseData">
                     <div class="row g-3">
                         <div class="col-12 col-md-5">
                             <div class="input-group">
@@ -69,20 +67,20 @@
                                        class="form-control"
                                        name="name"
                                        id="searchInput"
-                                       placeholder="Search faculties..." />
+                                       placeholder="Search courses..." />
                             </div>
                         </div>
                         <div class="col-12 col-md-2"></div>
                         <div class="col-12 col-md-4">
                             <div class="d-flex align-items-center">
                                 <span class="me-2 text-nowrap">Sort By:</span>
-                                <select class="form-control" name="sort" id="costSort">
-                                    <option value="">Program Code by Ascending</option>
-                                    <option value="1">Program Code by Descending</option>
-                                    <option value="2">Program Name by Ascending</option>
-                                    <option value="3">Program Name by Descending</option>
-                                    <option value="4">Cost Low to High</option>
-                                    <option value="5">Cost High to Low</option>
+                                <select class="form-control" name="sort" id="filter">
+                                    <option value="">Course Code by Ascending</option>
+                                    <option value="1">Course Code by Descending</option>
+                                    <option value="2">Course Name by Ascending</option>
+                                    <option value="3">Course Name by Descending</option>
+                                    <option value="4">Credit Hour Low to High</option>
+                                    <option value="5">Credit Hour to Low</option>
                                 </select>
                             </div>
                         </div>
@@ -99,8 +97,8 @@
             <!-- Faculty Table -->
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <div id="facultyData">
-                        <partial name="_Faculty" />
+                    <div id="courseData">
+                        <partial name="_Course" />
                     </div>
                 </div>
             </div>
@@ -111,7 +109,7 @@
 
 
 
-<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
+@* <div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -125,26 +123,31 @@
                     <div class="modal-body">
 
                         <div class="form-group">
-                            <label for="FacultyId" class="font-weight-medium">Faculty ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="FacultyId" name="FacultyId"
-                                   value="@(Model.EditFaculty?.Id != null ? Model.EditFaculty.Id : "")"
+                            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ProgramId" name="ProgramId"
+                                   value="@(Model.EditProgram?.Id != null ? Model.EditProgram.Id : "")"
                                    required>
                         </div>
 
                         <div class="form-group">
                             <div class="form-group">
-                                <label for="FacultyName" class="font-weight-medium">Faculty Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="FacultyName" name="FacultyName"
-                                       value="@(Model.EditFaculty?.Name != null ? Model.EditFaculty.Name : "")"
+                                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="ProgramName" name="ProgramName"
+                                       value="@(Model.EditProgram?.Name != null ? Model.EditProgram.Name : "")"
                                        required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="CostPerCreditHour" class="font-weight-medium">Cost Per Credit Hour<span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="CostPerCreditHour" name="CostPerCreditHour" step="0.01"
-                                   value="@Model.EditFaculty?.CostPerCreditHour"
-                                   required>
+                            <label for="FacultyId" class="font-weight-medium">Faculty<span class="text-danger">*</span></label>
+                            <select class="form-control" id="facultyFilter">
+                                <option value="default">Select Faculty</option>
+                                @foreach (var f in ViewBag.Faculty)
+                                {
+                                    <option value="@f.Id">@f.Id - @f.Name</option>
+                                }
+                            </select>
+
                         </div>
 
                     </div>
@@ -152,8 +155,8 @@
                         <button class="btn btn closeBtn" type="button" data-dismiss="modal" closeBtn>
                             <i class="fas fa-times mr-1"></i> Cancel
                         </button>
-                        <button class="btn btn-primary" type="submit" id="saveStudentBtn">
-                            <i class="fas fa-save mr-1"></i> Add Faculty
+                        <button class="btn btn-primary" type="submit" id="saveBtn">
+                            <i class="fas fa-save mr-1"></i> Add Program
                         </button>
                     </div>
                 </form>
@@ -161,7 +164,7 @@
 
         </div>
     </div>
-</div>
+</div> *@
 
 
 
@@ -211,19 +214,19 @@
 
         if (editId) {
             // Check TempData server-side
-            @if (Model.EditFaculty != null)
+            @if (Model.EditCourse != null)
             {
-                    <text>
-                         $('#addEditModal').modal('show');
-                        $("#addEditModalLabel").text("Edit Faculty");
-                        $("#saveStudentBtn").html('<i class="fas fa-save mr-1"></i> Update Faculty');
-                        $("#FacultyId").prop("readonly", true);
-                    </text>
+                <text>
+                    $('#addEditModal').modal('show');      
+                    $("#addEditModalLabel").text("Edit Program");
+                    $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Course');
+                    $("#CourseId").prop("readonly", true);
+                </text>
             }
         }
 
              $(".closeBtn").on("click", function() {
-                  window.location.href = '/Admin/FacultyManagement';
+                  window.location.href = '/Admin/ProgramManagement';
         });
 
         });

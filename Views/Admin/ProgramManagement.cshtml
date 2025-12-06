@@ -74,12 +74,13 @@
                         </div>
                         <div class="col-12 col-md-2"></div>
                         <div class="col-12 col-md-4">
-                            <select class="form-control" name="filter" id="facultyFilter">
+                            <select class="form-control" name="filter" id="filter">
                                 <option value="">All Faculty</option>
-                                @foreach(var f in ViewBag.faculty)
+                                @foreach (var f in ViewBag.Faculty)
                                 {
                                     <option value="@f.Id">@f.Id</option>
                                 }
+
                             </select>
                         </div>
                         <div class="col-12 col-md-1">
@@ -121,27 +122,32 @@
                     <div class="modal-body">
 
                         <div class="form-group">
-                            <label for="FacultyId" class="font-weight-medium">Faculty ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="FacultyId" name="FacultyId"
+                            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ProgramId" name="ProgramId"
                                    value="@(Model.EditProgram?.Id != null ? Model.EditProgram.Id : "")"
                                    required>
                         </div>
 
                         <div class="form-group">
                             <div class="form-group">
-                                <label for="FacultyName" class="font-weight-medium">Faculty Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="FacultyName" name="FacultyName"
+                                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="ProgramName" name="ProgramName"
                                        value="@(Model.EditProgram?.Name != null ? Model.EditProgram.Name : "")"
                                        required>
                             </div>
                         </div>
 
-                        @* <div class="form-group">
-                            <label for="CostPerCreditHour" class="font-weight-medium">Cost Per Credit Hour<span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="CostPerCreditHour" name="CostPerCreditHour" step="0.01"
-                                   value="@Model.EditProgram?.CostPerCreditHour"
-                                   required>
-                        </div> *@
+                        <div class="form-group">
+                            <label for="FacultyId" class="font-weight-medium">Faculty<span class="text-danger">*</span></label>
+                            <select class="form-control" id="facultyFilter">
+                                <option value="default">Select Faculty</option>
+                                @foreach (var f in ViewBag.Faculty)
+                                {
+                                    <option value="@f.Id">@f.Id - @f.Name</option>
+                                }
+                            </select>
+
+                        </div>
 
                     </div>
                     <div class="modal-footer bg-light">
@@ -163,7 +169,7 @@
 
 
 
-@* <!-- Delete Confirmation Modal -->
+<!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
@@ -209,20 +215,22 @@
             // Check TempData server-side
             @if (Model.EditProgram != null)
             {
-                        <text>
-                             $('#addEditModal').modal('show');
-                            $("#addEditModalLabel").text("Edit Program");
-                            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
-                            $("#FacultyId").prop("readonly", true);
-                        </text>
+                <text>
+                    $('#addEditModal').modal('show');
+                    $('#facultyFilter option[value="default"]').hide();
+                    $('#facultyFilter').val('@Model.EditProgram.FacultyId')
+                    $("#addEditModalLabel").text("Edit Program");
+                    $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
+                    $("#ProgramId").prop("readonly", true);
+                </text>
             }
         }
 
              $(".closeBtn").on("click", function() {
-                  window.location.href = '/Admin/FacultyManagement';
+                  window.location.href = '/Admin/ProgramManagement';
         });
 
         });
     </script>
 
-} *@
+}

@@ -133,7 +133,7 @@ $("#searchInput").on("keyup", function () {
     $("#filterForm").submit();
 });
 
-$("#costSort").on("change", function () {
+$("#filter").on("change", function () {
     $("#filterForm").submit();
 });
 
