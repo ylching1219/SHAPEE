@@ -1,0 +1,104 @@
+@using SHAPEE.Models
+@model IEnumerable<ClassSelectionItemVM>
+
+@{
+    var mode = (ViewData["Mode"] as string ?? "take").ToLower();
+    var isView = mode == "view";
+}
+
+<table class="table table-hover mb-0" id="classTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Section ID</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Course</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Day / Time</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Room</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Semester</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Type</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="classesTableBody">
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <i class="fas fa-door-closed fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">
+                        @(isView
+                            ? "You currently have no classes assigned. Please contact the administrator if this is unexpected."
+                            : "You have no classes today.")
+                    </p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                var s = item.Section;
+                var typeLetter = s.SectionType switch
+                {
+                    "Lecture" => "L",
+                    "Practical" => "P",
+                    "Tutorial" => "T",
+                    _ => "?"
+                };
+
+                var typeBgClass = s.SectionType switch
+                {
+                    "Lecture" => "bg-primary",
+                    "Practical" => "bg-info",
+                    "Tutorial" => "bg-success",
+                    _ => "bg-secondary"
+                };
+
+                var typeBadgeClass = s.SectionType switch
+                {
+                    "Lecture" => "primary",
+                    "Practical" => "info",
+                    "Tutorial" => "success",
+                    _ => "secondary"
+                };
+
+                <tr class="border-bottom"
+                    data-section-id="@s.SectionId"
+                    data-section-name="@s.SectionId">
+                    <td class="px-4 py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="@typeBgClass text-white mr-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; border-radius: 50%; font-weight: bold; font-size: 14px;">
+                                @typeLetter
+                            </div>
+                            <div class="font-weight-medium text-gray-900">@s.SectionId</div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@s.Course?.Id</div>
+                        <div class="text-muted small">@s.Course?.Name</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@s.Day</div>
+                        <div class="text-muted small">@s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")</div>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@(s.Room?.Id ?? "-")</td>
+                    <td class="px-4 py-3 text-muted">@s.SemesterId</td>
+                    <td class="px-4 py-3">
+                        <span class="badge badge-@typeBadgeClass">@s.SectionType</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a class="btn btn-sm btn-primary @( !item.CanStart && !isView ? "disabled" : "" )"
+                           title="@( !item.CanStart && !isView ? item.DisabledReason : "" )"
+                           href="@( isView
+                                    ? Url.Action("AttendanceManagement", "Staff", new { sectionId = s.SectionId })
+                                    : item.CanStart
+                                        ? Url.Action("MarkAttendance", "Staff", new { sectionId = s.SectionId })
+                                        : "#" )">
+                            <i class="fas @(isView ? "fa-eye" : "fa-play-circle")"></i>
+                            @(isView ? "View Attendance" : "Start Session")
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

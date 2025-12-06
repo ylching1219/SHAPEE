@@ -4,73 +4,172 @@
 @{
     var mode = (ViewData["Mode"] as string ?? "take").ToLower();
     var isView = mode == "view";
+    ViewData["Title"] = isView ? "Select Class to View Attendance" : "Select Class to Take Attendance";
 }
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            @(isView ? "Select Class to View Attendance" : "Select Class to Take Attendance")
-        </h1>
-        <p class="text-muted small mt-2">
-            Choose one of your classes to take attendance.
-        </p>
-    </div>
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        @(isView ? "Select Class to View Attendance" : "Select Class to Take Attendance")
+    </h1>
 </div>
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">
-        @(isView
-            ? "You currently have no classes assigned. Please contact the administrator if this is unexpected."
-            : "You have no classes today.")
-    </div>
-}
-else
-{
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Your Classes</h6>
+<div class="card shadow-sm">
+    <!-- Card Header -->
+    <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                Your Classes (<span id="classCount">@Model.Count()</span>)
+            </h5>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Section ID</th>
-                            <th>Course</th>
-                            <th>Day / Time</th>
-                            <th>Room</th>
-                            <th>Semester</th>
-                            <th style="width: 140px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card-body bg-light border-bottom">
+        <form id="filterForm"
+              data-ajax="true"
+              data-ajax-method="GET"
+              data-ajax-url="/Staff/ClassSelection"
+              data-ajax-update="#classData">
+            <input type="hidden" name="mode" value="@mode" />
+            <div class="row g-3">
+                <div class="col-12 col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" id="searchInput" placeholder="Search classes...">
+                    </div>
+                </div>
+                <div class="col-12 col-md-2">
+                    <select class="form-control" name="day" id="dayFilter" @(isView ? "" : "disabled")>
+                        <option value="">All Days</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <select class="form-control" name="sectionType" id="sectionTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="Lecture">Lecture</option>
+                        <option value="Practical">Practical</option>
+                        <option value="Tutorial">Tutorial</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <select class="form-control" name="semester" id="semesterFilter">
+                        <option value="">All Semesters</option>
+                        @foreach (var semester in Model.Select(m => m.Section.SemesterId).Distinct().OrderByDescending(s => s))
                         {
-                            var s = item.Section;
-                            <tr>
-                                <td>@s.SectionId</td>
-                                <td>@s.Course?.Id - @s.Course?.Name</td>
-                                <td>@s.Day, @s.StartTime.ToString("HH:mm") – @s.EndTime.ToString("HH:mm")</td>
-                                <td>@s.Room?.Id</td>
-                                <td>@s.SemesterId</td>
-                                <td>
-                                    <a class="btn btn-sm btn-primary @( !item.CanStart && !isView ? "disabled" : "" )"
-                                       title="@( !item.CanStart && !isView ? item.DisabledReason : "" )"
-                                       href="@( isView
-                                                ? Url.Action("AttendanceManagement", "Staff", new { sectionId = s.SectionId })
-                                                : item.CanStart
-                                                    ? Url.Action("MarkAttendance", "Staff", new { sectionId = s.SectionId })
-                                                    : "#" )">
-                                        <i class="fas @(isView ? "fa-eye" : "fa-play-circle")"></i>
-                                        @(isView ? "View Attendance" : "Start Session")
-                                    </a>
-                                </td>
-                            </tr>
+                            <option value="@semester">@semester</option>
                         }
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <select class="form-control" name="sort" id="classSort">
+                        <option value="">Sort By</option>
+                        <option value="1">Section ID (Ascending)</option>
+                        <option value="2">Section ID (Descending)</option>
+                        <option value="3">Day (Ascending)</option>
+                        <option value="4">Day (Descending)</option>
+                        <option value="5">Time (Early to Late)</option>
+                        <option value="6">Time (Late to Early)</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-1">
+                    <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Classes Table -->
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <div id="classData">
+                <partial name="_ClassSelection" />
             </div>
         </div>
     </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            //disable day filter in take mode
+            @if (!isView)
+            {
+                <text>
+                $('#dayFilter').prop('disabled', true);
+                </text>
+            }
+
+            //update class list with filters
+            function updateClassList() {
+                const searchTerm = $('#searchInput').val();
+                const selectedDay = $('#dayFilter').val();
+                const selectedType = $('#sectionTypeFilter').val();
+                const selectedSemester = $('#semesterFilter').val();
+                const sortOption = $('#classSort').val();
+                const currentMode = '@mode';
+
+                const queryParams = new URLSearchParams();
+                queryParams.append('mode', currentMode);
+                if (searchTerm) queryParams.append('search', searchTerm);
+                if (selectedDay && !$('#dayFilter').prop('disabled')) queryParams.append('day', selectedDay);
+                if (selectedType) queryParams.append('sectionType', selectedType);
+                if (selectedSemester) queryParams.append('semester', selectedSemester);
+                if (sortOption) queryParams.append('sort', sortOption);
+
+                $.ajax({
+                    url: '/Staff/ClassSelection',
+                    type: 'GET',
+                    data: queryParams.toString(),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        $('#classData').html(response);
+                        const totalCount = $('#classesTableBody tr[data-section-id]').length;
+                        $('#classCount').text(totalCount);
+                    },
+                    error: function() {
+                        alert('Error loading classes');
+                    }
+                });
+            }
+
+            //listen for filter changes
+            $('#searchInput, #dayFilter, #sectionTypeFilter, #semesterFilter, #classSort').on('change keyup', function() {
+                const inputId = $(this).attr('id');
+                //delay search input to prevent high request
+                if (inputId === 'searchInput') {
+                    clearTimeout(window.searchDelayTimer);
+                    window.searchDelayTimer = setTimeout(updateClassList, 500);
+                } else {
+                    updateClassList();
+                }
+            });
+
+            //reset button click
+            $('button[type="reset"]').on('click', function() {
+                $('#searchInput').val('');
+                $('#dayFilter').val('');
+                $('#sectionTypeFilter').val('');
+                $('#semesterFilter').val('');
+                $('#classSort').val('');
+
+                setTimeout(function() {
+                    window.location.href = '/Staff/ClassSelection?mode=@mode';
+                }, 100);
+            });
+        });
+    </script>
 }

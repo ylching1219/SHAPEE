@@ -19,7 +19,7 @@ namespace SHAPEE.Controllers
 
         //===============KOH KAI MINN================
 
-        public IActionResult ClassSelection(string mode = "take")
+        public IActionResult ClassSelection(string mode = "take", string? search = null, string? day = null, string? sectionType = null, string? semester = null, string? sort = null)
         {
             ViewData["Title"] = mode == "view"
                 ? "Select Class to View Attendance"
@@ -32,22 +32,101 @@ namespace SHAPEE.Controllers
             var todayAbbrev = todayName[..3];                  
             var currentTime = TimeOnly.FromDateTime(now);
 
-            var sections = db.ClassSections
+            var isView = (mode ?? "take").Equals("view", StringComparison.OrdinalIgnoreCase);
+
+            //base query all sections for this staff
+            var sectionsQuery = db.ClassSections
                 .Include(c => c.Course)
                 .Include(c => c.Room)
                 .Include(c => c.Semester)
                 .Where(c => c.StaffId == staffId)
-                .OrderBy(c => c.Day)
-                .ThenBy(c => c.StartTime)
-                .ToList();
+                .AsQueryable();
 
-            var isView = (mode ?? "take").Equals("view", StringComparison.OrdinalIgnoreCase);
+            //only filter by today in TAKE mode, not in VIEW mode
+            if (!isView)
+            {
+                // mode = take (show only today class)
+                //convert to lowercase for comparison
+                var todayNameLower = todayName.ToLower();
+                var todayAbbrevLower = todayAbbrev.ToLower();
+                sectionsQuery = sectionsQuery.Where(s =>
+                    s.Day.ToLower() == todayNameLower ||
+                    s.Day.ToLower().StartsWith(todayAbbrevLower));
+            }
+
+            // search filter (only section id, course id ,room id)
+            search = search?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(search))
+            {
+                var searchLower = search.ToLower();
+                sectionsQuery = sectionsQuery.Where(s =>
+                    s.SectionId.ToLower().Contains(searchLower) ||
+                    (s.Course != null && s.Course.Id.ToLower().Contains(searchLower)) ||
+                    (s.Room != null && s.Room.Id.ToLower().Contains(searchLower)));
+            }
+
+            // other filters (works for both modes)
+            day = day?.Trim() ?? "";
+            sectionType = sectionType?.Trim() ?? "";
+            semester = semester?.Trim() ?? "";
+
+            // day filter (map full day names to match db data)
+            // only apply day filter in VIEW mode (disabled in TAKE mode)
+            if (!string.IsNullOrEmpty(day) && isView)
+            {
+                //map full day names to match db data
+                var dayMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Monday", "Mon" },
+                    { "Tuesday", "Tues" },
+                    { "Wednesday", "Wed" },
+                    { "Thursday", "Thurs" },
+                    { "Friday", "Fri" },
+                    { "Saturday", "Sat" },
+                    { "Sunday", "Sun" }
+                };
+
+                //get the db data for the selected day
+                var dayAbbrev = dayMapping.ContainsKey(day) ? dayMapping[day] : day;
+                var dayAbbrevLower = dayAbbrev.ToLower();
+                
+                var dayLower = day.ToLower();
+                
+                sectionsQuery = sectionsQuery.Where(s =>
+                    s.Day.ToLower() == dayAbbrevLower ||
+                    s.Day.ToLower() == dayLower ||
+                    s.Day.ToLower().StartsWith(dayAbbrevLower));
+            }
+
+            if (!string.IsNullOrEmpty(sectionType))
+            {
+                sectionsQuery = sectionsQuery.Where(s => s.SectionType == sectionType);
+            }
+
+            if (!string.IsNullOrEmpty(semester))
+            {
+                sectionsQuery = sectionsQuery.Where(s => s.SemesterId == semester);
+            }
+
+            // sorting
+            sectionsQuery = sort switch
+            {
+                "1" => sectionsQuery.OrderBy(s => s.SectionId),
+                "2" => sectionsQuery.OrderByDescending(s => s.SectionId),
+                "3" => sectionsQuery.OrderBy(s => s.Day),
+                "4" => sectionsQuery.OrderByDescending(s => s.Day),
+                "5" => sectionsQuery.OrderBy(s => s.StartTime),
+                "6" => sectionsQuery.OrderByDescending(s => s.StartTime),
+                _ => sectionsQuery.OrderBy(s => s.Day).ThenBy(s => s.StartTime)
+            };
+
+            var sections = sectionsQuery.ToList();
 
             List<ClassSelectionItemVM> vm;
 
             if (isView)
             {
-                // mode = view (show all class)
+                // mode = view (show all class) no time chedking (no need to check if time has been reached or has passed)
                 vm = sections.Select(s => new ClassSelectionItemVM
                 {
                     Section = s,
@@ -57,19 +136,22 @@ namespace SHAPEE.Controllers
             }
             else
             {
-                //mode = take (show only today class)
-                var todaysSections = sections
-                    .Where(s =>
-                        string.Equals(s.Day, todayName, StringComparison.OrdinalIgnoreCase) ||
-                        s.Day.StartsWith(todayAbbrev, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                vm = todaysSections.Select(s =>
+                // mode = take (already filtered to today's classes above)
+                // show all today classe, but disable button if time not yet reach or passed
+                vm = sections.Select(s =>
                 {
+                    //allow starting if current time is between start time and end time
                     var canStart = currentTime >= s.StartTime && currentTime <= s.EndTime;
                     string? reason = null;
-                    if (currentTime < s.StartTime) reason = "Class not started yet.";
-                    else if (currentTime > s.EndTime) reason = "Class already ended.";
+                    
+                    if (currentTime < s.StartTime) 
+                    {
+                        reason = $"Class starts at {s.StartTime:HH:mm}. Please wait until the class time.";
+                    }
+                    else if (currentTime > s.EndTime) 
+                    {
+                        reason = $"Class ended at {s.EndTime:HH:mm}.";
+                    }
 
                     return new ClassSelectionItemVM
                     {
@@ -78,6 +160,11 @@ namespace SHAPEE.Controllers
                         DisabledReason = reason
                     };
                 }).ToList();
+            }
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_ClassSelection", vm);
             }
 
             return View(vm);
