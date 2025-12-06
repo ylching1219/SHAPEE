@@ -1,0 +1,101 @@
+@using SHAPEE.Models
+@model AttendanceManagementVM
+
+<table class="table table-hover mb-0" id="attendanceTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center" style="width: 40px;">
+                <input type="checkbox" id="selectAllCheckbox" title="Select All">
+            </th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Registered At</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Security</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Action</th>
+        </tr>
+    </thead>
+    <tbody id="attendanceTableBody">
+        @if (Model.Attendances == null || !Model.Attendances.Any())
+        {
+            <tr>
+                <td colspan="8" class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No attendance records found</p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var attendance in Model.Attendances)
+            {
+                var student = attendance.Student;
+                var statusClass = attendance.Status switch
+                {
+                    "Present" => "success",
+                    "Late" => "warning",
+                    "Absent" => "danger",
+                    "Excused" => "info",
+                    _ => "secondary"
+                };
+                
+                var rowClass = attendance.IsFlaged ? "table-danger" : "";
+                
+                <tr class="border-bottom @rowClass" data-attendance-id="@attendance.Id">
+                    <td class="px-4 py-3 text-center">
+                        <input type="checkbox" class="attendance-checkbox" value="@attendance.Id">
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@attendance.Date.ToString("yyyy-MM-dd")</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@(student?.Id ?? "N/A")</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@(student != null ? $"{student.FirstName} {student.LastName}" : "N/A")</div>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@attendance.RegisteredAt.ToString("hh:mm:ss tt")</td>
+                    <td class="px-4 py-3">
+                        <select class="form-control form-control-sm border-left-@statusClass attendance-status-select" 
+                                data-attendance-id="@attendance.Id" 
+                                data-original-status="@attendance.Status">
+                            <option value="Present" selected="@(attendance.Status == "Present")">Present</option>
+                            <option value="Late" selected="@(attendance.Status == "Late")">Late</option>
+                            <option value="Absent" selected="@(attendance.Status == "Absent")">Absent</option>
+                            <option value="Excused" selected="@(attendance.Status == "Excused")">Excused</option>
+                        </select>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        @if (attendance.IsFlaged)
+                        {
+                            <span class="badge badge-danger">
+                                <i class="fas fa-user-secret"></i> @(attendance.FlagReason ?? "Suspicious IP")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">
+                                <i class="fas fa-check-circle"></i> OK
+                            </span>
+                        }
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button class="btn btn-sm btn-primary saveAttendanceBtn" 
+                                data-attendance-id="@attendance.Id" 
+                                title="Save Changes"
+                                style="display: none;">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                        <button class="btn btn-sm btn-secondary cancelAttendanceBtn" 
+                                data-attendance-id="@attendance.Id" 
+                                title="Cancel Changes"
+                                style="display: none;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

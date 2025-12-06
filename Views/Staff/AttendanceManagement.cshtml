@@ -1,40 +1,40 @@
 @using SHAPEE.Models
+@model AttendanceManagementVM
+
 @{
     ViewData["Title"] = "Attendance Management";
-    var currentSection = ViewData["Section"] as ClassSection;
 }
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">Attendance Registry</h1>
-        @if (currentSection != null)
-        {
-            <p class="text-muted small mt-2 mb-0">
-                <strong>@currentSection.Course?.Id - @currentSection.Course?.Name</strong>
-                (@currentSection.SectionId) · @currentSection.Day
-                @currentSection.StartTime.ToString("HH:mm")–@currentSection.EndTime.ToString("HH:mm")
-                · Room @currentSection.Room?.Id · Semester @currentSection.SemesterId
-            </p>
-        }
-        else
-        {
-            <p class="text-muted small mt-2 mb-0">
-                Select a class from the class selection page to view its attendance.
-            </p>
-        }
-    </div>
-    <div class="mt-3 mt-sm-0">
-        <a class="btn btn-sm btn-outline-secondary mr-2"
-           href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })">
-            <i class="fas fa-arrow-left fa-sm"></i> Back to Class Selection
-        </a>
-        <button class="btn btn-sm btn-primary">
-            <i class="fas fa-download fa-sm text-white-50"></i> Export CSV
-        </button>
+@Html.AntiForgeryToken()
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Attendance Details</h1>
+            @if (Model?.Section != null)
+            {
+                <p class="text-muted small mt-2 mb-0">
+                    <strong>@Model.Section.Course?.Id - @Model.Section.Course?.Name</strong>
+                    (@Model.Section.SectionId) · @Model.Section.Day
+                    @Model.Section.StartTime.ToString("HH:mm")–@Model.Section.EndTime.ToString("HH:mm")
+                    · Room @Model.Section.Room?.Id · Semester @Model.Section.SemesterId
+                </p>
+            }
+        </div>
+        <div class="mt-3 mt-md-0">
+            <a class="btn btn-sm btn-outline-secondary mr-2"
+               href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })">
+                <i class="fas fa-arrow-left fa-sm"></i> Back to Class Selection
+            </a>
+            <button class="btn btn-sm btn-primary">
+                <i class="fas fa-download fa-sm"></i> Export CSV
+            </button>
+        </div>
     </div>
 </div>
 
-@if (currentSection == null)
+@if (Model?.Section == null)
 {
     <div class="alert alert-info">
         No class selected. Please go back to the class selection page and choose a class.
@@ -42,6 +42,7 @@
 }
 else
 {
+    <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card border-left-primary shadow h-100 py-2">
@@ -50,7 +51,7 @@ else
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Students</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">30</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="statTotalStudents">@Model.TotalStudents</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
@@ -66,9 +67,9 @@ else
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Average Present</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">27</div>
-                            <div class="small text-muted">90% over last 5 sessions</div>
+                                Overall Attendance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="statOverallAttendance">@Model.AveragePresent.ToString("F1")%</div>
+                            <div class="small text-muted">All sessions</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-user-check fa-2x text-gray-300"></i>
@@ -85,7 +86,7 @@ else
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
                                 Absences</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">8</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="statTotalAbsences">@Model.TotalAbsences</div>
                             <div class="small text-muted">This semester</div>
                         </div>
                         <div class="col-auto">
@@ -103,7 +104,7 @@ else
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Flagged Scans</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">3</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="statFlaggedCount">@Model.FlaggedCount</div>
                             <div class="small text-muted">Suspicious IP / device</div>
                         </div>
                         <div class="col-auto">
@@ -115,147 +116,372 @@ else
         </div>
     </div>
 
-    <!-- Filters + table -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Attendance Records</h6>
-        </div>
-        <div class="card-body">
-            <!-- Filter row -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-2">
-                    <label class="small font-weight-bold">Date</label>
-                    <input type="date" class="form-control" value="2025-09-01" />
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="small font-weight-bold">Student</label>
-                    <input type="text" class="form-control" placeholder="Search by ID or name" />
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="small font-weight-bold">Status</label>
-                    <select class="form-control">
-                        <option>All Statuses</option>
-                        <option>Present</option>
-                        <option>Late</option>
-                        <option>Absent</option>
-                        <option>Excused</option>
-                        <option>Flagged</option>
+    <!-- Attendance Table Card -->
+    <div class="card shadow-sm">
+        <!-- Card Header -->
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                    Attendance Records (<span id="attendanceCount">@Model.Attendances.Count()</span>)
+                </h5>
+                <div class="d-flex gap-2 align-items-center" id="bulkUpdateContainer" style="display: none;">
+                    <select class="form-control form-control-sm" id="bulkStatusSelect" style="min-width: 150px; height: 31px;">
+                        <option value="">Select Status</option>
+                        <option value="Present">Present</option>
+                        <option value="Late">Late</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Excused">Excused</option>
                     </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end mb-2">
-                    <button class="btn btn-primary w-100">
-                        <i class="fas fa-search fa-sm"></i> Filter
+                    <button class="btn btn-sm btn-success" id="bulkUpdateBtn" style="height: 31px; padding: 0.25rem 0.75rem; white-space: nowrap;">
+                        <i class="fas fa-save mr-1"></i> Update Selected (<span id="selectedCount">0</span>)
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="thead-light">
-                        <tr>
-                            <th style="width: 12%;">Date</th>
-                            <th style="width: 15%;">Student ID</th>
-                            <th style="width: 25%;">Name</th>
-                            <th style="width: 18%;">Registered At</th>
-                            <th style="width: 15%;">Status (Edit)</th>
-                            <th style="width: 10%;">Security</th>
-                            <th style="width: 5%;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Dummy row 1 -->
-                        <tr>
-                            <td>2025-09-01</td>
-                            <td>22WMR01234</td>
-                            <td>Koh Kai Minn</td>
-                            <td>10:01:15 AM</td>
-                            <td>
-                                <select class="form-control form-control-sm border-left-success">
-                                    <option selected>Present</option>
-                                    <option>Late</option>
-                                    <option>Absent</option>
-                                    <option>Excused</option>
-                                </select>
-                            </td>
-                            <td class="text-center text-success small">
-                                <i class="fas fa-check-circle"></i> OK
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
-                                    <i class="fas fa-save"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        <!-- Dummy row 2 (flagged) -->
-                        <tr class="table-danger">
-                            <td>2025-09-01</td>
-                            <td>22WMR09876</td>
-                            <td>Low Jwen Siong</td>
-                            <td>10:01:20 AM</td>
-                            <td>
-                                <select class="form-control form-control-sm border-left-warning">
-                                    <option>Present</option>
-                                    <option selected>Late</option>
-                                    <option>Absent</option>
-                                    <option>Excused</option>
-                                </select>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge badge-danger">
-                                    <i class="fas fa-user-secret"></i> Suspicious IP
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
-                                    <i class="fas fa-save"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        <!-- Dummy row 3 -->
-                        <tr>
-                            <td>2025-09-01</td>
-                            <td>22WMR05555</td>
-                            <td>Lee Kai Sheng</td>
-                            <td>10:02:05 AM</td>
-                            <td>
-                                <select class="form-control form-control-sm border-left-danger">
-                                    <option>Present</option>
-                                    <option>Late</option>
-                                    <option selected>Absent</option>
-                                    <option>Excused</option>
-                                </select>
-                            </td>
-                            <td class="text-center small">
-                                <span class="badge badge-secondary">
-                                    <i class="fas fa-info-circle"></i> Manual Edit
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-primary btn-sm btn-circle" title="Save Changes">
-                                    <i class="fas fa-save"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-3 d-flex justify-content-between align-items-center">
-                <div class="small text-muted">
-                    Showing dummy data for UI demo. Later this will be populated from `Attendance` entity.
+        <!-- Filters Section -->
+        <div class="card-body bg-light border-bottom">
+            <form id="filterForm"
+                  data-ajax="true"
+                  data-ajax-method="GET"
+                  data-ajax-url="/Staff/AttendanceManagement"
+                  data-ajax-update="#attendanceData">
+                <input type="hidden" name="sectionId" value="@Model.Section.SectionId" />
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" id="searchInput" placeholder="Search students...">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <input type="date" class="form-control" name="date" id="dateFilter" />
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <select class="form-control" name="status" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="Present">Present</option>
+                            <option value="Late">Late</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Excused">Excused</option>
+                            <option value="Flagged">Flagged</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <select class="form-control" name="sort" id="attendanceSort">
+                            <option value="">Sort By</option>
+                            <option value="1">Date (Ascending)</option>
+                            <option value="2">Date (Descending)</option>
+                            <option value="3">Student ID (Ascending)</option>
+                            <option value="4">Student ID (Descending)</option>
+                            <option value="5">Time (Early to Late)</option>
+                            <option value="6">Time (Late to Early)</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-1">
+                        <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
                 </div>
-                <nav aria-label="Page navigation example" class="d-none d-md-block">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                    </ul>
-                </nav>
+            </form>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <div id="attendanceData">
+                    <partial name="_Attendance" />
+                </div>
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            //initialize handlers
+            initializeHandlers();
+
+            //update attendance list with filters
+            function refreshAttendanceList() {
+                const searchTerm = $('#searchInput').val();
+                const selectedDate = $('#dateFilter').val();
+                const selectedStatus = $('#statusFilter').val();
+                const sortOption = $('#attendanceSort').val();
+                const sectionId = '@Model?.Section?.SectionId';
+
+                const queryParams = new URLSearchParams();
+                queryParams.append('sectionId', sectionId);
+                if (searchTerm) queryParams.append('search', searchTerm);
+                if (selectedDate) queryParams.append('date', selectedDate);
+                if (selectedStatus) queryParams.append('status', selectedStatus);
+                if (sortOption) queryParams.append('sort', sortOption);
+
+                $.ajax({
+                    url: '/Staff/AttendanceManagement',
+                    type: 'GET',
+                    data: queryParams.toString(),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        $('#attendanceData').html(response);
+                        const totalCount = $('#attendanceTableBody tr[data-attendance-id]').length;
+                        $('#attendanceCount').text(totalCount);
+                        initializeHandlers();
+                        updateSelectedCount();
+                    },
+                    error: function() {
+                        alert('Error loading attendance records');
+                    }
+                });
+            }
+
+            //update selected count and show/hide bulk update button
+            function updateSelectedCount() {
+                const selectedCount = $('.attendance-checkbox:checked').length;
+                $('#selectedCount').text(selectedCount);
+                
+                if (selectedCount > 0) {
+                    $('#bulkUpdateContainer').show();
+                    //disable status dropdowns for selected rows
+                    $('.attendance-checkbox:checked').each(function() {
+                        const $row = $(this).closest('tr');
+                        $row.find('.attendance-status-select').prop('disabled', true);
+                    });
+                    //enable status dropdowns for unselected rows
+                    $('.attendance-checkbox:not(:checked)').each(function() {
+                        const $row = $(this).closest('tr');
+                        $row.find('.attendance-status-select').prop('disabled', false);
+                    });
+                } else {
+                    $('#bulkUpdateContainer').hide();
+                    $('#bulkStatusSelect').val('');
+                    //enable all status dropdowns
+                    $('.attendance-status-select').prop('disabled', false);
+                }
+            }
+
+            //initialize all event handlers
+            function initializeHandlers() {
+                //select all checkbox
+                $(document).off('change', '#selectAllCheckbox').on('change', '#selectAllCheckbox', function() {
+                    const isChecked = $(this).prop('checked');
+                    $('.attendance-checkbox').prop('checked', isChecked);
+                    updateSelectedCount();
+                });
+
+                //individual checkbox change
+                $(document).off('change', '.attendance-checkbox').on('change', '.attendance-checkbox', function() {
+                    updateSelectedCount();
+                    //uncheck select all if individual checkbox unchecked
+                    const totalCheckboxes = $('.attendance-checkbox').length;
+                    const checkedCheckboxes = $('.attendance-checkbox:checked').length;
+                    $('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+                });
+
+                //status select change -- show save/cancel buttons (only if not disabled)
+                $(document).off('change', '.attendance-status-select').on('change', '.attendance-status-select', function() {
+                    //ignore if disabled (selected for bulk update)
+                    if ($(this).prop('disabled')) {
+                        return;
+                    }
+                    
+                    const $row = $(this).closest('tr');
+                    const attendanceId = $(this).data('attendance-id');
+                    const newStatus = $(this).val();
+                    const originalStatus = $(this).data('original-status');
+                    
+                    if (newStatus !== originalStatus) {
+                        //show save and cancel buttons
+                        $row.find('.saveAttendanceBtn').show();
+                        $row.find('.cancelAttendanceBtn').show();
+                        $row.addClass('table-warning');
+                    } else {
+                        //hide buttons if status reverted
+                        $row.find('.saveAttendanceBtn').hide();
+                        $row.find('.cancelAttendanceBtn').hide();
+                        $row.removeClass('table-warning');
+                    }
+                });
+
+                //single attendance status save
+                $(document).off('click', '.saveAttendanceBtn').on('click', '.saveAttendanceBtn', function() {
+                    const attendanceId = $(this).data('attendance-id');
+                    const $row = $(this).closest('tr');
+                    const statusSelect = $row.find('.attendance-status-select');
+                    const newStatus = statusSelect.val();
+                    const originalStatus = statusSelect.data('original-status');
+                    
+                    if (newStatus === originalStatus) {
+                        SweetAlert.info('No Changes', 'Status has not been changed.');
+                        return;
+                    }
+                    
+                    updateAttendanceStatus([attendanceId], newStatus, function() {
+                        //update original status after successful save
+                        statusSelect.data('original-status', newStatus);
+                        $row.find('.saveAttendanceBtn').hide();
+                        $row.find('.cancelAttendanceBtn').hide();
+                        $row.removeClass('table-warning');
+                    });
+                });
+
+                //cancel changes for single record
+                $(document).off('click', '.cancelAttendanceBtn').on('click', '.cancelAttendanceBtn', function() {
+                    const attendanceId = $(this).data('attendance-id');
+                    const $row = $(this).closest('tr');
+                    const statusSelect = $row.find('.attendance-status-select');
+                    const originalStatus = statusSelect.data('original-status');
+                    
+                    SweetAlert.confirm(
+                        'Cancel Changes?',
+                        'Are you sure you want to discard the changes?',
+                        {
+                            confirmButtonText: 'Yes, Discard',
+                            cancelButtonText: 'No, Keep Changes',
+                            onConfirm: function() {
+                                statusSelect.val(originalStatus);
+                                $row.find('.saveAttendanceBtn').hide();
+                                $row.find('.cancelAttendanceBtn').hide();
+                                $row.removeClass('table-warning');
+                                SweetAlert.success('Changes Discarded', 'The status has been reverted to the original value.');
+                            }
+                        }
+                    );
+                });
+            }
+
+            //listen for filter changes
+            $('#searchInput, #dateFilter, #statusFilter, #attendanceSort').on('change keyup', function() {
+                const inputId = $(this).attr('id');
+                //delay search input to prevent high request
+                if (inputId === 'searchInput') {
+                    clearTimeout(window.searchDelayTimer);
+                    window.searchDelayTimer = setTimeout(refreshAttendanceList, 500);
+                } else {
+                    refreshAttendanceList();
+                }
+            });
+
+            //reset button click
+            $('button[type="reset"]').on('click', function() {
+                $('#searchInput').val('');
+                $('#dateFilter').val('');
+                $('#statusFilter').val('');
+                $('#attendanceSort').val('');
+
+                setTimeout(function() {
+                    window.location.href = '/Staff/AttendanceManagement?sectionId=@Model?.Section?.SectionId';
+                }, 100);
+            });
+
+            //bulk attendance status update
+            $(document).on('click', '#bulkUpdateBtn', function() {
+                const selectedIds = $('.attendance-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+                
+                if (selectedIds.length === 0) {
+                    SweetAlert.warning('No Selection', 'Please select at least one record to update.');
+                    return;
+                }
+                
+                const newStatus = $('#bulkStatusSelect').val();
+                if (!newStatus) {
+                    SweetAlert.warning('Status Required', 'Please select a status from the dropdown.');
+                    return;
+                }
+                
+                SweetAlert.confirm(
+                    'Bulk Update Status',
+                    `Are you sure you want to update ${selectedIds.length} record(s) to "${newStatus}"?`,
+                    {
+                        confirmButtonText: 'Yes, Update',
+                        cancelButtonText: 'Cancel',
+                        onConfirm: function() {
+                            updateAttendanceStatus(selectedIds, newStatus, function() {
+                                //uncheck all checkboxes after successful update
+                                $('.attendance-checkbox').prop('checked', false);
+                                $('#selectAllCheckbox').prop('checked', false);
+                                updateSelectedCount();
+                            });
+                        },
+                        onCancel: function() {
+                            SweetAlert.info('Cancelled', 'Bulk update has been cancelled.');
+                        }
+                    }
+                );
+            });
+
+            //refresh statistics cards
+            function refreshStatistics() {
+                const sectionId = '@Model?.Section?.SectionId';
+                
+                $.ajax({
+                    url: '/Staff/GetAttendanceStatistics',
+                    type: 'GET',
+                    data: { sectionId: sectionId },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#statTotalStudents').text(response.totalStudents);
+                            $('#statOverallAttendance').text(response.overallAttendance.toFixed(1) + '%');
+                            $('#statTotalAbsences').text(response.totalAbsences);
+                            $('#statFlaggedCount').text(response.flaggedCount);
+                        }
+                    },
+                    error: function() {
+                        console.error('Error refreshing statistics');
+                    }
+                });
+            }
+
+            //update attendance status function
+            function updateAttendanceStatus(attendanceIds, newStatus, onSuccess) {
+                $.ajax({
+                    url: '/Staff/UpdateAttendanceStatus',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        attendanceIds: attendanceIds,
+                        status: newStatus
+                    }),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            //refresh statistics first
+                            refreshStatistics();
+                            
+                            SweetAlert.success(
+                                'Success!',
+                                response.message || `Successfully updated ${attendanceIds.length} record(s) to ${newStatus}.`,
+                                {
+                                    timer: 2000,
+                                    onConfirm: function() {
+                                        if (onSuccess) onSuccess();
+                                        refreshAttendanceList();
+                                    }
+                                }
+                            );
+                        } else {
+                            SweetAlert.error('Error', response.message || 'Failed to update attendance status.');
+                        }
+                    },
+                    error: function() {
+                        SweetAlert.error('Error', 'An error occurred while updating attendance status.');
+                    }
+                });
+            }
+        });
+    </script>
 }

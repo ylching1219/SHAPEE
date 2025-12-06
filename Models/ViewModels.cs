@@ -78,7 +78,7 @@ namespace SHAPEE.Models
         public Program? EditProgram { get; set; }
     }
 
-
+    //KM
 
     public class ClassSelectionItemVM
     {
@@ -99,6 +99,18 @@ namespace SHAPEE.Models
         public List<Student> AbsentStudents { get; set; } = [];
         public List<Attendance> FlaggedAttendances { get; set; } = [];
         public DateOnly Today { get; set; }
+    }
+
+    public class AttendanceManagementVM
+    {
+        public ClassSection Section { get; set; }
+        public int TotalStudents { get; set; }
+        public double AveragePresent { get; set; }
+        public int AveragePresentPercentage { get; set; }
+        public int TotalAbsences { get; set; }
+        public int FlaggedCount { get; set; }
+        public List<Attendance> Attendances { get; set; } = [];
+        public List<Student> EnrolledStudents { get; set; } = [];
     }
 
     // JS

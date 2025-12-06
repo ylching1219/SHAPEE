@@ -375,8 +375,74 @@ namespace SHAPEE.Controllers
             return Json(new { success = true, items });
         }
 
+        [HttpGet]
+        public IActionResult GetAttendanceStatistics(string sectionId)
+        {
+            if (string.IsNullOrEmpty(sectionId))
+            {
+                return Json(new { success = false, message = "Section ID is required." });
+            }
 
-        public IActionResult AttendanceManagement(string sectionId)
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var section = db.ClassSections
+                .Include(c => c.Course)
+                .Include(c => c.Room)
+                .Include(c => c.Semester)
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+            if (section == null)
+            {
+                return Json(new { success = false, message = "Section not found." });
+            }
+
+            //get all enrolled student for this class section
+            var enrolledStudents = db.Enrollments
+                .Include(e => e.Student)
+                .Where(e => e.ClassSectionId == sectionId 
+                 && e.Type == "Enrolled" 
+                 && e.Status == "Approved")
+                .Select(e => e.Student)
+                .ToList();
+
+            var totalStudents = enrolledStudents.Count;
+
+            //get all attendance records for this class section
+            var allAttendances = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .ToList();
+
+            //calculate overall attendance percentage
+            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
+            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
+            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
+            var overallAttendancePercentage = totalPossibleAttendances > 0
+                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+                : 0;
+
+            //calculate flaged count
+            var flaggedCount = allAttendances.Count(a => a.IsFlaged);
+            
+            //count total absences this semester
+            var semesterStart = section.Semester?.Id != null 
+                ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
+                : DateOnly.FromDateTime(DateTime.Now);
+            
+            var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
+            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+
+            return Json(new { 
+                success = true,
+                totalStudents = totalStudents,
+                overallAttendance = overallAttendancePercentage,
+                totalAbsences = totalAbsences,
+                flaggedCount = flaggedCount
+            });
+        }
+
+
+        public IActionResult AttendanceManagement(string sectionId, string? search = null, string? date = null, string? status = null, string? sort = null)
         {
             if (string.IsNullOrEmpty(sectionId))
                 return RedirectToAction("ClassSelection", new { mode = "view" });
@@ -392,9 +458,115 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
 
-            ViewData["Section"] = section; 
+            //get all enrolled students for this class section
+            var enrolledStudents = db.Enrollments
+                .Include(e => e.Student)
+                .Where(e => e.ClassSectionId == sectionId 
+                 && e.Type == "Enrolled" 
+                 && e.Status == "Approved")
+                .Select(e => e.Student)
+                .ToList();
+
+            var totalStudents = enrolledStudents.Count;
+
+            //get all attendance records for this class section with filters
+            var attendancesQuery = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .AsQueryable();
+
+            //apply search filter
+            search = search?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(search))
+            {
+                var searchLower = search.ToLower();
+                attendancesQuery = attendancesQuery.Where(a =>
+                    (a.Student != null && (a.Student.Id.ToLower().Contains(searchLower) ||
+                     (a.Student.FirstName != null && a.Student.FirstName.ToLower().Contains(searchLower)) ||
+                     (a.Student.LastName != null && a.Student.LastName.ToLower().Contains(searchLower)))));
+            }
+
+            //apply date filter
+            date = date?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(date) && DateOnly.TryParse(date, out var filterDate))
+            {
+                attendancesQuery = attendancesQuery.Where(a => a.Date == filterDate);
+            }
+
+            //apply status filter
+            status = status?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (status == "Flagged")
+                {
+                    attendancesQuery = attendancesQuery.Where(a => a.IsFlaged);
+                }
+                else
+                {
+                    attendancesQuery = attendancesQuery.Where(a => a.Status == status);
+                }
+            }
+
+            //apply sorting
+            attendancesQuery = sort switch
+            {
+                "1" => attendancesQuery.OrderBy(a => a.Date),
+                "2" => attendancesQuery.OrderByDescending(a => a.Date),
+                "3" => attendancesQuery.OrderBy(a => a.Student != null ? a.Student.Id : ""),
+                "4" => attendancesQuery.OrderByDescending(a => a.Student != null ? a.Student.Id : ""),
+                "5" => attendancesQuery.OrderBy(a => a.RegisteredAt),
+                "6" => attendancesQuery.OrderByDescending(a => a.RegisteredAt),
+                _ => attendancesQuery.OrderByDescending(a => a.Date).ThenByDescending(a => a.RegisteredAt)
+            };
+
+            var filteredAttendances = attendancesQuery.ToList();
+
+            //get all attendances for statistics (before filterd)
+            var allAttendances = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .ToList();
+
+            //calculate overall attendance percentage
+            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
+            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
+            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
+            var overallAttendancePercentage = totalPossibleAttendances > 0
+                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+                : 0;
+
+            //calculate flaged count
+            var flaggedCount = allAttendances.Count(a => a.IsFlaged);
+            
+            //count total absences this semester
+            var semesterStart = section.Semester?.Id != null 
+                ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
+                : DateOnly.FromDateTime(DateTime.Now);
+            
+            var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
+            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+
+            //create view model
+            var viewModel = new AttendanceManagementVM
+            {
+                Section = section,
+                TotalStudents = totalStudents,
+                AveragePresent = overallAttendancePercentage, //stores overall attendance percentage
+                AveragePresentPercentage = (int)overallAttendancePercentage,
+                TotalAbsences = totalAbsences,
+                FlaggedCount = flaggedCount,
+                Attendances = filteredAttendances,
+                EnrolledStudents = enrolledStudents
+            };
+
             ViewData["Title"] = "Attendance Management";
-            return View(); 
+            
+            if (Request.IsAjax())
+            {
+                return PartialView("_Attendance", viewModel);
+            }
+            
+            return View(viewModel); 
         }
 
 
@@ -402,6 +574,60 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "Attendance Analytics";
             return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateAttendanceStatus([FromBody] UpdateAttendanceStatusRequest request)
+        {
+            if (request == null || request.AttendanceIds == null || !request.AttendanceIds.Any())
+            {
+                return Json(new { success = false, message = "No attendance records selected." });
+            }
+
+            if (string.IsNullOrEmpty(request.Status))
+            {
+                return Json(new { success = false, message = "Status is required." });
+            }
+
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //verify all attendances belong to class sections owned by this staff
+            var attendances = db.Attendances
+                .Include(a => a.ClassSection)
+                .Where(a => request.AttendanceIds.Contains(a.Id) && a.ClassSection.StaffId == staffId)
+                .ToList();
+
+            if (attendances.Count != request.AttendanceIds.Count)
+            {
+                return Json(new { success = false, message = "Some attendance records were not found or you don't have permission to update them." });
+            }
+
+            //update status for all selected attendances
+            foreach (var attendance in attendances)
+            {
+                attendance.Status = request.Status;
+            }
+
+            try
+            {
+                db.SaveChanges();
+                return Json(new { 
+                    success = true, 
+                    message = $"Successfully updated {attendances.Count} attendance record(s) to {request.Status}." 
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error updating attendance: {ex.Message}" });
+            }
+        }
+
+        //request model for update attendance status
+        public class UpdateAttendanceStatusRequest
+        {
+            public List<string> AttendanceIds { get; set; } = new();
+            public string Status { get; set; } = "";
         }
     }
 }
