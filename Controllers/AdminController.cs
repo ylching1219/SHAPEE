@@ -81,8 +81,8 @@ namespace SHAPEE.Controllers
         public IActionResult StaffManagement(string? name, string? filter1, string? filter2, string? filter3)
         {
             ViewData["Title"] = "Staff Management";
-
             var filteredStaff = db.Staffs
+                .Include(s => s.Faculty)
                 .AsQueryable();
 
             name = name?.Trim() ?? "";
@@ -167,50 +167,31 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(firstName) ||
-                    string.IsNullOrWhiteSpace(lastName) ||
-                    string.IsNullOrWhiteSpace(email) ||
-                    string.IsNullOrWhiteSpace(gender) ||
-                    string.IsNullOrWhiteSpace(programName) ||
-                    yearLevel <= 0 ||
-                    semester <= 0)
-                {
-                    TempData["ErrorMessage"] = "Please fill in all required fields.";
-                    return RedirectToAction(nameof(StudentManagement));
-                }
-
-                // Check duplicate email
                 if (await db.Students.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
-                // Generate Student ID
                 var lastStudent = await db.Students
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
 
-                var yearPrefix = DateTime.Now.Year.ToString().Substring(2); // "25"
+                var yearPrefix = DateTime.Now.Year.ToString().Substring(2);
 
                 string newId;
 
                 if (lastStudent != null && lastStudent.Id.StartsWith(yearPrefix))
                 {
-                    // get the number part after the year prefix
                     int lastNumber = int.Parse(lastStudent.Id.Substring(2));
 
                     newId = $"{yearPrefix}{(lastNumber + 1):D5}";
                 }
                 else
                 {
-                    // first ID of the year
                     newId = $"{yearPrefix}00001";
                 }
 
-
-                // Find Program by CODE (not Name) since form sends code
                 var program = await db.Programs
                     .FirstOrDefaultAsync(p => p.Name == programName);
 
@@ -220,12 +201,10 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
-                // Generate random password + hash
                 string rawPassword = GenerateRandomPassword(8);
                 var passwordHasher = new PasswordHasher<User>();
                 string passwordHash = passwordHasher.HashPassword(null, rawPassword);
 
-                // Create student
                 var student = new Student
                 {
                     Id = newId,
@@ -433,17 +412,6 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(firstName) ||
-                    string.IsNullOrWhiteSpace(lastName) ||
-                    string.IsNullOrWhiteSpace(email) ||
-                    string.IsNullOrWhiteSpace(gender) ||
-                    string.IsNullOrWhiteSpace(facultyId))
-                {
-                    TempData["ErrorMessage"] = "Please fill in all required fields.";
-                    return RedirectToAction(nameof(StaffManagement));
-                }
-
                 // Check duplicate email
                 if (await db.Staffs.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
@@ -651,15 +619,6 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(firstName) ||
-                    string.IsNullOrWhiteSpace(lastName) ||
-                    string.IsNullOrWhiteSpace(email))
-                {
-                    TempData["ErrorMessage"] = "Please fill in all required fields.";
-                    return RedirectToAction(nameof(AdminManagement));
-                }
-
                 // Check duplicate email
                 if (await db.Admins.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
@@ -896,11 +855,9 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(facultyId) ||
-                    string.IsNullOrWhiteSpace(facultyName) ||
-                    costPerCreditHour <= 0)
+                if (costPerCreditHour <= 0)
                 {
-                    TempData["ErrorMessage"] = "Please fill in all required fields.";
+                    TempData["ErrorMessage"] = "Cost Per Credit Hour must be greater than 0.";
                     return RedirectToAction(nameof(FacultyManagement));
                 }
 
@@ -996,14 +953,35 @@ namespace SHAPEE.Controllers
         {
             return View();
         }
-        public IActionResult DeleteFaculty(int id)
+
+        //Delete Faculty
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFaculty(string id)
         {
-            var faculty = db.Faculties.Find(id);
-            if (faculty == null)
+            try
             {
-                return NotFound();
+                var faculty = await db.Faculties.FindAsync(id);
+
+                if (faculty == null)
+                {
+                    TempData["ErrorMessage"] = "Faculty not found.";
+                    return RedirectToAction(nameof(FacultyManagement));
+                }
+
+                var facultyName = faculty.Name;
+
+                db.Faculties.Remove(faculty);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Faculty '{facultyName}' deleted successfully!";
+                return RedirectToAction(nameof(FacultyManagement));
             }
-            return View(faculty);
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting faculty: {ex.Message}";
+                return RedirectToAction(nameof(FacultyManagement));
+            }
         }
 
         //YL

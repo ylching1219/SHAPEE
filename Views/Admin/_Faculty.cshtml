@@ -1,6 +1,4 @@
 ﻿@model FacultyManageVM
-
-
 <table class="table table-hover mb-0" id="facultyTable">
     <thead class="bg-light">
         <tr>
@@ -14,7 +12,7 @@
         @if (Model.Faculties.Count() == 0)
         {
             <tr>
-                <td colspan="9" class="text-center py-5">
+                <td colspan="4" class="text-center py-5">
                     <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
                     <p class="text-muted mb-0">No faculty found</p>
                 </td>
@@ -24,13 +22,14 @@
         {
             @foreach (var f in Model.Faculties)
             {
-                <tr class="border-bottom">
+                <tr class="border-bottom"
+                    data-faculty-id="@f.Id"
+                    data-faculty-name="@f.Name">
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@f.Id</div>
                     </td>
                     <td class="px-4 py-3 text-muted">@f.Name</td>
                     <td class="px-4 py-3 text-muted">RM @f.CostPerCreditHour</td>
-
                     <td class="px-4 py-3 text-center">
                         <div class="dropdown">
                             <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
@@ -40,22 +39,15 @@
                                 <a class="dropdown-item" href="@Url.Action("FacultyManagement", "Admin", new { editId = f.Id })">
                                     <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                 </a>
-
-                                @* <a class="dropdown-item" href="#" onclick="toggleSuspend('@student.Id', this); return false;">
-                                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
-                                                    </a> *@
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteStudentModal">
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteFacultyModal">
                                     <i class="fas fa-trash mr-2"></i> Delete
                                 </a>
                             </div>
                         </div>
                     </td>
                 </tr>
-
             }
         }
     </tbody>
 </table>
-
-

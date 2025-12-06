@@ -1,5 +1,4 @@
 ﻿@model IEnumerable<Staff>
-@using System.Text.Json
 
 <table class="table table-hover mb-0" id="staffsTable">
     <thead class="bg-light">
@@ -39,18 +38,20 @@
                     "locked" => "badge-danger",
                     _ => "badge-light"
                 };
-                var staffJson = JsonSerializer.Serialize(new
-                {
-                    staff.Id,
-                    staff.FirstName,
-                    staff.LastName,
-                    staff.Email,
-                    staff.Contact,
-                    staff.Gender,
-                    staff.Status,
-                    FacultyId = staff.FacultyId
-                });
-                <tr data-staff='@staffJson' data-staff-name="@staff.FullName" class="border-bottom">
+
+                // Get faculty name from the database relationship instead of hardcoding
+                var facultyName = staff.Faculty?.Name ?? "N/A";
+
+                <tr data-staff-id="@staff.Id"
+                    data-staff-name="@staff.FullName"
+                    data-first-name="@staff.FirstName"
+                    data-last-name="@staff.LastName"
+                    data-email="@staff.Email"
+                    data-contact="@staff.Contact"
+                    data-gender="@staff.Gender"
+                    data-status="@staff.Status"
+                    data-faculty-id="@staff.FacultyId"
+                    class="border-bottom">
                     <td class="px-4 py-3 text-muted">@staff.Id</td>
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@staff.FullName</div>
@@ -72,16 +73,6 @@
                     <td class="px-4 py-3 text-muted">@staff.Email</td>
                     <td class="px-4 py-3 text-muted">@(staff.Contact ?? "N/A")</td>
                     <td class="px-4 py-3">
-                        @{
-                            var facultyName = staff.FacultyId switch
-                            {
-                                "FOCS" => "Faculty of Computing & Information Technology",
-                                "FAFB" => "Faculty of Accountancy, Finance & Business",
-                                "FAS" => "Faculty of Applied Sciences",
-                                "FOET" => "Faculty of Engineering & Technology",
-                                _ => staff.FacultyId ?? "N/A"
-                            };
-                        }
                         <span class="badge badge-info badge-pill">@facultyName</span>
                     </td>
                     <td class="px-4 py-3 text-muted">@staff.DateJoin.ToString("dd/MM/yyyy")</td>

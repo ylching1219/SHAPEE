@@ -260,23 +260,32 @@
                 form.classList.add('was-validated');
             }, false);
 
-            // Prepare Edit Modal
+            // Prepare Edit Modal - UPDATED to use data attributes instead of JSON
             window.prepareEditModal = function(element) {
                 const row = element.closest('tr');
-                const staffData = JSON.parse(row.getAttribute('data-staff'));
 
-                modalTitle.innerText = 'Edit Staff: ' + staffData.FirstName + ' ' + staffData.LastName;
+                // Get data from individual data attributes
+                const staffId = row.getAttribute('data-staff-id');
+                const firstName = row.getAttribute('data-first-name');
+                const lastName = row.getAttribute('data-last-name');
+                const gender = row.getAttribute('data-gender');
+                const email = row.getAttribute('data-email');
+                const contact = row.getAttribute('data-contact');
+                const facultyId = row.getAttribute('data-faculty-id');
+                const status = row.getAttribute('data-status');
+
+                modalTitle.innerText = 'Edit Staff: ' + firstName + ' ' + lastName;
                 form.setAttribute('action', '@Url.Action("EditStaff", "Admin")');
 
                 // Populate form fields
-                document.getElementById('staffId').value = staffData.Id;
-                document.getElementById('staffFirstName').value = staffData.FirstName;
-                document.getElementById('staffLastName').value = staffData.LastName;
-                document.getElementById('staffGender').value = staffData.Gender || '';
-                document.getElementById('staffEmail').value = staffData.Email;
-                document.getElementById('staffContact').value = staffData.Contact || '';
-                document.getElementById('staffFaculty').value = staffData.FacultyId || '';
-                document.getElementById('staffStatus').value = (staffData.Status || '').trim();
+                document.getElementById('staffId').value = staffId;
+                document.getElementById('staffFirstName').value = firstName;
+                document.getElementById('staffLastName').value = lastName;
+                document.getElementById('staffGender').value = gender || '';
+                document.getElementById('staffEmail').value = email;
+                document.getElementById('staffContact').value = contact || '';
+                document.getElementById('staffFaculty').value = facultyId || '';
+                document.getElementById('staffStatus').value = (status || '').trim();
 
                 // Show status field for edit
                 statusGroup.style.display = 'block';
@@ -289,14 +298,14 @@
                 });
             };
 
-            // Prepare Delete Modal
+            // Prepare Delete Modal - UPDATED to use data attributes instead of JSON
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
                 const staffName = row.getAttribute('data-staff-name');
-                const staffData = JSON.parse(row.getAttribute('data-staff'));
+                const staffId = row.getAttribute('data-staff-id');
 
                 document.getElementById('staffToDeleteName').innerText = staffName;
-                document.getElementById('deleteStaffId').value = staffData.Id;
+                document.getElementById('deleteStaffId').value = staffId;
             };
 
             // Toggle Suspend/Activate

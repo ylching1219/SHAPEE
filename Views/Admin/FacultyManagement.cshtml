@@ -32,7 +32,7 @@
 
 
 <div class="tab-content" id="FacultyManagementTabContent">
-    <!-- Students Tab -->
+    <!-- Faculties Tab -->
     <div class="tab-pane fade show active" id="faculties" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
@@ -168,7 +168,7 @@
 
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
+<div class="modal fade" id="deleteFacultyModal" tabindex="-1" role="dialog" aria-labelledby="deleteFacultyModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -182,7 +182,7 @@
                     <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
                 </div>
                 <p class="text-center mb-2">Are you sure you want to delete</p>
-                <p class="text-center font-weight-bold mb-3"><span id="studentToDeleteName"></span>?</p>
+                <p class="text-center font-weight-bold mb-3"><span id="facultyToDeleteName"></span>?</p>
                 <p class="text-danger small text-center mb-0">
                     <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
                 </p>
@@ -191,9 +191,9 @@
                 <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Cancel
                 </button>
-                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteFaculty" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <input type="hidden" id="deleteFacultyId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
@@ -205,7 +205,7 @@
 
 @section Scripts {
     <script>
-               $(document).ready(function () {
+        $(document).ready(function () {
             const url = new URL(window.location.href);
             const editId = url.searchParams.get("editId");
 
@@ -228,6 +228,24 @@
             });
         });
 
+        window.prepareDeleteModal = function(element) {
+            const row = element.closest('tr');
+            const facultyName = row.getAttribute('data-faculty-name');
+            const facultyId = row.getAttribute('data-faculty-id');
+
+            document.getElementById('facultyToDeleteName').innerText = facultyName;
+            document.getElementById('deleteFacultyId').value = facultyId;
+        };
+
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
     </script>
 
 }
