@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
 
 namespace SHAPEE.Controllers
@@ -1068,14 +1070,247 @@ namespace SHAPEE.Controllers
 
 
         //JS
-        public IActionResult RoomManagement()
+        public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
         {
+            ViewData["Title"] = "Room Management";
+            Room? editRoom = null;
 
-            var rooms = db.Rooms
-                .OrderBy(r => r.Id)
-                .ToList();
+            if (!string.IsNullOrEmpty(editId))
+            {
+                editRoom = db.Rooms.FirstOrDefault(r => r.Id == editId);
+            }
 
-            return View(rooms);
+            search = search?.Trim() ?? "";
+            type = type?.Trim() ?? "";
+            block = block?.Trim() ?? "";
+            status = status?.Trim() ?? "";
+
+            var filteredRooms = db.Rooms
+                .Where(r => r.Id.Contains(search))
+                .Where(r => type == "" || r.Type == type)
+                .Where(r => block == "" || r.Block == block)
+                .Where(r => status == "" || r.Status == status)
+                .AsQueryable();
+
+            var roomsQuery =
+                (sort == "1") ? filteredRooms.OrderBy(r => r.Id) :
+                (sort == "2") ? filteredRooms.OrderByDescending(r => r.Id) :
+                (sort == "3") ? filteredRooms.OrderBy(r => r.Floor) :
+                (sort == "4") ? filteredRooms.OrderByDescending(r => r.Floor) :
+                                filteredRooms.OrderBy(r => r.Id);
+
+            var rooms = roomsQuery.ToList();
+
+            var vm = new RoomManageVM
+            {
+                Rooms = rooms,
+                EditRoom = editRoom
+            };
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Room", vm);
+            }
+
+            return View(vm);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddRoom(string roomId, string type, string block, int? floor)
+        {
+            if (!floor.HasValue)
+            {
+                return Json(new { success = false, message = "Floor is required." });
+            }
+
+            roomId = roomId?.Trim().ToUpper();
+            type = type?.Trim();
+            block = block?.Trim().ToUpper();
+
+            // For Labs: Room ID uses 0-2, but database stores as 1-3
+            int actualFloor = floor.Value;
+
+            if (type == "Lab")
+            {
+                if (floor < 0 || floor > 2)
+                {
+                    return Json(new { success = false, message = "Lab floor must be between 0 and 2." });
+                }
+                // Convert Room ID floor (0-2) to database floor (1-3)
+                actualFloor = floor.Value + 1;
+            }
+            else if (type == "Classroom")
+            {
+                if (floor < 1 || floor > 3)
+                {
+                    return Json(new { success = false, message = "Classroom floor must be between 1 and 3." });
+                }
+            }
+
+            // Check if room already exists
+            bool exists = await db.Rooms.AnyAsync(r => r.Id == roomId);
+
+            if (exists)
+            {
+                return Json(new { success = false, message = $"Room ID '{roomId}' already exists." });
+            }
+
+            // Validate Room ID format
+            if (string.IsNullOrWhiteSpace(roomId))
+            {
+                return Json(new { success = false, message = "Room ID is required." });
+            }
+
+            if (!roomId.StartsWith(block))
+            {
+                return Json(new { success = false, message = $"Room ID must start with block '{block}'." });
+            }
+
+            if (type == "Lab")
+            {
+                // Lab format: [Block][0-2][0][0-2] where floor 0=Floor1, 1=Floor2, 2=Floor3 in DB
+                var pattern = $@"^{Regex.Escape(block)}[0-2]0[0-2]$";
+                if (!Regex.IsMatch(roomId, pattern))
+                {
+                    return Json(new { success = false, message = $"Lab Room ID must follow format: {block}[0-2]0[0-2] (e.g., {block}000, {block}101, {block}202)" });
+                }
+
+                // Check if floor digit matches selected floor
+                var floorDigitInId = roomId.Substring(block.Length, 1);
+                if (floorDigitInId != floor.Value.ToString())
+                {
+                    return Json(new { success = false, message = $"Room ID floor digit must match the selected floor. Expected: {block}{floor}0[0-2]" });
+                }
+            }
+            else if (type == "Classroom")
+            {
+                // Classroom format: [Block][1-3][0][1-3]
+                var pattern = $@"^{Regex.Escape(block)}[1-3]0[1-3]$";
+                if (!Regex.IsMatch(roomId, pattern))
+                {
+                    return Json(new { success = false, message = $"Classroom Room ID must follow format: {block}[1-3]0[1-3] (e.g., {block}101, {block}202, {block}303)" });
+                }
+
+                // Check if floor digit matches selected floor
+                var floorDigitInId = roomId.Substring(block.Length, 1);
+                if (floorDigitInId != floor.Value.ToString())
+                {
+                    return Json(new { success = false, message = $"Room ID floor digit must match the selected floor. Expected: {block}{floor}0[1-3]" });
+                }
+            }
+            else if (type == "Lecture Hall")
+            {
+                if (!roomId.StartsWith("DK"))
+                {
+                    return Json(new { success = false, message = "Lecture Hall Room ID must start with 'DK'." });
+                }
+            }
+
+            try
+            {
+                var room = new Room
+                {
+                    Id = roomId,
+                    Type = type,
+                    Block = block,
+                    Floor = actualFloor, // Store the converted floor for Labs (0-2), normal for Classroom (1-3)
+                    Status = "Available"
+                };
+
+                db.Rooms.Add(room);
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Room '{roomId}' added successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error adding room: {ex.InnerException?.Message ?? ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRoom(string roomId, string status)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(status))
+                {
+                    TempData["ErrorMessage"] = "Status is required.";
+                    return RedirectToAction(nameof(RoomManagement));
+                }
+
+                // Fetch room
+                var room = await db.Rooms.FindAsync(roomId);
+
+                if (room == null)
+                {
+                    TempData["ErrorMessage"] = "Room not found.";
+                    return RedirectToAction(nameof(RoomManagement));
+                }
+
+                // Only update status
+                room.Status = status;
+
+                db.Rooms.Update(room);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Room status updated successfully!";
+                return RedirectToAction(nameof(RoomManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error updating room: " + ex.Message;
+                return RedirectToAction(nameof(RoomManagement));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRoom(string id)
+        {
+            try
+            {
+                var room = await db.Rooms.FindAsync(id);
+
+                if (room == null)
+                {
+                    TempData["ErrorMessage"] = "Room not found.";
+                    return RedirectToAction(nameof(RoomManagement));
+                }
+
+                var roomId = room.Id;
+
+                db.Rooms.Remove(room);
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Room '{roomId}' deleted successfully!";
+                return RedirectToAction(nameof(RoomManagement));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting room: {ex.Message}";
+                return RedirectToAction(nameof(RoomManagement));
+            }
+        }
+
+        // GET: ExportRoomsCSV
+        public IActionResult ExportRoomsCSV()
+        {
+            var rooms = db.Rooms.OrderBy(r => r.Id).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Room ID,Type,Block,Floor,Status");
+
+            foreach (var room in rooms)
+            {
+                csv.AppendLine($"{room.Id},{room.Type},{room.Block},{room.Floor},{room.Status}");
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", $"Rooms_{DateTime.Now:yyyyMMdd}.csv");
+        }
+
     }
 }

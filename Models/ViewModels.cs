@@ -100,4 +100,11 @@ namespace SHAPEE.Models
         public List<Attendance> FlaggedAttendances { get; set; } = [];
         public DateOnly Today { get; set; }
     }
+
+    // JS
+    public class RoomManageVM
+    {
+        public List<Room> Rooms { get; set; } = [];
+        public Room? EditRoom { get; set; }
+    }
 }
