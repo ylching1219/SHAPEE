@@ -1,127 +1,128 @@
 ﻿@{
-    ViewData["Title"] = "Classwork Page";
-    var room = ViewBag.Room;
+	ViewData["Title"] = "Classwork Page";
+	var room = ViewBag.Room;
 }
 
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
-        margin: 0;
-        padding: 0;
-    }
+	body {
+		font-family: Arial, sans-serif;
+		background-color: #f5f5f5;
+		margin: 0;
+		padding: 0;
+	}
 
-    .class-header {
-        background: white;
-        height: 80px;
-        border-radius: 12px;
-        margin: 20px auto;
-        width: 90%;
-        color: black;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        font-weight: bold;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    }
+	.class-header {
+		background: white;
+		height: 80px;
+		border-radius: 12px;
+		margin: 20px auto;
+		width: 90%;
+		color: black;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.8rem;
+		font-weight: bold;
+		box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+	}
 
-    .upload-header {
-        width: 90%;
-        margin: 20px auto 10px auto;
-        text-align: left;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
+	.upload-header {
+		width: 90%;
+		margin: 20px auto 10px auto;
+		text-align: left;
+		font-size: 1.2rem;
+		font-weight: bold;
+	}
 
-    #titleInput {
-        width: 90%;
-        height: 40px;
-        margin: 10px auto;
-        display: block;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-    }
+	#titleInput {
+		width: 90%;
+		height: 40px;
+		margin: 10px auto;
+		display: block;
+		padding: 10px;
+		border-radius: 8px;
+		border: 1px solid #ccc;
+	}
 
-    .upload-area {
-        width: 90%;
-        margin: 0 auto 10px auto;
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        text-align: center;
-        border: 2px dashed #007bff;
-        cursor: pointer;
-        transition: 0.2s ease;
-    }
+	.upload-area {
+		width: 90%;
+		margin: 0 auto 10px auto;
+		background: white;
+		padding: 25px;
+		border-radius: 12px;
+		text-align: center;
+		border: 2px dashed #007bff;
+		cursor: pointer;
+		transition: 0.2s ease;
+	}
 
-        .upload-area.dragover {
-            background: #e8f1ff;
-            border-color: #0056c7;
-        }
+		.upload-area.dragover {
+			background: #e8f1ff;
+			border-color: #0056c7;
+		}
 
-        .upload-area p {
-            margin: 10px 0;
-            color: #555;
-        }
+		.upload-area p {
+			margin: 10px 0;
+			color: #555;
+		}
 
-    #pendingFiles {
-        width: 90%;
-        margin: 10px auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
+	#pendingFiles {
+		width: 90%;
+		margin: 10px auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
 
-    .file-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 5px;
-        background: #e8f1ff;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
+	.file-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
+		margin-bottom: 5px;
+		background: #e8f1ff;
+		padding: 5px 10px;
+		border-radius: 6px;
+	}
 
-        .file-item span {
-            word-break: break-word;
-        }
+		.file-item span {
+			word-break: break-word;
+		}
 
-        .file-item button {
-            padding: 4px 8px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
+		.file-item button {
+			padding: 4px 8px;
+			background: #dc3545;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 0.8rem;
+		}
 
-    #errorBox {
-        color: red;
-        font-weight: bold;
-        margin: 10px auto;
-        text-align: center;
-        display: none;
-    }
+	#errorBox {
+		color: red;
+		font-weight: bold;
+		margin: 10px auto;
+		text-align: center;
+		display: none;
+	}
 
-    #uploadBtn {
-        display: none;
-        margin: 20px auto;
-        padding: 10px 25px;
-        border-radius: 6px;
-        cursor: pointer;
-        background: #007bff;
-        color: white;
-        border: none;
-        display: block;
-    }
+	#uploadBtn {
+		display: none;
+		margin: 20px auto;
+		padding: 10px 25px;
+		border-radius: 6px;
+		cursor: pointer;
+		background: #007bff;
+		color: white;
+		border: none;
+		display: block;
+	}
 </style>
+@* <link rel="icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtRkubkvI7KFuYTz5fxh7AJGc4pNPjIrdlKw&s" type="image/png"> *@
 
 <div class="class-header">
-    <strong> aacs1000</strong>
+	<strong> aacs1000</strong>
 </div>
 
 <div class="upload-header">Add New Material</div>
@@ -131,9 +132,9 @@
 
 <!-- Drag & Drop Area -->
 <div id="uploadArea" class="upload-area">
-    <p>Drag & Drop your files here</p>
-    <p>or click to browse</p>
-    <input type="file" id="fileInput" multiple style="display:none;" />
+	<p>Drag & Drop your files here</p>
+	<p>or click to browse</p>
+	<input type="file" id="fileInput" multiple style="display:none;" />
 </div>
 
 <!-- Pending files list -->
@@ -147,90 +148,90 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    let filesToUpload = [];
-    const uploadArea = document.getElementById("uploadArea");
-    const fileInput = document.getElementById("fileInput");
-    const courseId = "aacs1000";
+	let filesToUpload = [];
+	const uploadArea = document.getElementById("uploadArea");
+	const fileInput = document.getElementById("fileInput");
+	const courseId = "aacs1000";
 
-    // Open file dialog
-    uploadArea.addEventListener("click", () => fileInput.click());
+	// Open file dialog
+	uploadArea.addEventListener("click", () => fileInput.click());
 
-    // Drag & drop
-    uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
-    uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
-    uploadArea.addEventListener("drop", e => {
-        e.preventDefault();
-        uploadArea.classList.remove("dragover");
-        handleFiles(e.dataTransfer.files);
-    });
+	// Drag & drop
+	uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
+	uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+	uploadArea.addEventListener("drop", e => {
+		e.preventDefault();
+		uploadArea.classList.remove("dragover");
+		handleFiles(e.dataTransfer.files);
+	});
 
-    fileInput.addEventListener("change", () => handleFiles(fileInput.files));
+	fileInput.addEventListener("change", () => handleFiles(fileInput.files));
 
-    function handleFiles(selectedFiles){
-        for(let i=0;i<selectedFiles.length;i++){
-            filesToUpload.push(selectedFiles[i]);
-        }
-        renderPendingFiles();
-    }
+	function handleFiles(selectedFiles){
+		for(let i=0;i<selectedFiles.length;i++){
+			filesToUpload.push(selectedFiles[i]);
+		}
+		renderPendingFiles();
+	}
 
-        function renderPendingFiles(){
-        const container = $('#pendingFiles');
-        container.empty();
-        $('#errorBox').hide();
+		function renderPendingFiles(){
+		const container = $('#pendingFiles');
+		container.empty();
+		$('#errorBox').hide();
 
-        // List all pending files
-        filesToUpload.forEach((file,index)=>{
-            container.append(`<div class="file-item">
-                <span>${file.name}</span>
-                <button type="button" onclick="removeFile(${index})">Remove</button>
-            </div>`);
-        });
+		// List all pending files
+		filesToUpload.forEach((file,index)=>{
+			container.append(`<div class="file-item">
+				<span>${file.name}</span>
+				<button type="button" onclick="removeFile(${index})">Remove</button>
+			</div>`);
+		});
 
-        // Always show the upload button
-        $('#uploadBtn').show();
-    }
+		// Always show the upload button
+		$('#uploadBtn').show();
+	}
 
 
-    function removeFile(index){
-        filesToUpload.splice(index,1);
-        renderPendingFiles();
-    }
+	function removeFile(index){
+		filesToUpload.splice(index,1);
+		renderPendingFiles();
+	}
 
-    // Upload
-    $('#uploadBtn').on('click', function(e){
-        e.preventDefault();
-        const title = $('#titleInput').val().trim();
+	// Upload
+	$('#uploadBtn').on('click', function(e){
+		e.preventDefault();
+		const title = $('#titleInput').val().trim();
 
-        if(!title){
-            $('#errorBox').text("Please enter a title.").show();
-            return;
-        }
+		if(!title){
+			$('#errorBox').text("Please enter a title.").show();
+			return;
+		}
 
-        if(filesToUpload.length === 0){
-            $('#errorBox').text("No files selected.").show();
-            return;
-        }
+		if(filesToUpload.length === 0){
+			$('#errorBox').text("No files selected.").show();
+			return;
+		}
 
-        $('#errorBox').hide();
+		$('#errorBox').hide();
 
-        const formData = new FormData();
-        filesToUpload.forEach(f => formData.append("files", f));
-        formData.append("courseId", courseId);
-        formData.append("title", title);
+		const formData = new FormData();
+		filesToUpload.forEach(f => formData.append("files", f));
+		formData.append("courseId", courseId);
+		formData.append("title", title);
 
-        $.ajax({
-            url:'@Url.Action("UploadDoc", "Classroom")',
-            type:'POST',
-            data:formData,
-            processData:false,
-            contentType:false,
-            success:function(res){
-                alert("Files uploaded successfully!");
-                window.location.href = "/staff/classwork";
-            },
-            error:function(err){
-                $('#errorBox').text("Upload failed: "+err.responseText).show();
-            }
-        });
-    });
+		$.ajax({
+			url:'@Url.Action("UploadDoc", "Classroom")',
+			type:'POST',
+			data:formData,
+			processData:false,
+			contentType:false,
+			success:function(res){
+				alert("Files uploaded successfully!");
+				window.location.href = "/staff/classwork";
+			},
+			error:function(err){
+				$('#errorBox').text("Upload failed: "+err.responseText).show();
+			}
+		});
+	});
 </script>

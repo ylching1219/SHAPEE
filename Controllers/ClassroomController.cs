@@ -120,4 +120,21 @@ public class ClassroomController : Controller
         _db.SaveChanges();
         return Ok();
     }
+    public IActionResult StudentClasswork()
+    {
+        string courseId = "aacs1000"; //now fixed first
+
+        var materials = _db.Materials
+            .Where(m => m.CourseId == courseId)
+            .OrderBy(m => m.Title)
+            .ThenBy(m => m.Id)
+            .ToList();
+
+        ViewBag.CourseId = courseId;
+
+
+        return View("~/Views/Student/Classwork.cshtml", materials);
+    }
+
+
 }
