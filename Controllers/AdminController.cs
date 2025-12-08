@@ -951,10 +951,6 @@ namespace SHAPEE.Controllers
         }
 
 
-        public IActionResult SaveFaculty(FacultyVM vm)
-        {
-            return View();
-        }
 
         //Delete Faculty
         [HttpPost]
@@ -1011,6 +1007,7 @@ namespace SHAPEE.Controllers
             }
             var faculty = db.Faculties.OrderBy(f => f.Id).ToList();
             ViewBag.Faculty = faculty;
+            ViewBag.FacultyList = new SelectList(faculty, "Id", "Name", editProgram?.FacultyId);
 
             var programList = programQuery.ToList();
             var vm = new ProgramManageVM
@@ -1018,15 +1015,96 @@ namespace SHAPEE.Controllers
                 Program = programList,
                 EditProgram = editProgram,
            
-               
             };
 
+            if (!string.IsNullOrEmpty(editId)) {
+              
+                return PartialView("_ProgramForm", vm);
+            }
             if (Request.IsAjax())
             {
                 return PartialView("_Program", vm);
             }
             return View(vm);
         }
+
+        [HttpPost]
+        public IActionResult AddProgram(ProgramManageVM vm)
+        {
+            var s = db.Programs.FirstOrDefault(p => p.Id == vm.ProgramId);
+
+            if (s == null)
+            {
+                var p = new SHAPEE.Models.Program
+                {
+                    Id = vm.ProgramId!,
+                    Name = vm.ProgramName!,
+                    FacultyId = vm.FacultyId!
+                };
+
+                db.Programs.Add(p);
+                db.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Program {vm.ProgramId} added successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to add new Program. Error: Program ID duplicate!";
+            }
+             return RedirectToAction(nameof(ProgramManagement));
+        }
+
+        [HttpPost]
+        public IActionResult EditProgram(ProgramManageVM vm)
+        {
+            var s = db.Programs.FirstOrDefault(p => p.Id == vm.ProgramId);
+            if (s == null)
+            {
+                TempData["ErrorMessage"] = "Program not found!";
+                return RedirectToAction("ProgramManagement");
+            }
+
+            // Only update properties, never change the primary key
+            s.Name = vm.ProgramName!.Trim();
+            s.FacultyId = vm.FacultyId!;
+
+            db.SaveChanges(); // tracked entity, no Update() needed
+
+            TempData["SuccessMessage"] = $"Program {vm.ProgramId} updated successfully.";
+            return RedirectToAction("ProgramManagement");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteProgram(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                TempData["ErrorMessage"] = "Program ID not provided.";
+                return RedirectToAction(nameof(ProgramManagement));
+            }
+
+            var program = db.Programs.FirstOrDefault(p => p.Id == id);
+            if (program == null)
+            {
+                TempData["ErrorMessage"] = "Program not found.";
+                return RedirectToAction(nameof(ProgramManagement));
+            }
+
+            try
+            {
+                db.Programs.Remove(program);
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Program '{program.Name}' deleted successfully.";
+            }
+            catch (DbUpdateException ex)
+            {
+                
+                TempData["ErrorMessage"] = $"Cannot delete program. It may be used by other records.";
+            }
+
+            return RedirectToAction(nameof(ProgramManagement));
+        }
+
 
         public IActionResult CourseManagement(string? sort, string? name, string? editId)
         {

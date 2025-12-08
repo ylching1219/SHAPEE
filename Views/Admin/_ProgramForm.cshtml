@@ -1,0 +1,44 @@
+﻿@model ProgramManageVM
+<form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddProgram">
+    <div class="modal-body">
+
+        <div class="form-group">
+            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="ProgramId" name="ProgramId"
+                   value="@(Model.EditProgram?.Id != null ? Model.EditProgram.Id : "")"
+                   required>
+            <span asp-validation-for="ProgramId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <div class="form-group">
+                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="ProgramName" name="ProgramName"
+                       value="@(Model.EditProgram?.Name != null ? Model.EditProgram.Name : "")"
+                       required>
+                <span asp-validation-for="ProgramName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="FacultyId" class="font-weight-medium">Faculty<span class="text-danger">*</span></label>
+            <select asp-for="FacultyId"
+                    asp-items="ViewBag.FacultyList"
+                    class="form-control">
+                <option value="">Select Faculty</option> 
+            </select>
+            <span asp-validation-for="FacultyId" class="text-danger"></span>
+
+
+        </div>
+
+    </div>
+    <div class="modal-footer bg-light">
+        <button class="btn btn closeBtn" type="button" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i> Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" id="saveBtn">
+            <i class="fas fa-save mr-1"></i> Add Program
+        </button>
+    </div>
+</form>

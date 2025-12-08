@@ -76,7 +76,22 @@ namespace SHAPEE.Models
     {
         public List<Program> Program { get; set; } = [];
         public Program? EditProgram { get; set; }
+
+        [Required(ErrorMessage = "Program ID is required.")]
+        public string? ProgramId { get; set; }
+
+        [Required(ErrorMessage = "Program Name is required.")]
+        public string? ProgramName { get; set; }
+
+        [Required(ErrorMessage = "Faculty must be selected.")]
+        public string? FacultyId { get; set; }
     }
+
+    //public class ProgramVM
+    //{
+       
+    //}
+
 
     //KM
 

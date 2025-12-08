@@ -118,47 +118,7 @@
                 </button>
             </div>
             <div id="AddEditData">
-                <form id="addEditForm" method="post" asp-controller="Admin" asp-action="InsertFaculty">
-                    <div class="modal-body">
-
-                        <div class="form-group">
-                            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ProgramId" name="ProgramId"
-                                   value="@(Model.EditProgram?.Id != null ? Model.EditProgram.Id : "")"
-                                   required>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="form-group">
-                                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="ProgramName" name="ProgramName"
-                                       value="@(Model.EditProgram?.Name != null ? Model.EditProgram.Name : "")"
-                                       required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="FacultyId" class="font-weight-medium">Faculty<span class="text-danger">*</span></label>
-                            <select class="form-control" id="facultyFilter">
-                                <option value="default">Select Faculty</option>
-                                @foreach (var f in ViewBag.Faculty)
-                                {
-                                    <option value="@f.Id">@f.Id - @f.Name</option>
-                                }
-                            </select>
-
-                        </div>
-
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn closeBtn" type="button" data-dismiss="modal" closeBtn>
-                            <i class="fas fa-times mr-1"></i> Cancel
-                        </button>
-                        <button class="btn btn-primary" type="submit" id="saveBtn">
-                            <i class="fas fa-save mr-1"></i> Add Program
-                        </button>
-                    </div>
-                </form>
+                <partial name="_ProgramForm" />
             </div>
 
         </div>
@@ -193,7 +153,7 @@
                 <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Cancel
                 </button>
-                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteProgram" style="display:inline;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="deleteStudentId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
@@ -207,30 +167,31 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-        const url = new URL(window.location.href);
-        const editId = url.searchParams.get("editId");
+          function onEditLoaded() {
+            console.log("Partial Loaded");
 
-        if (editId) {
-            // Check TempData server-side
-            @if (Model.EditProgram != null)
-            {
-                <text>
-                    $('#addEditModal').modal('show');
-                    $('#facultyFilter option[value="default"]').hide();
-                    $('#facultyFilter').val('@Model.EditProgram.FacultyId')
-                    $("#addEditModalLabel").text("Edit Program");
-                    $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
-                    $("#ProgramId").prop("readonly", true);
-                </text>
-            }
+            $("#addEditModal").modal("show");
+            $("#addEditModalLabel").text("Edit Program");
+
+            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
+
+            $("#ProgramId").prop("readonly", true);
+
+            $("#addEditForm").attr("action", "/Admin/EditProgram");
         }
 
-             $(".closeBtn").on("click", function() {
-                  window.location.href = '/Admin/ProgramManagement';
-        });
+        function prepareDeleteModal(element) {
+            var id = $(element).data("id");
+            var name = $(element).data("name");
 
-        });
+            // Set hidden input value for form submission
+            $("#deleteStudentId").val(id);
+
+            // Display name in modal
+            $("#studentToDeleteName").text(name);
+        }
+
+
     </script>
 
 }
