@@ -224,9 +224,8 @@ namespace SHAPEE.Migrations
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
 
-                    b.Property<string>("TutorialGroupId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("TutorialGroupId")
+                        .HasColumnType("int");
 
                     b.Property<int>("YearLevel")
                         .HasColumnType("int");
@@ -768,9 +767,11 @@ namespace SHAPEE.Migrations
 
             modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("NumberOfStudents")
                         .HasColumnType("int");
@@ -909,8 +910,8 @@ namespace SHAPEE.Migrations
                     b.Property<int>("Semester")
                         .HasColumnType("int");
 
-                    b.Property<string>("TutorialGroupId")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int?>("TutorialGroupId")
+                        .HasColumnType("int");
 
                     b.Property<int>("YearLevel")
                         .HasColumnType("int");

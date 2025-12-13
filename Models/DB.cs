@@ -108,7 +108,7 @@ public class Student : User
     public Program Program { get; set; }
 
     //FK to TutorialGroup -- 1 student belong to 1 tutorial group
-    public string? TutorialGroupId { get; set; }
+    public int? TutorialGroupId { get; set; }
     public TutorialGroup TutorialGroup { get; set; }
 
     //1 student have many enrollments
@@ -242,7 +242,7 @@ public class ClassSection
     public string SectionType { get; set; } //Lecture, Practical, Tutorial
 
     //FK to TutorialGroup -- 1 class section belong to 1 tutorial group
-    public string TutorialGroupId { get; set; }
+    public int TutorialGroupId { get; set; }
     public TutorialGroup TutorialGroup { get; set; }
 
     //FK to Room -- 1 class section belong to 1 room
@@ -273,8 +273,7 @@ public class ClassSection
 
 public class TutorialGroup
 {
-    [Key, MaxLength(50)]
-    public string Id { get; set; } 
+    public int Id { get; set; } 
 
     //FK to Program -- 1 tutorial group belong to 1 program
     public string ProgramId { get; set; }
@@ -289,6 +288,8 @@ public class TutorialGroup
     //1 tutorial group have many students
     public List<Student> Students { get; set; } = [];
 
+    [NotMapped]
+    public string GroupName => $"{Program?.Name}Y{YearLevel}G{Id}";
 }
 
 public class Enrollment

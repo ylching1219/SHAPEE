@@ -811,7 +811,7 @@ namespace SHAPEE.Controllers
 
 
 
-     
+
         public IActionResult FacultyManagement(string? sort, string? name, string? editId)
         {
             ViewData["Title"] = "Faculty Management";
@@ -983,7 +983,8 @@ namespace SHAPEE.Controllers
         }
 
         //YL
-        public IActionResult ProgramManagement(string? filter, string? name, string? editId) 
+        //Program Management
+        public IActionResult ProgramManagement(string? filter, string? name, string? editId)
         {
             ViewData["Title"] = "Program Management";
             SHAPEE.Models.Program? editProgram = null;
@@ -1002,7 +1003,7 @@ namespace SHAPEE.Controllers
             if (!string.IsNullOrEmpty(filter))
             {
                 programQuery = programQuery.
-                    Where(p=>p.FacultyId == filter)
+                    Where(p => p.FacultyId == filter)
                     .AsQueryable();
             }
             var faculty = db.Faculties.OrderBy(f => f.Id).ToList();
@@ -1014,11 +1015,11 @@ namespace SHAPEE.Controllers
             {
                 Program = programList,
                 EditProgram = editProgram,
-           
+
             };
 
-            if (!string.IsNullOrEmpty(editId)) {
-              
+            if (!string.IsNullOrEmpty(editId))
+            {
                 return PartialView("_ProgramForm", vm);
             }
             if (Request.IsAjax())
@@ -1051,7 +1052,7 @@ namespace SHAPEE.Controllers
             {
                 TempData["ErrorMessage"] = "Failed to add new Program. Error: Program ID duplicate!";
             }
-             return RedirectToAction(nameof(ProgramManagement));
+            return RedirectToAction(nameof(ProgramManagement));
         }
 
         [HttpPost]
@@ -1098,18 +1099,47 @@ namespace SHAPEE.Controllers
             }
             catch (DbUpdateException ex)
             {
-                
+
                 TempData["ErrorMessage"] = $"Cannot delete program. It may be used by other records.";
             }
 
             return RedirectToAction(nameof(ProgramManagement));
         }
 
+        public IActionResult ExportProgramsCsv(string? filter)
+        {
+            var query = db.Programs
+                         .Include(p => p.Faculty)
+                         .AsQueryable();
 
+
+
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                query = query.Where(p => p.FacultyId == filter);
+                Console.WriteLine("Filter applied: " + filter);
+            }
+
+            var data = query
+                .Select(p => new ProgramCsvVM
+                {
+                    ProgramId = p.Id,
+                    ProgramName = p.Name,
+                    FacultyName = p.Faculty.Name,
+                })
+                .ToList();
+
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", "Programs.csv");
+        }
+
+
+        //Course Management
         public IActionResult CourseManagement(string? sort, string? name, string? editId)
         {
             ViewData["Title"] = "Course Management";
-           Course? editCourse = null;
+            Course? editCourse = null;
 
             if (!string.IsNullOrEmpty(editId))
             {
@@ -1118,17 +1148,17 @@ namespace SHAPEE.Controllers
             name = name?.Trim() ?? "";
 
             var courseQuery = db.Courses
-                
+
                 .Where(p => p.Name.Contains(name))
                 .AsQueryable();
 
-             courseQuery =
-                  (sort == "1") ? courseQuery.OrderByDescending(f => f.Id) :
-                  (sort == "2") ? courseQuery.OrderBy(f => f.Name) :
-                  (sort == "3") ? courseQuery.OrderByDescending(f => f.Name) :
-                  (sort == "4") ? courseQuery.OrderBy(f => f.CreditHours) :
-                  (sort == "5") ? courseQuery.OrderByDescending(f => f.CreditHours) :
-                                       courseQuery.OrderBy(f => f.Id);
+            courseQuery =
+                 (sort == "1") ? courseQuery.OrderByDescending(f => f.Id) :
+                 (sort == "2") ? courseQuery.OrderBy(f => f.Name) :
+                 (sort == "3") ? courseQuery.OrderByDescending(f => f.Name) :
+                 (sort == "4") ? courseQuery.OrderBy(f => f.CreditHours) :
+                 (sort == "5") ? courseQuery.OrderByDescending(f => f.CreditHours) :
+                                      courseQuery.OrderBy(f => f.Id);
 
 
             var courseList = courseQuery.ToList();
@@ -1138,6 +1168,10 @@ namespace SHAPEE.Controllers
                 EditCourse = editCourse
             };
 
+            if (!string.IsNullOrEmpty(editId))
+            {
+                return PartialView("_CourseForm", vm);
+            }
             if (Request.IsAjax())
             {
                 return PartialView("_Course", vm);
@@ -1145,8 +1179,158 @@ namespace SHAPEE.Controllers
             return View(vm);
         }
 
+        [HttpPost]
+        public IActionResult AddCourse(CourseManageVM vm)
+        {
+            var s = db.Courses.FirstOrDefault(p => p.Id == vm.CourseId);
 
 
+            if (s == null)
+            {
+                if (vm.CreditHours == null || vm.CreditHours <= 0)
+                {
+                    TempData["ErrorMessage"] = "Credit Hours must be greater than 0.";
+                    return RedirectToAction(nameof(CourseManagement));
+                }
+
+                var p = new Course
+                {
+                    Id = vm.CourseId!,
+                    Name = vm.CourseName!,
+                    CreditHours = vm.CreditHours ?? 0
+                };
+
+                db.Courses.Add(p);
+                db.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Course {vm.CourseId} added successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to add new Course. Error: Course ID duplicate!";
+            }
+            return RedirectToAction(nameof(CourseManagement));
+        }
+
+        [HttpPost]
+        public IActionResult EditCourse(CourseManageVM vm)
+        {
+            var s = db.Courses.FirstOrDefault(p => p.Id == vm.CourseId);
+
+            if (s == null)
+            {
+                TempData["ErrorMessage"] = "Course not found!";
+                return RedirectToAction(nameof(CourseManagement));
+            }
+            if (vm.CreditHours == null || vm.CreditHours <= 0)
+            {
+                TempData["ErrorMessage"] = "Credit Hours must be greater than 0.";
+                return RedirectToAction(nameof(CourseManagement));
+            }
+            // Only update properties, never change the primary key
+            s.Name = vm.CourseName!.Trim();
+            s.CreditHours = vm.CreditHours ?? 0;
+
+            db.SaveChanges(); // tracked entity, no Update() needed
+
+            TempData["SuccessMessage"] = $"Course {vm.CourseId} updated successfully.";
+            return RedirectToAction(nameof(CourseManagement));
+        }
+
+        [HttpPost]
+        public IActionResult DeleteCourse(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                TempData["ErrorMessage"] = "Course ID not provided.";
+                return RedirectToAction(nameof(CourseManagement));
+            }
+
+            var course = db.Courses.FirstOrDefault(p => p.Id == id);
+            if (course == null)
+            {
+                TempData["ErrorMessage"] = "Course not found.";
+                return RedirectToAction(nameof(CourseManagement));
+            }
+
+            try
+            {
+                db.Courses.Remove(course);
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Course '{course.Name}' deleted successfully.";
+            }
+            catch (DbUpdateException ex)
+            {
+
+                TempData["ErrorMessage"] = $"Cannot delete course. It may be used by other records.";
+            }
+
+            return RedirectToAction(nameof(CourseManagement));
+        }
+
+        public IActionResult ExportCourseCsv() 
+        {
+            var query = db.Courses;
+
+
+            var data = query
+                .Select(p => new CourseCsvVM 
+                {
+                    CourseId = p.Id,
+                    CourseName = p.Name,
+                    CreditHours = p.CreditHours,
+                })
+                .ToList();
+
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", "Course.csv"); 
+        }
+
+        //Group Management
+        public IActionResult GroupManagement()
+        {             
+            ViewData["Title"] = "Group Management";
+            TutorialGroup? editGroup = null;
+            var groupList = db.TutorialGroups
+                .Include(g => g.Program)
+                .OrderBy(g => g.Id)
+                .ToList();
+
+            var program = db.Programs
+                .OrderBy(p => p.Id)
+                .ToList();
+            ViewBag.Program = program;
+            ViewBag.ProgramList = new SelectList(program, "Id", "Name", editGroup?.ProgramId);
+            var vm = new GroupManageVM
+            {
+                Groups = groupList
+            };
+            return View(vm); 
+        }
+
+        //public IActionResult AddGroup(GroupManageVM vm)
+        //{
+        //    //var s = db.TutorialGroups.FirstOrDefault(p => p.Id == vm.GroupId);
+        //    var groupID = vm.ProgramId + vm.YearLevel + "G" + vm.GroupId;
+        //    if (s == null)
+        //    {
+        //        //var p = new TutorialGroup
+        //        //{
+        //        //    Id = vm.GroupId!,
+        //        //    Name = vm.GroupName!,
+        //        //    ProgramId = vm.ProgramId!
+        //        //};
+        //        //db.TutorialGroups.Add(p);
+        //        //db.SaveChanges();
+        //        TempData["SuccessMessage"] = $"Group {groupID} added successfully.";
+        //    }
+        //    else
+        //    {
+        //        TempData["ErrorMessage"] = "Failed to add new Group. Error: Group ID duplicate!";
+        //    }
+        //    return RedirectToAction(nameof(GroupManagement));
+        //}
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
         {

@@ -32,7 +32,7 @@
 
 
 <div class="tab-content" id="ProgramManagementTabContent">
-    <!-- Students Tab -->
+
     <div class="tab-pane fade show active" id="programs" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
@@ -48,6 +48,7 @@
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
                             <i class="fas fa-download mr-1"></i> Export CSV
                         </button>
+
                     </div>
                 </div>
             </div>
@@ -113,7 +114,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Faculty</h5>
-                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close">
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close" onclick="onAddLoaded()">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -130,7 +131,7 @@
 
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -144,7 +145,7 @@
                     <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
                 </div>
                 <p class="text-center mb-2">Are you sure you want to delete</p>
-                <p class="text-center font-weight-bold mb-3"><span id="studentToDeleteName"></span>?</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
                 <p class="text-danger small text-center mb-0">
                     <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
                 </p>
@@ -155,7 +156,7 @@
                 </button>
                 <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteProgram" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <input type="hidden" id="deleteId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
@@ -167,6 +168,18 @@
 
 @section Scripts {
     <script>
+
+            
+          $("#exportCsvBtn").on("click", function () {
+
+            const form = $("#filterForm")[0];
+            const params = new URLSearchParams(new FormData(form));
+
+            // Redirect to export action with filters
+            window.location.href = '/Admin/ExportProgramsCsv?' + params.toString();
+           });
+   
+
           function onEditLoaded() {
             console.log("Partial Loaded");
 
@@ -178,17 +191,28 @@
             $("#ProgramId").prop("readonly", true);
 
             $("#addEditForm").attr("action", "/Admin/EditProgram");
-        }
+          }
+
+          function onAddLoaded(){
+              console.log("Partial Add Loaded");
+              $("#addEditModalLabel").text("Add Program");
+              $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Add Program');
+              $("#ProgramId").prop("readonly", false);
+              $("#addEditForm").attr("action", "/Admin/AddProgram");
+              $("#ProgramId").val("");
+              $("#ProgramName").val("");
+              $("#FacultyId").val("");
+          }
 
         function prepareDeleteModal(element) {
             var id = $(element).data("id");
             var name = $(element).data("name");
 
             // Set hidden input value for form submission
-            $("#deleteStudentId").val(id);
+            $("#deleteId").val(id);
 
             // Display name in modal
-            $("#studentToDeleteName").text(name);
+            $("#ToDeleteName").text(name);
         }
 
 
