@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -809,9 +810,56 @@ namespace SHAPEE.Controllers
             }
         }
 
+        public async Task<IActionResult> Profile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var user = await db.Users
+                .OfType<Admin>()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+            return View("~/Views/Shared/Profile.cshtml", user);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(Admin model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("~/Views/Shared/Profile.cshtml", model);
+            }
+
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var user = await db.Users.FindAsync(userId);
+
+                if (user == null)
+                    return NotFound();
+
+                user.FirstName = model.FirstName;
+                user.LastName = model.LastName;
+                user.Email = model.Email;
+                user.Contact = model.Contact;
+
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while updating profile.";
+            }
+
+            return RedirectToAction("Profile");
+        }
 
 
-     
+
         public IActionResult FacultyManagement(string? sort, string? name, string? editId)
         {
             ViewData["Title"] = "Faculty Management";

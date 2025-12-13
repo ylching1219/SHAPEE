@@ -146,5 +146,20 @@ namespace SHAPEE.Controllers
 
             return RedirectToAction("ViewAttendance");
         }
+
+        public async Task<IActionResult> Profile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var user = await db.Users
+                .OfType<Student>()
+                .Include(s => s.Program)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+            return View("~/Views/Shared/Profile.cshtml", user);
+        }
     }
 }

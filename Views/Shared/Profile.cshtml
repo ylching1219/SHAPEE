@@ -1,0 +1,659 @@
+﻿<!-- Views/Shared/Profile.cshtml -->
+@model User
+
+@{
+    ViewData["Title"] = "My Profile";
+    var isAdmin = User.IsInRole("Admin");
+    var isStaff = User.IsInRole("Staff");
+    var isStudent = User.IsInRole("Student");
+    var staff = Model as Staff;
+    var student = Model as Student;
+}
+
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Profile</h1>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="row">
+        <!-- Profile Card -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-body text-center">
+                    <div class="mb-3 position-relative">
+                        @if (isStaff && !string.IsNullOrEmpty(staff?.ProfilePictureUrl))
+                        {
+                            <img src="@staff.ProfilePictureUrl" class="rounded-circle" width="150" height="150" alt="Profile Picture">
+                        }
+                        else if (isStudent && !string.IsNullOrEmpty(student?.ProfilePictureUrl))
+                        {
+                            <img src="@student.ProfilePictureUrl" class="rounded-circle" width="150" height="150" alt="Profile Picture">
+                        }
+                        else
+                        {
+                            <img src="~/img/undraw_profile.svg" class="rounded-circle" width="150" height="150" alt="Profile Picture">
+                        }
+
+                        @if (isStaff || isStudent)
+                        {
+                            <button type="button" class="btn btn-sm btn-primary rounded-circle position-absolute" style="bottom: 10px; right: 35%;" data-toggle="modal" data-target="#uploadPhotoModal">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        }
+                    </div>
+                    <h4 class="mb-1">@Model.FullName</h4>
+                    <p class="text-muted mb-2">
+                        @if (isAdmin)
+                        {
+                            <text>Administrator</text>
+                        }
+                        else if (isStaff)
+                        {
+                            <text>Staff / Lecturer</text>
+                        }
+                        else if (isStudent)
+                        {
+                            <text>Student</text>
+                        }
+                    </p>
+                    <span class="badge badge-success mb-3">@Model.Status</span>
+                    <div class="mt-3">
+                        <p class="mb-1"><strong>User ID:</strong> @Model.Id</p>
+                        <p class="mb-1"><strong>Email:</strong> @Model.Email</p>
+                        <p class="mb-1"><strong>Contact:</strong> @(Model.Contact ?? "Not provided")</p>
+                        @if (isStaff)
+                        {
+                            <p class="mb-1"><strong>Gender:</strong> @staff?.Gender</p>
+                        }
+                        else if (isStudent)
+                        {
+                            <p class="mb-1"><strong>Gender:</strong> @student?.Gender</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (isAdmin)
+            {
+                <!-- Admin Quick Actions -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-primary btn-block mb-2">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                        <a href="#" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-bell"></i> Notification Settings
+                        </a>
+                        <a href="#" class="btn btn-secondary btn-block">
+                            <i class="fas fa-history"></i> Activity Log
+                        </a>
+                    </div>
+                </div>
+            }
+            else if (isStaff)
+            {
+                <!-- Staff Quick Stats -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Quick Stats</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <small class="text-muted">Classes Teaching</small>
+                            <h4 class="mb-0">5</h4>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Total Students</small>
+                            <h4 class="mb-0">120</h4>
+                        </div>
+                        <div>
+                            <small class="text-muted">Years of Service</small>
+                            <h4 class="mb-0">@((DateTime.Now.Year - (staff?.DateJoin.Year ?? DateTime.Now.Year))) years</h4>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (isStudent)
+            {
+                <!-- Student Academic Summary -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Academic Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <small class="text-muted">Current Year</small>
+                            <h4 class="mb-0">Year @(student?.YearLevel ?? 1)</h4>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Current Semester</small>
+                            <h4 class="mb-0">Semester @(student?.Semester ?? 1)</h4>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Enrolled Courses</small>
+                            <h4 class="mb-0">@(student?.Enrollments?.Count ?? 0)</h4>
+                        </div>
+                        <div>
+                            <small class="text-muted">Overall Attendance</small>
+                            <h4 class="mb-0 text-success">92%</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Quick Actions -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Url.Action("ViewAttendance", "Student")" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-clipboard-check"></i> View Attendance
+                        </a>
+                        <a href="#" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-graduation-cap"></i> View Grades
+                        </a>
+                        <a href="#" class="btn btn-warning btn-block">
+                            <i class="fas fa-file-invoice-dollar"></i> View Invoices
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Profile Information Form -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Profile Information</h6>
+                    <button type="button" class="btn btn-sm btn-primary" id="editBtn">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm" method="post" asp-action="UpdateProfile" enctype="multipart/form-data">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="FirstName" class="font-weight-bold">First Name</label>
+                                    <input asp-for="FirstName" class="form-control" disabled />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="LastName" class="font-weight-bold">Last Name</label>
+                                    <input asp-for="LastName" class="form-control" disabled />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Email" class="font-weight-bold">Email Address</label>
+                                    <input asp-for="Email" class="form-control" type="email" disabled />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Contact" class="font-weight-bold">Contact Number</label>
+                                    <input asp-for="Contact" class="form-control" placeholder="Enter contact number" disabled />
+                                    <span asp-validation-for="Contact" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (isStaff)
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Gender</label>
+                                        <select name="Staff_Gender" class="form-control" disabled>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" selected="@(staff?.Gender == "Male")">Male</option>
+                                            <option value="Female" selected="@(staff?.Gender == "Female")">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Date Joined</label>
+                                        <input name="Staff_DateJoin" value="@staff?.DateJoin.ToString("yyyy-MM-dd")" class="form-control" type="date" disabled readonly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="font-weight-bold">Faculty</label>
+                                <input type="text" class="form-control" value="@(staff?.Faculty?.Name ?? "Not Assigned")" disabled readonly />
+                            </div>
+                        }
+                        else if (isStudent)
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Gender</label>
+                                        <select name="Gender" class="form-control" disabled>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" selected="@(student?.Gender == "Male")">Male</option>
+                                            <option value="Female" selected="@(student?.Gender == "Female")">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Date Enrolled</label>
+                                        <input name="DateJoin" value="@student?.DateJoin.ToString("yyyy-MM-dd")" class="form-control" type="date" disabled readonly />
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (isAdmin)
+                        {
+                            <div class="form-group">
+                                <label class="font-weight-bold">Account Status</label>
+                                <input type="text" class="form-control" value="@Model.Status" disabled readonly />
+                            </div>
+                        }
+
+                        @if (isStaff || isStudent)
+                        {
+                            <div class="form-group d-none" id="profilePictureGroup">
+                                <label class="font-weight-bold">Profile Picture</label>
+                                <input type="file" class="form-control-file" name="profilePicture" accept="image/*" disabled />
+                                <small class="form-text text-muted">Accepted formats: JPG, PNG. Max size: 2MB</small>
+                            </div>
+                        }
+
+                        <div class="d-none" id="formActions">
+                            <hr>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancelBtn">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (isAdmin)
+            {
+                <!-- Admin Security Settings -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Security Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Login Attempts:</strong> @Model.LoginAttempts</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Last Password Change:</strong> Not available</p>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
+                            <i class="fas fa-lock"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+            }
+            else if (isStaff)
+            {
+                <!-- Staff Teaching Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Teaching Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Faculty:</strong> @(staff?.Faculty?.Name ?? "Not Assigned")</p>
+                        <p><strong>Date Joined:</strong> @(staff?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                        <a href="@Url.Action("MyClasses", "Staff")" class="btn btn-info">
+                            <i class="fas fa-book"></i> View My Classes
+                        </a>
+                    </div>
+                </div>
+            }
+            else if (isStudent)
+            {
+                <!-- Student Academic Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Academic Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Program:</strong> @(student?.Program?.Name ?? "Not Assigned")</p>
+                                <p><strong>Year Level:</strong> Year @(student?.YearLevel ?? 1)</p>
+                                <p><strong>Semester:</strong> Semester @(student?.Semester ?? 1)</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Tutorial Group:</strong> @(student?.TutorialGroupId ?? "Not Assigned")</p>
+                                <p><strong>Date Enrolled:</strong> @(student?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                                <p><strong>Status:</strong> <span class="badge badge-success">@Model.Status</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Enrollment Statistics -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Total Courses
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">@(student?.Enrollments?.Count ?? 0)</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-book fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Attendance Rate
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">92%</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Upload Photo Modal -->
+@if (isStaff || isStudent)
+{
+    <div class="modal fade" id="uploadPhotoModal" tabindex="-1" role="dialog" aria-labelledby="uploadPhotoModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadPhotoModalLabel">Upload Profile Picture</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="post" asp-action="UploadProfilePicture" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="profilePictureUpload">Choose a photo</label>
+                            <input type="file" class="form-control-file" id="profilePictureUpload" name="profilePicture" accept="image/*" required>
+                            <small class="form-text text-muted">Accepted formats: JPG, PNG. Max size: 2MB</small>
+                        </div>
+                        <div id="imagePreview" class="text-center d-none">
+                            <img id="preview" src="#" alt="Preview" class="img-thumbnail" style="max-width: 300px; max-height: 300px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Edit button functionality
+            $('#editBtn').click(function() {
+                $('#profileForm input:not([readonly]), #profileForm select').prop('disabled', false);
+                @if (isStaff || isStudent)
+                {
+                            <text>$('#profilePictureGroup').removeClass('d-none');</text>
+                }
+                $('#formActions').removeClass('d-none');
+                $(this).addClass('d-none');
+            });
+
+            // Cancel button functionality
+            $('#cancelBtn').click(function() {
+                $('#profileForm input, #profileForm select').prop('disabled', true);
+                @if (isStaff || isStudent)
+                {
+                            <text>$('#profilePictureGroup').addClass('d-none');</text>
+                }
+                $('#formActions').addClass('d-none');
+                $('#editBtn').removeClass('d-none');
+            });
+
+            // Image preview functionality
+            $('#profilePictureUpload').change(function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#preview').attr('src', e.target.result);
+                        $('#imagePreview').removeClass('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+}
+
+<!--
+CONTROLLER EXAMPLE:
+Based on your TPH (Table-Per-Hierarchy) database structure with Discriminator column
+
+// Example Controller Action - works for any role
+public class ProfileController : Controller
+{
+    private readonly ApplicationDbContext _context;
+
+    public ProfileController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // Query the Users table with discriminator-based filtering
+        User user = null;
+
+        if (User.IsInRole("Admin"))
+        {
+            user = await _context.Users
+                .OfType<Admin>()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        else if (User.IsInRole("Staff"))
+        {
+            user = await _context.Users
+                .OfType<Staff>()
+                .Include(s => s.Faculty)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        else if (User.IsInRole("Student"))
+        {
+            user = await _context.Users
+                .OfType<Student>()
+                .Include(s => s.Program)
+                .Include(s => s.TutorialGroup)
+                .Include(s => s.Enrollments)
+                .Include(s => s.Invoices)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        if (user == null)
+            return NotFound();
+
+        return View("~/Views/Shared/Profile.cshtml", user);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateProfile(User model)
+    {
+        if (!ModelState.IsValid)
+            return View("~/Views/Shared/Profile.cshtml", model);
+
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            // Update common fields
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Email = model.Email;
+            user.Contact = model.Contact;
+
+            // Update role-specific fields
+            if (user is Staff staff && model is Staff staffModel)
+            {
+                staff.Gender = staffModel.Gender;
+            }
+            else if (user is Student student && model is Student studentModel)
+            {
+                student.Gender = studentModel.Gender;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Profile updated successfully!";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "An error occurred while updating profile.";
+        }
+
+        return RedirectToAction("Index");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile profilePicture)
+    {
+        if (profilePicture == null || profilePicture.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Please select a file.";
+            return RedirectToAction("Index");
+        }
+
+        // Validate file type
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+        var extension = Path.GetExtension(profilePicture.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            TempData["ErrorMessage"] = "Invalid file type. Only JPG and PNG are allowed.";
+            return RedirectToAction("Index");
+        }
+
+        // Validate file size (2MB max)
+        if (profilePicture.Length > 2 * 1024 * 1024)
+        {
+            TempData["ErrorMessage"] = "File size must be less than 2MB.";
+            return RedirectToAction("Index");
+        }
+
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            // Generate unique filename
+            var fileName = $"{userId}_{Guid.NewGuid()}{extension}";
+            var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+
+            // Create directory if it doesn't exist
+            if (!Directory.Exists(uploadPath))
+                Directory.CreateDirectory(uploadPath);
+
+            var filePath = Path.Combine(uploadPath, fileName);
+
+            // Save file
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await profilePicture.CopyToAsync(stream);
+            }
+
+            // Update database based on discriminator
+            if (user is Staff staff)
+            {
+                // Delete old file if exists
+                if (!string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", staff.ProfilePictureUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                        System.IO.File.Delete(oldFilePath);
+                }
+
+                staff.ProfilePictureUrl = $"/uploads/profiles/{fileName}";
+            }
+            else if (user is Student student)
+            {
+                // Delete old file if exists
+                if (!string.IsNullOrEmpty(student.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", student.ProfilePictureUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                        System.IO.File.Delete(oldFilePath);
+                }
+
+                student.ProfilePictureUrl = $"/uploads/profiles/{fileName}";
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Profile picture uploaded successfully!";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "An error occurred while uploading the file.";
+        }
+
+        return RedirectToAction("Index");
+    }
+}
+
+// Alternative: Add to existing controllers (Admin, Staff, Student)
+// Each controller can have this action pointing to the shared view
+-->
