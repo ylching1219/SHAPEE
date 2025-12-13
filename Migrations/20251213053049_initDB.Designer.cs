@@ -12,7 +12,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251213051045_initDB")]
+    [Migration("20251213053049_initDB")]
     partial class initDB
     {
         /// <inheritdoc />
@@ -775,6 +775,9 @@ namespace SHAPEE.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("GroupNumber")
+                        .HasColumnType("int");
 
                     b.Property<int>("NumberOfStudents")
                         .HasColumnType("int");

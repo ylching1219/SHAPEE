@@ -172,6 +172,7 @@ namespace SHAPEE.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    GroupNumber = table.Column<int>(type: "int", nullable: false),
                     ProgramId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false),

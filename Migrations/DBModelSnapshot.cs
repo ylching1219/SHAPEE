@@ -773,6 +773,9 @@ namespace SHAPEE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("GroupNumber")
+                        .HasColumnType("int");
+
                     b.Property<int>("NumberOfStudents")
                         .HasColumnType("int");
 

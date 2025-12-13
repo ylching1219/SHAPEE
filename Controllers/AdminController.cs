@@ -1268,13 +1268,13 @@ namespace SHAPEE.Controllers
             return RedirectToAction(nameof(CourseManagement));
         }
 
-        public IActionResult ExportCourseCsv() 
+        public IActionResult ExportCourseCsv()
         {
             var query = db.Courses;
 
 
             var data = query
-                .Select(p => new CourseCsvVM 
+                .Select(p => new CourseCsvVM
                 {
                     CourseId = p.Id,
                     CourseName = p.Name,
@@ -1284,12 +1284,12 @@ namespace SHAPEE.Controllers
 
 
             var bytes = Helper.ExportToCsv(data);
-            return File(bytes, "text/csv", "Course.csv"); 
+            return File(bytes, "text/csv", "Course.csv");
         }
 
         //Group Management
         public IActionResult GroupManagement()
-        {             
+        {
             ViewData["Title"] = "Group Management";
             TutorialGroup? editGroup = null;
             var groupList = db.TutorialGroups
@@ -1306,31 +1306,27 @@ namespace SHAPEE.Controllers
             {
                 Groups = groupList
             };
-            return View(vm); 
+            return View(vm);
         }
 
-        //public IActionResult AddGroup(GroupManageVM vm)
-        //{
-        //    //var s = db.TutorialGroups.FirstOrDefault(p => p.Id == vm.GroupId);
-        //    var groupID = vm.ProgramId + vm.YearLevel + "G" + vm.GroupId;
-        //    if (s == null)
-        //    {
-        //        //var p = new TutorialGroup
-        //        //{
-        //        //    Id = vm.GroupId!,
-        //        //    Name = vm.GroupName!,
-        //        //    ProgramId = vm.ProgramId!
-        //        //};
-        //        //db.TutorialGroups.Add(p);
-        //        //db.SaveChanges();
-        //        TempData["SuccessMessage"] = $"Group {groupID} added successfully.";
-        //    }
-        //    else
-        //    {
-        //        TempData["ErrorMessage"] = "Failed to add new Group. Error: Group ID duplicate!";
-        //    }
-        //    return RedirectToAction(nameof(GroupManagement));
-        //}
+        public IActionResult AddGroup(GroupManageVM vm)
+        {
+           
+
+            var p = new TutorialGroup
+            {
+                ProgramId = vm.ProgramId!,
+                YearLevel = vm.YearLevel ?? 1,
+                Semester = vm.Semester ?? 1,
+                NumberOfStudents = 0
+            };
+            db.TutorialGroups.Add(p);
+            db.SaveChanges();
+            TempData["SuccessMessage"] = $"Group added successfully.";
+
+
+            return RedirectToAction(nameof(GroupManagement));
+        }
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
         {

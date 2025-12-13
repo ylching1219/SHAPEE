@@ -273,7 +273,11 @@ public class ClassSection
 
 public class TutorialGroup
 {
-    public int Id { get; set; } 
+    public int Id { get; set; }
+
+    public string GroupName => $"{ProgramId}Y{YearLevel}G{GroupNumber}";
+
+    public int GroupNumber { get; set; }
 
     //FK to Program -- 1 tutorial group belong to 1 program
     public string ProgramId { get; set; }
@@ -288,8 +292,6 @@ public class TutorialGroup
     //1 tutorial group have many students
     public List<Student> Students { get; set; } = [];
 
-    [NotMapped]
-    public string GroupName => $"{Program?.Name}Y{YearLevel}G{Id}";
 }
 
 public class Enrollment

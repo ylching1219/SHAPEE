@@ -2,14 +2,7 @@
 <form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddGroup">
     <div class="modal-body">
 
-        <div class="form-group">
-            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="GroupId" name="GroupId"
-                   value="@(Model.EditGroup?.Id != null ? Model.EditGroup.Id : "")"
-                   required>
-            <span asp-validation-for="GroupId" class="text-danger"></span>
-        </div>
-
+      
         <div class="form-group">
             <label for="ProgramId" class="font-weight-medium">Program<span class="text-danger">*</span></label>
             <select asp-for="ProgramId"
