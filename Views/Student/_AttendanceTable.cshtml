@@ -1,0 +1,72 @@
+@model StudentAttendanceVM
+
+<div class="table-responsive">
+    <table class="table table-hover" id="subjectTable">
+        <thead>
+            <tr>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Section</th>
+                <th>Total Classes</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Percentage</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTableBody">
+            @if (Model.ClassAttendances == null || !Model.ClassAttendances.Any())
+            {
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">You are not enrolled in any classes yet.</p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model.ClassAttendances)
+                {
+                    var statusClass = item.AttendancePercentage >= 80 ? "success" :
+                                     item.AttendancePercentage >= 70 ? "info" :
+                                     item.AttendancePercentage >= 60 ? "warning" : "danger";
+                    var statusText = item.AttendancePercentage >= 80 ? "Excellent" :
+                                    item.AttendancePercentage >= 70 ? "Good" :
+                                    item.AttendancePercentage >= 60 ? "Fair" : "Poor";
+                    
+                    <tr class="subject-row" 
+                        data-section-id="@item.ClassSection.SectionId"
+                        style="cursor: pointer;">
+                        <td><span class="badge badge-secondary">@item.Course.Id</span></td>
+                        <td>@item.Course.Name</td>
+                        <td>@item.ClassSection.SectionId</td>
+                        <td>@item.TotalSessions</td>
+                        <td><span class="text-success font-weight-bold">@item.PresentCount</span></td>
+                        <td><span class="text-danger">@item.AbsentCount</span></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-@statusClass" 
+                                     role="progressbar" 
+                                     style="width: @item.AttendancePercentage%" 
+                                     aria-valuenow="@item.AttendancePercentage" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    @item.AttendancePercentage%
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-@statusClass">@statusText</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary view-details-btn" 
+                                    data-section-id="@item.ClassSection.SectionId">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

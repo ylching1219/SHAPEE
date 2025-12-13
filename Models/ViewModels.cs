@@ -161,6 +161,64 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
     }
+    
+    // student view attendacne
+    public class StudentAttendanceVM
+    {
+        //for summary view (list of clas)
+        public List<StudentAttendanceVM> ClassAttendances { get; set; } = [];
+        
+        // overall statistics
+        public int OverallPresent { get; set; }
+        public int OverallAbsent { get; set; }
+        public double OverallPercentage { get; set; }
+        public List<Attendance> RecentAttendances { get; set; } = [];
+        
+        // qr/token for taking attendance
+        public string? SectionId { get; set; }
+        public string? QrToken { get; set; }
+        
+        // for individual class item
+        public ClassSection? ClassSection { get; set; }
+        public Course? Course { get; set; } 
+        
+        // attendance statistic for a class
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int TotalSessions { get; set; }
+        public double AttendancePercentage { get; set; }
+        
+        // filter options
+        public List<SubjectFilterOption> AvailableSubjects { get; set; } = [];
+        public List<MonthFilterOption> AvailableMonths { get; set; } = [];
+    }
+
+    public class SubjectFilterOption
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+    }
+
+    public class MonthFilterOption
+    {
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public string DisplayText { get; set; }
+    }
+
+    // student attendance details view model
+    public class StudentAttendanceDetailsVM
+    {
+        public ClassSection? ClassSection { get; set; }  
+        public Course? Course { get; set; }  
+        public Semester? Semester { get; set; }  
+        
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int TotalSessions { get; set; }
+        public double AttendancePercentage { get; set; }
+        public List<Attendance> Attendances { get; set; } = [];
+    }
 
     // JS
     public class RoomManageVM
@@ -168,4 +226,5 @@ namespace SHAPEE.Models
         public List<Room> Rooms { get; set; } = [];
         public Room? EditRoom { get; set; }
     }
+
 }
