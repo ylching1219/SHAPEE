@@ -81,7 +81,7 @@ namespace SHAPEE.Models
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
         public TutorialGroup? EditGroup { get; set; }
-        public string? GroupId { get; set; }
+        public int? GroupNumber { get; set; }
         public string? ProgramId { get; set; }  
         public int? YearLevel { get; set; }
         public int? Semester { get; set; }

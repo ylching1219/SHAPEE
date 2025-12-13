@@ -275,7 +275,8 @@ public class TutorialGroup
 {
     public int Id { get; set; }
 
-    public string GroupName => $"{ProgramId}Y{YearLevel}G{GroupNumber}";
+    [MaxLength(100)]
+    public string GroupName {  get; set; }
 
     public int GroupNumber { get; set; }
 
