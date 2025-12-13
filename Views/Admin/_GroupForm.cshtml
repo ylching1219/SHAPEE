@@ -1,0 +1,51 @@
+﻿@model GroupManageVM
+<form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddGroup">
+    <div class="modal-body">
+
+      
+        <div class="form-group">
+            <label for="ProgramId" class="font-weight-medium">Program<span class="text-danger">*</span></label>
+            <select asp-for="ProgramId"
+                    asp-items="ViewBag.ProgramList"
+                    class="form-control">
+                <option value="">Select Program</option>
+            </select>
+            <span asp-validation-for="ProgramId" class="text-danger"></span>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                    <select class="form-control" id="yearLevel" name="yearLevel" required>
+                        <option value="">Year</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                    <div class="invalid-feedback">Please select year level.</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="semester" class="font-weight-medium">Semester <span class="text-danger">*</span></label>
+                    <select class="form-control" id="semester" name="semester" required>
+                        <option value="">Semester</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <div class="invalid-feedback">Please select semester.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer bg-light">
+        <button class="btn btn closeBtn" type="button" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i> Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" id="saveBtn">
+            <i class="fas fa-save mr-1"></i> Add Program
+        </button>
+    </div>
+</form>

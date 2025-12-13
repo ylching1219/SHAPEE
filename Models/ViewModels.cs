@@ -68,13 +68,28 @@ namespace SHAPEE.Models
 
     public class CourseManageVM
     {
-        public List<Course> Courses { get; set; } = [];
+        public List<Course>? Courses { get; set; } = [];
         public Course? EditCourse { get; set; }
+
+        public string? CourseId { get; set; }
+        public string? CourseName { get; set; }
+        public int? CreditHours { get; set; } 
+
     }
 
+    public class GroupManageVM
+    {
+        public List<TutorialGroup>? Groups { get; set; } = [];
+        public TutorialGroup? EditGroup { get; set; }
+        public int? GroupNumber { get; set; }
+        public string? ProgramId { get; set; }  
+        public int? YearLevel { get; set; }
+        public int? Semester { get; set; }
+
+    }
     public class ProgramManageVM
     {
-        public List<Program> Program { get; set; } = [];
+        public List<Program>? Program { get; set; } = [];
         public Program? EditProgram { get; set; }
 
         [Required(ErrorMessage = "Program ID is required.")]
@@ -87,10 +102,29 @@ namespace SHAPEE.Models
         public string? FacultyId { get; set; }
     }
 
-    //public class ProgramVM
-    //{
-       
-    //}
+    public class ProgramCsvVM
+    {
+        [Display(Name = "Program ID")]
+        public string ProgramId { get; set; }
+
+        [Display(Name = "Program Name")]
+        public string ProgramName { get; set; }
+
+        [Display(Name = "Faculty")]
+        public string FacultyName { get; set; }
+
+    }
+
+    public class CourseCsvVM
+    {
+        [Display(Name = "Course ID")]
+        public string CourseId { get; set; }
+        [Display(Name = "Course Name")]
+        public string CourseName { get; set; }
+        [Display(Name = "Credit Hours")]
+        public int CreditHours { get; set; }
+    }
+
 
 
     //KM

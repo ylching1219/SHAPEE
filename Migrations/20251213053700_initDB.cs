@@ -170,7 +170,10 @@ namespace SHAPEE.Migrations
                 name: "TutorialGroups",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GroupName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    GroupNumber = table.Column<int>(type: "int", nullable: false),
                     ProgramId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false),
@@ -210,7 +213,7 @@ namespace SHAPEE.Migrations
                     Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     ProfilePictureUrl = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     ProgramId = table.Column<string>(type: "nvarchar(50)", nullable: true),
-                    TutorialGroupId = table.Column<string>(type: "nvarchar(50)", nullable: true)
+                    TutorialGroupId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -272,7 +275,7 @@ namespace SHAPEE.Migrations
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     SectionType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TutorialGroupId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    TutorialGroupId = table.Column<int>(type: "int", nullable: false),
                     RoomId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     AttendanceCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     JoinCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),

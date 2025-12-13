@@ -1,0 +1,218 @@
+﻿@model GroupManageVM
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Group Management</h1>
+</div>
+
+
+
+<div class="tab-content" id="GroupManagementTabContent">
+
+    <div class="tab-pane fade show active" id="groups" role="tabpanel">
+        <div class="card shadow-sm">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                        Groups
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" id="addData">
+                            <i class="fas fa-user-plus mr-1"></i> Add Group
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
+                            <i class="fas fa-download mr-1"></i> Export CSV
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+            @* <!-- Filters Section -->
+            <div class="card-body bg-light border-bottom">
+                <form id="filterForm"
+                      data-ajax="true"
+                      data-ajax-method="GET"
+                      data-ajax-url="/Admin/ProgramManagement"
+                      data-ajax-update="#programData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control"
+                                       name="name"
+                                       id="searchInput"
+                                       placeholder="Search programs..." />
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-2"></div>
+                        <div class="col-12 col-md-4">
+                            <select class="form-control" name="filter" id="filter">
+                                <option value="">All Faculty</option>
+                                @foreach (var f in ViewBag.Faculty)
+                                {
+                                    <option value="@f.Id">@f.Id</option>
+                                }
+
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div> *@
+
+            <!-- Faculty Table -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <div id="groupData">
+                        <partial name="_Group" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Faculty</h5>
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close" onclick="onAddLoaded()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="AddEditData">
+                <partial name="_GroupForm" />
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteProgram" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteId" name="Id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+
+
+          $("#exportCsvBtn").on("click", function () {
+
+            const form = $("#filterForm")[0];
+            const params = new URLSearchParams(new FormData(form));
+
+            // Redirect to export action with filters
+            window.location.href = '/Admin/ExportProgramsCsv?' + params.toString();
+           });
+
+
+          function onEditLoaded() {
+            console.log("Partial Loaded");
+
+            $("#addEditModal").modal("show");
+            $("#addEditModalLabel").text("Edit Program");
+
+            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
+
+            $("#ProgramId").prop("readonly", true);
+
+            $("#addEditForm").attr("action", "/Admin/EditProgram");
+          }
+
+          function onAddLoaded(){
+              console.log("Partial Add Loaded");
+              $("#addEditModalLabel").text("Add Program");
+              $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Add Program');
+              $("#ProgramId").prop("readonly", false);
+              $("#addEditForm").attr("action", "/Admin/AddProgram");
+              $("#ProgramId").val("");
+              $("#ProgramName").val("");
+              $("#FacultyId").val("");
+          }
+
+        function prepareDeleteModal(element) {
+            var id = $(element).data("id");
+            var name = $(element).data("name");
+
+            // Set hidden input value for form submission
+            $("#deleteId").val(id);
+
+            // Display name in modal
+            $("#ToDeleteName").text(name);
+        }
+
+
+    </script>
+
+}

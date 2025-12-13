@@ -1,0 +1,42 @@
+﻿@model CourseManageVM
+<form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddCourse">
+    <div class="modal-body">
+
+        <div class="form-group">
+            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="CourseId" name="CourseId"
+                   value="@(Model.EditCourse?.Id != null ? Model.EditCourse.Id : "")"
+                   required>
+            <span asp-validation-for="CourseId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <div class="form-group">
+                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="CourseName" name="CourseName"
+                       value="@(Model.EditCourse?.Name != null ? Model.EditCourse.Name : "")"
+                       required>
+                <span asp-validation-for="CourseName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="FacultyId" class="font-weight-medium">Credit Hour<span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="CreditHours" name="CreditHours" step=" 1" 
+                   value="@(Model.EditCourse?.CreditHours != null ? Model.EditCourse.CreditHours : "")"
+                   required>
+            <span asp-validation-for="CreditHours" class="text-danger"></span>
+
+
+        </div>
+
+    </div>
+    <div class="modal-footer bg-light">
+        <button class="btn btn closeBtn" type="button" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i> Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" id="saveBtn">
+            <i class="fas fa-save mr-1"></i> Add Program
+        </button>
+    </div>
+</form>

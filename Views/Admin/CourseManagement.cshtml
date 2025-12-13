@@ -30,7 +30,7 @@
 
 
 <div class="tab-content" id="CourseManagementTabContent">
-    <!-- Students Tab -->
+
     <div class="tab-pane fade show active" id="courses" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
@@ -80,7 +80,7 @@
                                     <option value="2">Course Name by Ascending</option>
                                     <option value="3">Course Name by Descending</option>
                                     <option value="4">Credit Hour Low to High</option>
-                                    <option value="5">Credit Hour to Low</option>
+                                    <option value="5">Credit Hour High to Low</option>
                                 </select>
                             </div>
                         </div>
@@ -109,69 +109,25 @@
 
 
 
-@* <div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Faculty</h5>
-                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close">
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close" onclick="onAddLoaded()">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div id="AddEditData">
-                <form id="addEditForm" method="post" asp-controller="Admin" asp-action="InsertFaculty">
-                    <div class="modal-body">
-
-                        <div class="form-group">
-                            <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ProgramId" name="ProgramId"
-                                   value="@(Model.EditProgram?.Id != null ? Model.EditProgram.Id : "")"
-                                   required>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="form-group">
-                                <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="ProgramName" name="ProgramName"
-                                       value="@(Model.EditProgram?.Name != null ? Model.EditProgram.Name : "")"
-                                       required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="FacultyId" class="font-weight-medium">Faculty<span class="text-danger">*</span></label>
-                            <select class="form-control" id="facultyFilter">
-                                <option value="default">Select Faculty</option>
-                                @foreach (var f in ViewBag.Faculty)
-                                {
-                                    <option value="@f.Id">@f.Id - @f.Name</option>
-                                }
-                            </select>
-
-                        </div>
-
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn closeBtn" type="button" data-dismiss="modal" closeBtn>
-                            <i class="fas fa-times mr-1"></i> Cancel
-                        </button>
-                        <button class="btn btn-primary" type="submit" id="saveBtn">
-                            <i class="fas fa-save mr-1"></i> Add Program
-                        </button>
-                    </div>
-                </form>
+                <partial name="_CourseForm" />
             </div>
 
         </div>
     </div>
-</div> *@
-
-
-
-
+</div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -185,7 +141,7 @@
                     <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
                 </div>
                 <p class="text-center mb-2">Are you sure you want to delete</p>
-                <p class="text-center font-weight-bold mb-3"><span id="studentToDeleteName"></span>?</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
                 <p class="text-danger small text-center mb-0">
                     <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
                 </p>
@@ -194,9 +150,9 @@
                 <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Cancel
                 </button>
-                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="Delete" style="display:inline;">
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteCourse" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" id="deleteStudentId" name="Id" />
+                    <input type="hidden" id="deleteId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
@@ -208,28 +164,45 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-        const url = new URL(window.location.href);
-        const editId = url.searchParams.get("editId");
 
-        if (editId) {
-            // Check TempData server-side
-            @if (Model.EditCourse != null)
-            {
-                <text>
-                    $('#addEditModal').modal('show');      
-                    $("#addEditModalLabel").text("Edit Program");
-                    $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Course');
-                    $("#CourseId").prop("readonly", true);
-                </text>
-            }
+         $("#exportCsvBtn").on("click", function () {
+            window.location.href = '/Admin/ExportCourseCsv';
+           });
+          function onEditLoaded() {
+            console.log("Partial Loaded");
+
+            $("#addEditModal").modal("show");
+            $("#addEditModalLabel").text("Edit Program");
+
+            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
+
+            $("#CourseId").prop("readonly", true);
+
+            $("#addEditForm").attr("action", "/Admin/EditCourse");
+          }
+
+          function onAddLoaded(){
+              console.log("Partial Add Loaded");
+              $("#addEditModalLabel").text("Add Program");
+              $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Add Program');
+              $("#CourseId").prop("readonly", false);
+              $("#addEditForm").attr("action", "/Admin/AddCourse");
+              $("#CourseId").val("");
+              $("#CourseName").val("");
+              $("#CreditHours").val("");
+          }
+
+        function prepareDeleteModal(element) {
+            var id = $(element).data("id");
+            var name = $(element).data("name");
+
+            // Set hidden input value for form submission
+            $("#deleteId").val(id);
+
+            // Display name in modal
+            $("#ToDeleteName").text(name);
         }
 
-             $(".closeBtn").on("click", function() {
-                  window.location.href = '/Admin/ProgramManagement';
-        });
-
-        });
     </script>
 
 }
