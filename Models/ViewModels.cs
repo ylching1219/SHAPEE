@@ -245,11 +245,60 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
     }
 
+    // Academic Calendar ViewModels
+    public class SemesterConfigVM
+    {
+        public List<Semester> Semesters { get; set; } = [];
+        public List<SemesterWithTypeInfo> SemestersWithType { get; set; } = [];
+    }
+
+    public class SemesterWithTypeInfo
+    {
+        public Semester Semester { get; set; }
+        public string CalculatedType { get; set; }
+        public double Weeks { get; set; }
+    }
+
+    public class EventManagementVM
+    {
+        public List<CalendarEvent> Events { get; set; } = [];
+        public List<Semester> Semesters { get; set; } = [];
+        public string? SelectedSemesterId { get; set; }
+        public List<EventWithSemesterInfo> EventsWithSemester { get; set; } = [];
+    }
+
+    public class EventWithSemesterInfo
+    {
+        public CalendarEvent Event { get; set; }
+        public Semester? Semester { get; set; }
+    }
+
+    public class CalendarEventVM
+    {
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public string Type { get; set; }
+        public string? SemesterId { get; set; }
+        public string Color { get; set; }
+        public bool AllDay { get; set; }
+    }
+
+    public class ConflictCheckVM
+    {
+        public bool HasConflict { get; set; }
+        public List<CalendarEvent> ConflictingEvents { get; set; } = [];
+        public string Message { get; set; } = "";
+    }
+    
     // JS
     public class RoomManageVM
     {
         public List<Room> Rooms { get; set; } = [];
         public Room? EditRoom { get; set; }
     }
+
 
 }
