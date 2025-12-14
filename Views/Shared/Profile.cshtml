@@ -229,14 +229,6 @@
                         <h6 class="m-0 font-weight-bold text-primary">Security Information</h6>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Login Attempts:</strong> @Model.LoginAttempts</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Last Password Change:</strong> Not available</p>
-                            </div>
-                        </div>
                         <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
                             <i class="fas fa-lock"></i> Change Password
                         </a>
@@ -253,6 +245,11 @@
                     <div class="card-body">
                         <p><strong>Faculty:</strong> @(staff?.Faculty?.Name ?? "Not Assigned")</p>
                         <p><strong>Date Joined:</strong> @(staff?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
+                            <i class="fas fa-lock"></i> Change Password
+                        </a>
                     </div>
                 </div>
             }
@@ -275,6 +272,11 @@
                                 <p><strong>Date Enrolled:</strong> @(student?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
                                 <p><strong>Status:</strong> <span class="badge badge-success">@Model.Status</span></p>
                             </div>
+                        </div>
+                        <div class="card-body">
+                            <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
+                                <i class="fas fa-lock"></i> Change Password
+                            </a>
                         </div>
                     </div>
                 </div>

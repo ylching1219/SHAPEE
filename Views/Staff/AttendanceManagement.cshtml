@@ -116,6 +116,60 @@ else
         </div>
     </div>
 
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <!-- Line Chart - Attendance Trend -->
+        <div class="col-xl-8 col-lg-7 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Attendance Trend Over Time</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Chart Options:</div>
+                            <a class="dropdown-item" href="#" id="refreshLineChart">Refresh</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="attendanceTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie Chart - Status Distribution -->
+        <div class="col-xl-4 col-lg-5 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="statusDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Present
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Absent
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> Late
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Excused
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Attendance Table Card -->
     <div class="card shadow-sm">
         <!-- Card Header -->
@@ -201,8 +255,179 @@ else
 }
 
 @section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <script>
         $(document).ready(function() {
+            //chart instances
+            let attendanceTrendChart = null;
+            let statusDistributionChart = null;
+
+            //load chart data
+            function loadChartData() {
+                const sectionId = '@Model?.Section?.SectionId';
+                
+                $.ajax({
+                    url: '/Staff/GetAttendanceChartData',
+                    type: 'GET',
+                    data: { sectionId: sectionId },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            renderLineChart(response.lineChart);
+                            renderPieChart(response.pieChart);
+                        } else {
+                            console.error('Error loading chart data:', response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading chart data:', error);
+                    }
+                });
+            }
+
+            //render line chart - attendance trend
+            function renderLineChart(data) {
+                const ctx = document.getElementById('attendanceTrendChart');
+                if (!ctx) return;
+
+                if (attendanceTrendChart) {
+                    attendanceTrendChart.destroy();
+                }
+
+                attendanceTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Attendance Percentage (%)',
+                            data: data.data,
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(40, 167, 69)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Attendance: ' + context.parsed.y + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Attendance Percentage (%)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            //render pie chart - status distribution
+            function renderPieChart(data) {
+                const ctx = document.getElementById('statusDistributionChart');
+                if (!ctx) return;
+
+                if (statusDistributionChart) {
+                    statusDistributionChart.destroy();
+                }
+
+                statusDistributionChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: data.colors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return label + ': ' + value + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            //refresh line chart
+            $(document).on('click', '#refreshLineChart', function(e) {
+                e.preventDefault();
+                loadChartData();
+            });
+
+            //load charts on page load
+            loadChartData();
+
+            //refresh charts when attendance list is updated
+            const originalRefreshAttendanceList = refreshAttendanceList;
+            refreshAttendanceList = function() {
+                originalRefreshAttendanceList();
+                setTimeout(loadChartData, 500); //set delay to ensure data is updated
+            };
+
             //initialize handlers
             initializeHandlers();
 

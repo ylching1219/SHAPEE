@@ -91,10 +91,6 @@
     </div>
 }
 
-@section Styles {
-    <link href="~/css/attendance.css" rel="stylesheet" />
-}
-
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
@@ -105,35 +101,48 @@
 
 <!-- Filter Section -->
 <div class="card shadow mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <label class="font-weight-bold">Filter by Subject</label>
-                <select class="form-control" id="subjectFilter">
-                    <option value="all">All Subjects</option>
-                    <option value="BMCS2084">BMCS2084 - Data Structure and Algorithms</option>
-                    <option value="BMCS2068">BMCS2068 - Web Design and Development</option>
-                    <option value="BMCS1024">BMCS1024 - Discrete Structure</option>
-                    <option value="BMCS2043">BMCS2043 - Database Systems</option>
+    <div class="card-body bg-light border-bottom">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <select id="subjectFilter" class="form-control">
+                    <option value="">All Subjects</option>
+                    @foreach (var s in Model.AvailableSubjects)
+                    {
+                        <option value="@s.CourseId">@s.CourseName</option>
+                    }
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="font-weight-bold">Filter by Month</label>
-                <select class="form-control" id="monthFilter">
-                    <option value="11">November 2025</option>
-                    <option value="10">October 2025</option>
-                    <option value="09">September 2025</option>
-                    <option value="08">August 2025</option>
+
+            <div class="col-12 col-md-3">
+                <select id="monthFilter" class="form-control">
+                    <option value="">All Months</option>
+                    @foreach (var m in Model.AvailableMonths)
+                    {
+                        <option value="@($"{m.Year}-{m.Month:D2}")">
+                            @m.DisplayText
+                        </option>
+                    }
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="font-weight-bold">Filter by Status</label>
-                <select class="form-control" id="statusFilter">
-                    <option value="all">All Status</option>
-                    <option value="present">Present</option>
-                    <option value="absent">Absent</option>
-                    <option value="leave">Leave</option>
-                </select>
+
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                    </div>
+                    <input type="text"
+                           id="searchBox"
+                           class="form-control"
+                           placeholder="Search subject or section..." />
+                </div>
+            </div>
+
+            <div class="col-12 col-md-1">
+                <button type="button" class="btn btn-secondary w-100" id="resetFilters" title="Reset filters">
+                    <i class="fas fa-undo"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -206,83 +215,19 @@
     </div>
 </div>
 
-<!-- Subject-wise Attendance -->
+<!-- Attendance Table -->
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Subject-wise Attendance</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Attendance Table</h6>
             </div>
-            <div class="card-body">
-                @if (Model.ClassAttendances == null || !Model.ClassAttendances.Any())
-                {
-                    <div class="text-center py-5">
-                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">You are not enrolled in any classes yet.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="subjectTable">
-                            <thead>
-                                <tr>
-                                    <th>Subject Code</th>
-                                    <th>Subject Name</th>
-                                    <th>Section</th>
-                                    <th>Total Classes</th>
-                                    <th>Present</th>
-                                    <th>Absent</th>
-                                    <th>Percentage</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in Model.ClassAttendances)
-                                {
-                                    var statusClass = item.AttendancePercentage >= 80 ? "success" :
-                                                     item.AttendancePercentage >= 70 ? "info" :
-                                                     item.AttendancePercentage >= 60 ? "warning" : "danger";
-                                    var statusText = item.AttendancePercentage >= 80 ? "Excellent" :
-                                                    item.AttendancePercentage >= 70 ? "Good" :
-                                                    item.AttendancePercentage >= 60 ? "Fair" : "Poor";
-                                    
-                                    <tr class="subject-row" 
-                                        data-section-id="@item.ClassSection.SectionId"
-                                        style="cursor: pointer;">
-                                        <td><span class="badge badge-secondary">@item.Course.Id</span></td>
-                                        <td>@item.Course.Name</td>
-                                        <td>@item.ClassSection.SectionId</td>
-                                        <td>@item.TotalSessions</td>
-                                        <td><span class="text-success font-weight-bold">@item.PresentCount</span></td>
-                                        <td><span class="text-danger">@item.AbsentCount</span></td>
-                                        <td>
-                                            <div class="progress" style="height: 20px;">
-                                                <div class="progress-bar bg-@statusClass" 
-                                                     role="progressbar" 
-                                                     style="width: @item.AttendancePercentage%" 
-                                                     aria-valuenow="@item.AttendancePercentage" 
-                                                     aria-valuemin="0" 
-                                                     aria-valuemax="100">
-                                                    @item.AttendancePercentage%
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-@statusClass">@statusText</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary view-details-btn" 
-                                                    data-section-id="@item.ClassSection.SectionId">
-                                                <i class="fas fa-eye"></i> Details
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+           <div class="card-body">
+                <div id="attendanceContainer">
+                    <partial name="_AttendanceTable" model="Model" />
+                </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -341,20 +286,23 @@
 </div>
 
 <!-- Attendance Details Modal -->
-<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" role="dialog" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Attendance Details</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" id="attendanceDetailsContent">
-                <div class="text-center">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p>Loading...</p>
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">Loading attendance details...</p>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -365,18 +313,19 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <script>
-        // filter
-        document.getElementById('subjectFilter').addEventListener('change', function () {
-            // Filter logic
-        });
+        //load attendance
+        function loadAttendance() {
+            $.get('@Url.Action("ViewAttendance", "Student")', {
+                subject: $('#subjectFilter').val(),
+                month: $('#monthFilter').val(),
+                search: $('#searchBox').val()
+            }, function (html) {
+                $('#attendanceContainer').html(html);
+            });
+        }
 
-        document.getElementById('monthFilter').addEventListener('change', function () {
-            // Filter logic
-        });
-
-        document.getElementById('statusFilter').addEventListener('change', function () {
-            // Filter logic
-        });
+        $('#subjectFilter, #monthFilter').on('change', loadAttendance);
+        $('#searchBox').on('keyup', loadAttendance);
 
         //take att
         const btnScanQr = document.getElementById('btnScanQr');
@@ -401,11 +350,8 @@
                 </div>
             `;
             messageContainer.style.display = 'block';
-            
-            //scroll to msg
             messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
-            //autohide after 5 seconds for success msg
             if (isSuccess) {
                 setTimeout(() => {
                     const alert = messageContainer.querySelector('.alert');
@@ -419,48 +365,129 @@
             }
         }
 
+        //submit attendance via AJAX
+        function submitAttendance(data, onSuccess, onError) {
+            const formData = new FormData();
+            Object.keys(data).forEach(key => {
+                if (data[key]) formData.append(key, data[key]);
+            });
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+
+            showMessage("Processing...", true);
+
+            return fetch('@Url.Action("SubmitAttendance", "Student")', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: formData
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                }
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Failed to submit attendance');
+                    });
+                }
+                window.location.reload();
+                return null;
+            })
+            .then(data => {
+                if (!data) return;
+                
+                if (data.success) {
+                    showMessage(data.message || "Attendance recorded successfully!", true);
+                    if (onSuccess) onSuccess();
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showMessage(data.message || "Failed to record attendance.", false);
+                    if (onError) onError();
+                }
+            })
+            .catch(err => {
+                let errorMsg = err.message;
+                if (errorMsg.includes('BadRequest')) {
+                    errorMsg = errorMsg.split('BadRequest')[1]?.trim() || 'Invalid request';
+                } else if (errorMsg.length > 200) {
+                    errorMsg = "Failed to record attendance. Please check your code and try again.";
+                }
+                showMessage(errorMsg || "Failed to record attendance. Please try again.", false);
+                if (onError) onError();
+            });
+        }
+
+        //form submissions go to SubmitAttendance
+        $(document).on('submit', 'form[action*="SubmitAttendance"]', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const form = $(this);
+            const formData = new FormData(this);
+            const data = {
+                sectionId: formData.get('sectionId') || null,
+                qrToken: formData.get('qrToken') || null,
+                manualCode: formData.get('manualCode') || null
+            };
+            
+            const submitBtn = form.find('button[type="submit"]:focus, button[type="submit"]').first();
+            const originalHtml = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
+            const resetButton = () => {
+                submitBtn.prop('disabled', false).html(originalHtml);
+            };
+            
+            submitAttendance(data, 
+                () => {
+                    $('#codePanel, #qrPanel').hide();
+                    resetButton();
+                },
+                () => {
+                    resetButton();
+                }
+            );
+            
+            return false;
+        });
+
         //scan qr code
         btnScanQr.addEventListener('click', function () {
             qrPanel.style.display = 'block';
             codePanel.style.display = 'none';
-            //start scanner
             if (!html5QrScanner) {
-                    html5QrScanner = new Html5Qrcode("qrReader");
-                    Html5Qrcode.getCameras().then(devices => {
-                        if (devices && devices.length) {
-                            //find for back camera
-                            let cameraId = devices[0].id;
-                            for (const d of devices) {
-                                const label = (d.label || '').toLowerCase();
-                                if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
-                                    cameraId = d.id;
-                        break;
-                    }
-                }
-                //start scanning
-                    html5QrScanner.start(
-                        cameraId,
-                        { 
+                html5QrScanner = new Html5Qrcode("qrReader");
+                Html5Qrcode.getCameras().then(devices => {
+                    if (devices && devices.length) {
+                        let cameraId = devices[0].id;
+                        for (const d of devices) {
+                            const label = (d.label || '').toLowerCase();
+                            if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+                                cameraId = d.id;
+                                break;
+                            }
+                        }
+                        html5QrScanner.start(cameraId, { 
                             fps: 10, 
                             qrbox: { width: 250, height: 250 },
                             aspectRatio: 1.0
-                        },
-                        onQrSuccess
-                    ).catch(err => {
-                        showMessage("Failed to start camera: " + err.message, false);
-                    });
-                }
-            }).catch(err => {
-                showMessage("Unable to access camera: " + err.message, false);
-            });
-        }
-});
+                        }, onQrSuccess).catch(err => {
+                            showMessage("Failed to start camera: " + err.message, false);
+                        });
+                    }
+                }).catch(err => {
+                    showMessage("Unable to access camera: " + err.message, false);
+                });
+            }
+        });
 
         //enter code button
         btnEnterCode.addEventListener('click', function () {
             codePanel.style.display = 'block';
             qrPanel.style.display = 'none';
-            //stop QR scanner if running
             if (html5QrScanner) {
                 html5QrScanner.stop().catch(() => { });
                 html5QrScanner = null;
@@ -468,30 +495,23 @@
         });
 
         function onQrSuccess(decodedText, decodedResult) {
-            //stop scanner immediately to prevent multiple scans
             if (html5QrScanner) {
                 html5QrScanner.stop().catch(() => { });
                 html5QrScanner = null;
             }
 
             try {
-                let sectionId = null;
-                let token = null;
+                let sectionId = null, token = null;
 
-                // try parsing as full URL first
                 if (decodedText.includes('http://') || decodedText.includes('https://')) {
                     const url = new URL(decodedText);
                     sectionId = url.searchParams.get("sectionId");
                     token = url.searchParams.get("token");
-                } 
-                // try parsing as relative URL
-                else if (decodedText.includes('sectionId=') && decodedText.includes('token=')) {
+                } else if (decodedText.includes('sectionId=') && decodedText.includes('token=')) {
                     const params = new URLSearchParams(decodedText.split('?')[1] || decodedText);
                     sectionId = params.get("sectionId");
                     token = params.get("token");
-                }
-                // fallback: try to extract from any query string format
-                else {
+                } else {
                     const match = decodedText.match(/sectionId=([^&]+).*token=([^&]+)/);
                     if (match) {
                         sectionId = match[1];
@@ -504,67 +524,79 @@
                     return;
                 }
 
-                // show loading feedback
                 const qrReaderDiv = document.getElementById('qrReader');
                 qrReaderDiv.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Processing...</div>';
 
-                // submit attendance
-                fetch('@Url.Action("SubmitAttendance", "Student")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                submitAttendance({ sectionId, qrToken: token }, 
+                    () => {
+                        qrPanel.style.display = 'none';
+                        qrReaderDiv.innerHTML = '';
                     },
-                    body: new URLSearchParams({
-                        sectionId: sectionId,
-                        qrToken: token
-                    })
-                }).then(r => {
-                    if (!r.ok) {
-                        return r.text().then(t => { 
-                            //try to parse error message
-                            let errorMsg = t;
-                            try {
-                                //if response is HTML, try to extract error
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(t, 'text/html');
-                                const bodyText = doc.body.textContent || doc.body.innerText || '';
-                                if (bodyText.includes('BadRequest')) {
-                                    errorMsg = bodyText.split('BadRequest')[1]?.trim() || 'Invalid request';
-                                }
-                            } catch (e) {
-                                //use raw text if parsing fails
-                            }
-                            throw new Error(errorMsg);
-                        });
+                    () => {
+                        qrPanel.style.display = 'none';
+                        qrReaderDiv.innerHTML = '';
                     }
-                    return r.text();
-                }).then(response => {
-                    //success - reload page to show TempData message
-                    qrPanel.style.display = 'none';
-                    showMessage("Attendance recorded successfully!", true);
-                    //reload after a short delay to show the success message
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                }).catch(err => {
-                    //extract clean error message
-                    let errorMsg = err.message;
-                    if (errorMsg.includes('BadRequest')) {
-                        errorMsg = errorMsg.split('BadRequest')[1]?.trim() || 'Failed to record attendance';
-                    }
-                    showMessage(errorMsg || "Failed to record attendance. Please try again.", false);
-                    //reset scanner UI
-                    qrPanel.style.display = 'none';
-                    const qrReaderDiv = document.getElementById('qrReader');
-                    qrReaderDiv.innerHTML = ''; //clear the loading message
-                });
+                );
 
             } catch (e) {
                 showMessage("Error processing QR code: " + e.message, false);
                 qrPanel.style.display = 'none';
+                document.getElementById('qrReader').innerHTML = '';
             }
         }
+
+        //reset filters button
+        $('#resetFilters').on('click', function() {
+            $('#subjectFilter').val('');
+            $('#monthFilter').val('');
+            $('#searchBox').val('');
+            loadAttendance();
+        });
+
+        //view details button click
+        $(document).on('click', '.view-details-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const sectionId = $(this).data('section-id');
+            if (!sectionId) {
+                console.error('Section ID not found');
+                return;
+            }
+
+            //show modal
+            $('#attendanceDetailsModal').modal('show');
+
+            //reset modal content to loading state
+            $('#attendanceDetailsContent').html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">Loading attendance details...</p>
+                </div>
+            `);
+
+            //load attendance details
+            $.ajax({
+                url: '@Url.Action("GetAttendanceDetails", "Student")',
+                type: 'GET',
+                data: { sectionId: sectionId },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(html) {
+                    $('#attendanceDetailsContent').html(html);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading attendance details:', error);
+                    $('#attendanceDetailsContent').html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Error loading attendance details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        });
 
     </script>
 }

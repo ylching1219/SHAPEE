@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using System.Security.Claims;
+using System.Text;
 
 namespace SHAPEE.Controllers
 {
@@ -293,13 +294,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "take" });
 
-            // Get all enrolled students for this section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            // Get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             // Get attendance records for today
@@ -345,6 +343,124 @@ namespace SHAPEE.Controllers
 
             ViewData["Title"] = "Session Summary";
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAllAbsent(string sectionId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sectionId))
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section ID is required." });
+                    return BadRequest("Section ID is required.");
+                }
+
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var today = DateOnly.FromDateTime(DateTime.Now);
+
+                //verify section belongs to this staff member
+                var section = db.ClassSections
+                    .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+                if (section == null)
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section not found or you don't have permission." });
+                    return Unauthorized();
+                }
+
+                //get all enrolled students (tutorial group)
+                var enrolledStudents = db.Students
+                    .Where(s => s.TutorialGroupId.HasValue 
+                        && s.TutorialGroupId.Value == section.TutorialGroupId)
+                    .ToList();
+
+                //get existing attendance records for today
+                var existingAttendances = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId && a.Date == today)
+                    .Select(a => a.StudentId)
+                    .ToList();
+
+                //get students who dont have attendance records 
+                var absentStudents = enrolledStudents
+                    .Where(s => !existingAttendances.Contains(s.Id))
+                    .ToList();
+
+                if (!absentStudents.Any())
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "No absent students to mark." });
+                    TempData["ErrorMessage"] = "No absent students to mark.";
+                    return RedirectToAction("SessionSummary", new { sectionId });
+                }
+
+                var now = DateTime.Now;
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var ua = Request.Headers["User-Agent"].ToString();
+
+                //create attendance records for all absent students
+                foreach (var student in absentStudents)
+                {
+                    var attendance = new Attendance
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        ClassSectionId = sectionId,
+                        StudentId = student.Id,
+                        Date = today,
+                        RegisteredAt = now,
+                        Status = "Absent",
+                        IpAddress = ip,
+                        UserAgent = $"MANUAL||{ua}",
+                        IsFlaged = false,
+                        FlagReason = "Not Registered"
+                    };
+
+                    db.Attendances.Add(attendance);
+                }
+
+                db.SaveChanges();
+
+                var message = $"Successfully marked {absentStudents.Count} student(s) as Absent (Not Registered).";
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, message = message });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var errorMessage = "Error saving to database.";
+                if (dbEx.InnerException != null)
+                {
+                    errorMessage += " " + dbEx.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = "Error marking students as absent: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += " Inner: " + ex.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
         }
 
         [HttpGet]
@@ -397,13 +513,10 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "Section not found." });
             }
 
-            //get all enrolled student for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
@@ -460,13 +573,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
 
-            //get all enrolled students for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
@@ -571,11 +681,91 @@ namespace SHAPEE.Controllers
             return View(viewModel);
         }
 
-
-        public IActionResult AttendanceReport()
+        [HttpGet]
+        public IActionResult GetAttendanceChartData(string sectionId)
         {
-            ViewData["Title"] = "Attendance Analytics";
-            return View();
+            if (string.IsNullOrEmpty(sectionId))
+            {
+                return Json(new { success = false, message = "Section ID is required." });
+            }
+
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var section = db.ClassSections
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+            if (section == null)
+            {
+                return Json(new { success = false, message = "Section not found." });
+            }
+
+            //get allattendance record for this section
+            var allAttendances = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .OrderBy(a => a.Date)
+                .ToList();
+
+            //get all enrolled students
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
+                .ToList();
+
+            var totalStudents = enrolledStudents.Count;
+
+            //chart data by date
+            var attendanceByDate = allAttendances
+                .GroupBy(a => a.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    PresentCount = g.Count(a => a.Status == "Present"),
+                    TotalCount = g.Count(),
+                    AttendancePercentage = totalStudents > 0 
+                        ? Math.Round((double)g.Count(a => a.Status == "Present") / totalStudents * 100, 1)
+                        : 0
+                })
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            var lineChartLabels = attendanceByDate.Select(x => x.Date.ToString("MMM dd")).ToList();
+            var lineChartData = attendanceByDate.Select(x => x.AttendancePercentage).ToList();
+
+            //chart data by status
+            var statusDistribution = allAttendances
+                .GroupBy(a => a.Status)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var pieChartLabels = statusDistribution.Select(x => x.Status).ToList();
+            var pieChartData = statusDistribution.Select(x => x.Count).ToList();
+            var pieChartColors = pieChartLabels.Select(status => 
+                status == "Present" ? "#28a745" :
+                status == "Absent" ? "#dc3545" :
+                status == "Late" ? "#ffc107" :
+                status == "Excused" ? "#17a2b8" : "#6c757d"
+            ).ToList();
+
+            return Json(new
+            {
+                success = true,
+                lineChart = new
+                {
+                    labels = lineChartLabels,
+                    data = lineChartData
+                },
+                pieChart = new
+                {
+                    labels = pieChartLabels,
+                    data = pieChartData,
+                    colors = pieChartColors
+                }
+            });
         }
 
         [HttpPost]
@@ -632,6 +822,218 @@ namespace SHAPEE.Controllers
             public List<string> AttendanceIds { get; set; } = new();
             public string Status { get; set; } = "";
         }
+
+        //academic calendar - read only
+        public IActionResult ViewCalendar(string? semesterId = null)
+        {
+            ViewData["Title"] = "Academic Calendar";
+
+            var semesters = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .ToList();
+
+            var viewModel = new EventManagementVM
+            {
+                Events = new List<CalendarEvent>(),
+                Semesters = semesters,
+                SelectedSemesterId = semesterId,
+                EventsWithSemester = new List<EventWithSemesterInfo>()
+            };
+
+            return View(viewModel);
+        }
+
+        //get calendar events for staff
+        [HttpGet]
+        public IActionResult GetCalendarEvents(string? start, string? end, string? semesterId = null)
+        {
+            DateTime startDate;
+            DateTime endDate;
+            
+            if (!DateTime.TryParse(start, out startDate))
+            {
+                startDate = DateTime.Now.AddMonths(-1);
+            }
+            
+            if (!DateTime.TryParse(end, out endDate))
+            {
+                endDate = DateTime.Now.AddMonths(1);
+            }
+
+            var eventsList = new List<object>();
+
+            //get calendar events
+            var eventsQuery = db.CalendarEvents
+                .Where(e => e.StartTime >= startDate && e.EndTime <= endDate)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+                if (semester != null)
+                {
+                    var semesterStart = semester.StartDate.ToDateTime(TimeOnly.MinValue);
+                    var semesterEnd = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
+                    
+                    eventsQuery = eventsQuery.Where(e =>
+                        e.StartTime.Date >= semesterStart.Date &&
+                        e.StartTime.Date <= semesterEnd.Date);
+                }
+            }
+
+            var calendarEvents = eventsQuery.ToList();
+
+            //add calendar events
+            eventsList.AddRange(calendarEvents.Select(e => 
+            {
+                var isAllDay = (e.StartTime.Hour == 0 && e.StartTime.Minute == 0) &&
+                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 || 
+                               e.EndTime.Hour == 23 && e.EndTime.Minute == 59);
+                
+                return new
+                {
+                    id = e.Id,
+                    title = e.Title,
+                    description = e.Description,
+                    start = isAllDay ? e.StartTime.ToString("yyyy-MM-dd") : e.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = isAllDay ? e.EndTime.ToString("yyyy-MM-dd") : e.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    type = e.Type,
+                    backgroundColor = GetEventColor(e.Type),
+                    borderColor = GetEventColor(e.Type),
+                    textColor = GetEventTextColor(e.Type),
+                    allDay = isAllDay,
+                    eventType = "calendar"
+                };
+            }));
+
+            //get semesters and add them as events
+            var allSemesters = db.Semesters.ToList();
+            
+            var semesters = allSemesters.Where(s =>
+            {
+                var sStart = s.StartDate.ToDateTime(TimeOnly.MinValue);
+                var sEnd = s.EndDate.ToDateTime(TimeOnly.MaxValue);
+                return sStart <= endDate && sEnd >= startDate;
+            }).ToList();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                semesters = semesters.Where(s => s.Id == semesterId).ToList();
+            }
+
+            //add semester periods as events
+            eventsList.AddRange(semesters.Select(s =>
+            {
+                var weeks = (s.EndDate.ToDateTime(TimeOnly.MaxValue) - s.StartDate.ToDateTime(TimeOnly.MinValue)).TotalDays / 7;
+                var semesterType = weeks >= 13 ? "Long" : "Short";
+                
+                return new
+                {
+                    id = $"semester_{s.Id}",
+                    title = $"{s.Id} - {semesterType}",
+                    description = $"Semester Period: {s.StartDate:dd MMM yyyy} to {s.EndDate:dd MMM yyyy}",
+                    start = s.StartDate.ToString("yyyy-MM-dd"),
+                    end = s.EndDate.AddDays(1).ToString("yyyy-MM-dd"),
+                    type = "Semester Period",
+                    backgroundColor = semesterType == "Long" ? "#6f42c1" : "#e83e8c",
+                    borderColor = semesterType == "Long" ? "#5a32a3" : "#d91a72",
+                    textColor = "#ffffff",
+                    allDay = true,
+                    eventType = "semester",
+                    classNames = new[] { "semester-period" },
+                    extendedProps = new
+                    {
+                        eventType = "semester",
+                        semesterId = s.Id
+                    }
+                };
+            }));
+
+            return Json(eventsList);
+        }
+
+        //helper methods for event colors
+        private string GetEventColor(string eventType)
+        {
+            return eventType switch
+            {
+                "Public Holiday" => "#dc3545",
+                "Exam Period" => "#fd7e14",
+                "Academic Event" => "#28a745",
+                "Semester Break" => "#17a2b8",
+                _ => "#495057"
+            };
+        }
+
+        private string GetEventTextColor(string eventType)
+        {
+            return "#ffffff";
+        }
+
+        //export iCal for staff
+        public IActionResult ExportICal(string? semesterId = null)
+        {
+            var eventsQuery = db.CalendarEvents.AsQueryable();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+                if (semester != null)
+                {
+                    eventsQuery = eventsQuery.Where(e =>
+                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
+                        e.StartTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
+                }
+            }
+
+            var events = eventsQuery.ToList();
+
+            var ical = new StringBuilder();
+            ical.AppendLine("BEGIN:VCALENDAR");
+            ical.AppendLine("VERSION:2.0");
+            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
+            ical.AppendLine("CALSCALE:GREGORIAN");
+            ical.AppendLine("METHOD:PUBLISH");
+
+            foreach (var evt in events)
+            {
+                ical.AppendLine("BEGIN:VEVENT");
+                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
+                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"SUMMARY:{evt.Title}");
+                ical.AppendLine($"DESCRIPTION:{evt.Description}");
+                ical.AppendLine($"LOCATION:Academic Calendar");
+                ical.AppendLine($"STATUS:CONFIRMED");
+                ical.AppendLine("END:VEVENT");
+            }
+
+            ical.AppendLine("END:VCALENDAR");
+
+            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
+            return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+        }
+
+        //get semester details for calendar navigation
+        [HttpGet]
+        public IActionResult GetSemesterDetails(string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+            {
+                return Json(new { success = false, message = "Semester not found." });
+            }
+
+            return Json(new 
+            { 
+                success = true,
+                id = semester.Id,
+                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
+                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
+                isActive = semester.IsActive
+            });
+        }
+    
 
 
         // GET: Staff Profile

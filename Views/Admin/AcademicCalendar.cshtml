@@ -1,0 +1,652 @@
+@model EventManagementVM
+@{
+    ViewData["Title"] = "Academic Calendar";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+
+<style>
+    /* FullCalendar specific styling only - cannot be done with Bootstrap */
+    .fc-dayGridMonth-view .fc-event-time {
+        display: none;
+    }
+</style>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Academic Calendar</h1>
+    <a asp-action="ExportICal" asp-controller="Admin"
+       asp-route-semesterId="@Model.SelectedSemesterId"
+       class="btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-download fa-sm text-white-50 mr-2"></i> Export iCal
+    </a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+        <div class="col-md-5 pl-0">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-filter text-gray-400"></i></span>
+                </div>
+                <select id="semesterFilter" class="form-select border-0 bg-light font-weight-bold text-primary">
+                    <option value="">All Semesters</option>
+                    @foreach (var s in Model.Semesters)
+                    {
+                        var startDateStr = s.StartDate.ToString("yyyy-MM-dd");
+                        if (s.Id == Model.SelectedSemesterId)
+                        {
+                            <option value="@s.Id" selected="selected" data-start-date="@startDateStr">
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@s.Id" data-start-date="@startDateStr">
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <button class="btn btn-success btn-sm shadow-sm mr-2" id="btnAddSemester">
+                <i class="fas fa-calendar-plus mr-1"></i> Add Semester
+            </button>
+            <button class="btn btn-primary btn-sm shadow-sm" id="btnAddEvent">
+                <i class="fas fa-plus mr-1"></i> Add Event
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="semesterModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="semesterForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-weight-bold text-gray-800">Semester Configuration</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="semesterId" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Semester ID</label>
+                            <input type="text" class="form-control" id="semesterIdInput"
+                                   placeholder="e.g., 202501" required
+                                   pattern="[0-9]{6}" title="Format: YYYYMM" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Type</label>
+                            <select class="form-select" id="semesterType" required>
+                                <option value="">Select Type</option>
+                                <option value="Long">Long (14 weeks)</option>
+                                <option value="Short">Short (7 weeks)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Start Date</label>
+                            <input type="date" class="form-control" id="semesterStartDate" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">End Date</label>
+                            <input type="date" class="form-control bg-light" id="semesterEndDate" readonly />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 small" id="semesterInfo" style="display:none;">
+                        <i class="fas fa-info-circle mr-1"></i> <span id="semesterWeeks"></span>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="font-weight-bold text-gray-800 mb-0" for="semesterIsActive">Active Status</label>
+                            <div class="small text-muted">Enable for attendance tracking</div>
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="semesterIsActive" checked>
+                            <label class="custom-control-label" for="semesterIsActive"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Semester</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form id="eventForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-weight-bold text-gray-800">Event Details</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="eventId" />
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Title</label>
+                            <input type="text" class="form-control" id="eventTitle" placeholder="Event Name" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Category</label>
+                            <select class="form-select" id="eventType">
+                                <option>Public Holiday</option>
+                                <option>Exam Period</option>
+                                <option>Academic Event</option>
+                                <option>Semester Break</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Start Time</label>
+                            <input type="datetime-local" class="form-control" id="eventStart" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">End Time</label>
+                            <input type="datetime-local" class="form-control" id="eventEnd" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small font-weight-bold text-uppercase text-gray-500">Description</label>
+                        <textarea class="form-control" id="eventDescription" rows="3" placeholder="Add details..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteEvent" style="display:none;">
+                        <i class="fas fa-trash-alt mr-1"></i> Delete
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Event</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<script>
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            selectable: true,
+            editable: true,
+            eventResizableFromStart: true,
+            eventStartEditable: true,  
+            eventDurationEditable: true, 
+
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+
+            buttonText: {
+                today: 'Today'
+            },
+
+            eventTimeFormat: {
+                hour: 'numeric',
+                minute: '2-digit',
+                omitZeroMinute: true,
+                meridiem: 'short'
+            },
+            
+            dayMaxEvents: true,
+            moreLinkClick: 'popover',
+
+            events: function (info, successCallback, failureCallback) {
+                $.ajax({
+                    url: '@Url.Action("GetCalendarEvents", "Admin")',
+                    type: 'GET',
+                    data: {
+                        start: info.startStr,
+                        end: info.endStr,
+                        semesterId: $('#semesterFilter').val()
+                    },
+                    success: function(data) {
+                        console.log('Events loaded:', data);
+                        successCallback(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading events:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        SweetAlert.error('Error', 'Failed to load calendar events. Please check the console for details.');
+                        failureCallback();
+                    }
+                });
+            },
+
+            eventClick: function (info) {
+                if (info.event.extendedProps.eventType === 'semester') {
+                    openSemesterModalForEdit(info.event);
+                    return;
+                }
+                openEventModal(info.event);
+            },
+
+            dateClick: function (info) {
+                if (info.jsEvent.shiftKey) {
+                    openSemesterModal(info.dateStr);
+                } else {
+                    openEventModal(null, info.dateStr);
+                }
+            },
+
+            eventResize: function (info) {
+                if (info.event.extendedProps.eventType === 'semester') {
+                    calendar.refetchEvents();
+                    return;
+                }
+                updateEventDate(info.event, true); 
+            },
+
+            eventDrop: function (info) {
+                if (info.event.extendedProps.eventType === 'semester') {
+                    calendar.refetchEvents();
+                    return;
+                }
+                //this is called when user moves the entire event
+                updateEventDate(info.event, false); 
+            }
+        });
+
+        calendar.render();
+
+        $('#semesterFilter').on('change', function () {
+            const selectedSemesterId = $(this).val();
+            
+            //navigate to selected semester's start date
+            if (selectedSemesterId) {
+                //AJAX call to get semester details
+                $.ajax({
+                    url: '@Url.Action("GetSemesterDetails", "Admin")',
+                    type: 'GET',
+                    data: { semesterId: selectedSemesterId },
+                    success: function(semester) {
+                        if (semester && semester.startDate) {
+                            //navigate calendar to semester start date
+                            const startDate = new Date(semester.startDate);
+                            calendar.gotoDate(startDate);
+                        }
+                    },
+                    error: function() {
+                        console.error('Failed to get semester details');
+                    }
+                });
+            }
+            
+            calendar.refetchEvents();
+        });
+
+        $('#btnAddSemester').on('click', function () {
+            openSemesterModal();
+        });
+
+        $('#btnAddEvent').on('click', function () {
+            openEventModal(null);
+        });
+
+        //calculate end date when start date or semester type changes
+        $('#semesterStartDate, #semesterType').on('change', function() {
+            calculateSemesterEndDate();
+        });
+    });
+
+    function calculateSemesterEndDate() {
+        const startDate = $('#semesterStartDate').val();
+        const semesterType = $('#semesterType').val();
+
+        if (startDate && semesterType) {
+            const start = new Date(startDate);
+            const weeks = semesterType === 'Long' ? 14 : 7;
+            const end = new Date(start);
+            end.setDate(end.getDate() + (weeks * 7) - 1);
+
+            const endDateStr = end.toISOString().split('T')[0];
+            $('#semesterEndDate').val(endDateStr);
+
+            // Show info
+            $('#semesterInfo').show();
+            $('#semesterWeeks').text(`${weeks} weeks (${startDate} to ${endDateStr})`);
+        } else {
+            $('#semesterEndDate').val('');
+            $('#semesterInfo').hide();
+        }
+    }
+
+    function openSemesterModal(selectedDate = null) {
+        $('#semesterForm')[0].reset();
+        $('#semesterId').val('');
+        $('#semesterEndDate').val('');
+        $('#semesterInfo').hide();
+        $('#semesterIdInput').prop('readonly', false); 
+        
+        //pre-fill start date if provided
+        if (selectedDate) {
+            //convert FullCalendar date string (YYYY-MM-DD) to date input format
+            $('#semesterStartDate').val(selectedDate.split('T')[0]);
+            //trigger change to calculate end date if type is already selected
+            if ($('#semesterType').val()) {
+                calculateSemesterEndDate();
+            }
+        }
+        
+        $('#semesterModal').modal('show');
+    }
+
+    function openSemesterModalForEdit(event) {
+        //extract semester ID from event ID (format: "semester_202501")
+        const semesterId = event.id.replace('semester_', '');
+        
+        //get semester details from server
+        $.ajax({
+            url: '@Url.Action("GetSemesterDetails", "Admin")',
+            type: 'GET',
+            data: { semesterId: semesterId },
+            success: function(semester) {
+                if (semester && semester.success) {
+                    //populate form with semester data
+                    $('#semesterId').val(semester.id);
+                    $('#semesterIdInput').val(semester.id).prop('readonly', true); 
+                    $('#semesterStartDate').val(semester.startDate);
+                    $('#semesterEndDate').val(semester.endDate);
+                    $('#semesterIsActive').prop('checked', semester.isActive);
+                    
+                    //calculate and set semester type
+                    const startDate = new Date(semester.startDate);
+                    const endDate = new Date(semester.endDate);
+                    const weeks = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 7));
+                    $('#semesterType').val(weeks === 14 ? 'Long' : 'Short');
+                    
+                    //show calculated info
+                    $('#semesterWeeks').text(`${weeks} weeks (${semester.startDate} to ${semester.endDate})`);
+                    $('#semesterInfo').show();
+                    
+                    $('#semesterModal').modal('show');
+                } else {
+                    SweetAlert.error('Error', 'Failed to load semester details.');
+                }
+            },
+            error: function() {
+                SweetAlert.error('Error', 'Failed to load semester details.');
+            }
+        });
+    }
+
+    $('#semesterForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalHtml = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: '@Url.Action("CreateOrUpdateSemester", "Admin")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                id: $('#semesterIdInput').val(),
+                startDate: $('#semesterStartDate').val(),
+                semesterType: $('#semesterType').val(),
+                isActive: $('#semesterIsActive').is(':checked')
+            },
+            success: function (res) {
+                submitBtn.prop('disabled', false).html(originalHtml);
+                
+                if (res.success) {
+                    SweetAlert.success(
+                        'Success!',
+                        res.message || 'Semester saved successfully.',
+                        {
+                            timer: 2000,
+                            onConfirm: function() {
+                                $('#semesterModal').modal('hide');
+                                calendar.refetchEvents();
+                                //reload page to update semester filter
+                                setTimeout(() => window.location.reload(), 500);
+                            }
+                        }
+                    );
+                } else {
+                    SweetAlert.error('Error', res.message || 'Failed to save semester.');
+                }
+            },
+            error: function(xhr, status, error) {
+                submitBtn.prop('disabled', false).html(originalHtml);
+                console.error('Error saving semester:', error);
+                SweetAlert.error('Error', 'An error occurred while saving the semester. Please try again.');
+            }
+        });
+    });
+
+    function openEventModal(event, date) {
+        $('#eventForm')[0].reset();
+        $('#btnDeleteEvent').hide();
+        $('#eventId').val('');
+
+        if (event) {
+            $('#eventId').val(event.id);
+            $('#eventTitle').val(event.title);
+            $('#eventDescription').val(event.extendedProps.description || '');
+            $('#eventStart').val(event.start.toISOString().slice(0,16));
+            $('#eventEnd').val(event.end?.toISOString().slice(0,16) || '');
+            $('#eventType').val(event.extendedProps.type || 'Public Holiday');
+            $('#btnDeleteEvent').show();
+        } else if (date) {
+            $('#eventStart').val(date + 'T00:00');
+            $('#eventEnd').val(date + 'T23:59');
+        }
+
+        $('#eventModal').modal('show');
+    }
+
+    $('#eventForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalHtml = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: '@Url.Action("SaveEvent", "Admin")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                id: $('#eventId').val(),
+                title: $('#eventTitle').val(),
+                description: $('#eventDescription').val(),
+                startTime: $('#eventStart').val(),
+                endTime: $('#eventEnd').val(),
+                type: $('#eventType').val()
+            },
+            success: function (res) {
+                submitBtn.prop('disabled', false).html(originalHtml);
+                
+                if (res.success) {
+                    SweetAlert.success(
+                        'Success!',
+                        res.message || 'Event saved successfully.',
+                        {
+                            timer: 2000,
+                            onConfirm: function() {
+                                $('#eventModal').modal('hide');
+                                calendar.refetchEvents();
+                            }
+                        }
+                    );
+                } else {
+                    if (res.conflicts && res.conflicts.length > 0) {
+                        const conflictList = res.conflicts.map(c => 
+                            `• ${c.Title} (${new Date(c.StartTime).toLocaleString()} - ${new Date(c.EndTime).toLocaleString()})`
+                        ).join('\n');
+                        
+                        SweetAlert.error(
+                            'Conflict Detected',
+                            res.message + '\n\nConflicting events:\n' + conflictList
+                        );
+                    } else {
+                        SweetAlert.error('Error', res.message || 'Failed to save event.');
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                submitBtn.prop('disabled', false).html(originalHtml);
+                console.error('Error saving event:', error);
+                SweetAlert.error('Error', 'An error occurred while saving the event. Please try again.');
+            }
+        });
+    });
+
+    function updateEventDate(event, isResize = false) {
+        //get the new start and end dates
+        const newStart = event.start ? event.start.toISOString() : null;
+        const newEnd = event.end ? event.end.toISOString() : null;
+        
+        if (!newStart) {
+            calendar.refetchEvents();
+            SweetAlert.error('Error', 'Invalid event date.');
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("UpdateEventDate", "Admin")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                eventId: event.id,
+                newStart: newStart,
+                newEnd: newEnd || newStart //if no end, use start (single day event)
+            },
+            success: function (res) {
+                if (res.success) {
+                    const message = isResize 
+                        ? (res.message || 'Event duration updated successfully.')
+                        : (res.message || 'Event moved successfully.');
+                    
+                    SweetAlert.success('Success!', message, { timer: 2000 });
+                } else {
+                    //revert the event position on error
+                    calendar.refetchEvents();
+                    
+                    //handle conflict error
+                    if (res.conflicts && res.conflicts.length > 0) {
+                        const conflictList = res.conflicts.map(c => 
+                            `• ${c.Title} (${new Date(c.StartTime).toLocaleString()} - ${new Date(c.EndTime).toLocaleString()})`
+                        ).join('\n');
+                        
+                        SweetAlert.error(
+                            'Conflict Detected',
+                            res.message + '\n\nConflicting events:\n' + conflictList
+                        );
+                    } else {
+                        SweetAlert.error('Error', res.message || 'Failed to update event.');
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                calendar.refetchEvents();
+                console.error('Error updating event:', error);
+                SweetAlert.error('Error', 'An error occurred while updating the event. Please try again.');
+            }
+        });
+    }
+
+    $('#btnDeleteEvent').on('click', function () {
+        const eventId = $('#eventId').val();
+        if (!eventId) return;
+
+        SweetAlert.confirm(
+            'Delete Event?',
+            'Are you sure you want to delete this event? This action cannot be undone.',
+            {
+                confirmButtonText: 'Yes, Delete',
+                confirmButtonColor: '#e74a3b',
+                cancelButtonText: 'Cancel',
+                onConfirm: function() {
+                    const deleteBtn = $('#btnDeleteEvent');
+                    const originalHtml = deleteBtn.html();
+                    deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
+
+                    $.ajax({
+                        url: '@Url.Action("DeleteEvent", "Admin")',
+                        type: 'POST',
+                        data: {
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                            eventId: eventId
+                        },
+                        success: function (res) {
+                            deleteBtn.prop('disabled', false).html(originalHtml);
+                            
+                            if (res.success) {
+                                SweetAlert.success(
+                                    'Deleted!',
+                                    res.message || 'Event deleted successfully.',
+                                    {
+                                        timer: 2000,
+                                        onConfirm: function() {
+                                            $('#eventModal').modal('hide');
+                                            calendar.refetchEvents();
+                                        }
+                                    }
+                                );
+                            } else {
+                                SweetAlert.error('Error', res.message || 'Failed to delete event.');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            deleteBtn.prop('disabled', false).html(originalHtml);
+                            console.error('Error deleting event:', error);
+                            SweetAlert.error('Error', 'An error occurred while deleting the event. Please try again.');
+                        }
+                    });
+                }
+            }
+        );
+    });
+</script>
+}

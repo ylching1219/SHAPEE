@@ -105,6 +105,17 @@ namespace SHAPEE.Models
         public string? FacultyId { get; set; }
     }
 
+
+    public class AssignGroupVM
+    {
+        public List<TutorialGroup>? Groups { get; set; } = [];
+        public List<Student>? StudentList { get; set; } = [];
+        public string? SelectedGroupId { get; set; }
+        public string? ProgramId { get; set; }
+        public int? YearLevel { get; set; }
+        public int? Semester { get; set; }
+    }
+
     public class ProgramCsvVM
     {
         [Display(Name = "Program ID")]
@@ -188,8 +199,8 @@ namespace SHAPEE.Models
     // student view attendacne
     public class StudentAttendanceVM
     {
-        //for summary view (list of clas)
-        public List<StudentAttendanceVM> ClassAttendances { get; set; } = [];
+        //for summary view (list of classes)
+        public List<StudentAttendanceItemVM> ClassAttendances { get; set; } = [];
         
         // overall statistics
         public int OverallPresent { get; set; }
@@ -200,16 +211,6 @@ namespace SHAPEE.Models
         // qr/token for taking attendance
         public string? SectionId { get; set; }
         public string? QrToken { get; set; }
-        
-        // for individual class item
-        public ClassSection? ClassSection { get; set; }
-        public Course? Course { get; set; } 
-        
-        // attendance statistic for a class
-        public int PresentCount { get; set; }
-        public int AbsentCount { get; set; }
-        public int TotalSessions { get; set; }
-        public double AttendancePercentage { get; set; }
         
         // filter options
         public List<SubjectFilterOption> AvailableSubjects { get; set; } = [];
@@ -229,6 +230,18 @@ namespace SHAPEE.Models
         public string DisplayText { get; set; }
     }
 
+    public class StudentAttendanceItemVM
+    {
+    public ClassSection ClassSection { get; set; }
+    public Course Course { get; set; }
+
+    public int PresentCount { get; set; }
+    public int AbsentCount { get; set; }
+    public int TotalSessions { get; set; }
+    public double AttendancePercentage { get; set; }
+    }
+
+
     // student attendance details view model
     public class StudentAttendanceDetailsVM
     {
@@ -243,11 +256,68 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
     }
 
+    // Academic Calendar ViewModels
+    public class SemesterConfigVM
+    {
+        public List<Semester> Semesters { get; set; } = [];
+        public List<SemesterWithTypeInfo> SemestersWithType { get; set; } = [];
+    }
+
+    public class SemesterWithTypeInfo
+    {
+        public Semester Semester { get; set; }
+        public string CalculatedType { get; set; }
+        public double Weeks { get; set; }
+    }
+
+    public class EventManagementVM
+    {
+        public List<CalendarEvent> Events { get; set; } = [];
+        public List<Semester> Semesters { get; set; } = [];
+        public string? SelectedSemesterId { get; set; }
+        public List<EventWithSemesterInfo> EventsWithSemester { get; set; } = [];
+    }
+
+    public class EventWithSemesterInfo
+    {
+        public CalendarEvent Event { get; set; }
+        public Semester? Semester { get; set; }
+    }
+
+    public class CalendarEventVM
+    {
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public string Type { get; set; }
+        public string? SemesterId { get; set; }
+        public string Color { get; set; }
+        public bool AllDay { get; set; }
+    }
+
+    public class ConflictCheckVM
+    {
+        public bool HasConflict { get; set; }
+        public List<CalendarEvent> ConflictingEvents { get; set; } = [];
+        public string Message { get; set; } = "";
+    }
+    
     // JS
     public class RoomManageVM
     {
         public List<Room> Rooms { get; set; } = [];
         public Room? EditRoom { get; set; }
+    }
+
+
+    public class EmailVs
+    {
+        public string Email { get; set; }
+        public string Subject { get; set; }
+
+        public string Message { get; set; }
     }
 
 }

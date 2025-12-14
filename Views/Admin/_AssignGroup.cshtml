@@ -1,0 +1,89 @@
+﻿@model AssignGroupVM
+
+<div class="row g-4">
+    <!-- Groups Section -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>Available Groups
+            </div>
+            <div class="card-body">
+                <div id="groupsList" class="d-flex flex-column gap-3">
+                    @if (Model.Groups != null && Model.Groups.Any())
+                    {
+                        foreach (var group in Model.Groups)
+                        {
+                            <div class="group-card" data-group-id="@group.Id" data-group-name="@group.GroupName">
+                                <div class="group-header">
+                                    <span class="group-name">Group @group.GroupNumber</span>
+                                    <span class="student-count-badge">@group.NumberOfStudents students</span>
+                                </div>
+                                <div class="text-muted small">@group.GroupName</div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-folder2-open"></i>
+                            <p class="mb-0">Please select Program, Year, and Semester to view groups</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Section -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-people-fill me-2"></i>
+                    <span id="groupTitle">Select a group</span>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="addStudentBtn" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                    <i class="bi bi-plus-circle me-1"></i>Add Student
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="studentsInGroup">
+                    <div class="empty-state">
+                        <i class="bi bi-person-x"></i>
+                        <p class="mb-0">Select a group to view and manage students</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>Add Students to <span id="modalGroupName"></span>
+                </h5>
+                <button class="close text-danger closeBtn" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="form-control search-input" id="studentSearch" placeholder="Search students by name or ID...">
+                </div>
+                <div class="student-list-box" id="availableStudentsList">
+                    <!-- Available students will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
