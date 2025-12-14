@@ -10,8 +10,9 @@ namespace SHAPEE.Controllers
     public class StaffController(DB db) : Controller
     {
         // GET: /Staff
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            await LoadProfilePicture();
             ViewData["Title"] = "Staff Dashboard";
             return View();
         }
@@ -432,7 +433,8 @@ namespace SHAPEE.Controllers
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
             var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
 
-            return Json(new {
+            return Json(new
+            {
                 success = true,
                 totalStudents = totalStudents,
                 overallAttendance = overallAttendancePercentage,
@@ -612,7 +614,8 @@ namespace SHAPEE.Controllers
             try
             {
                 db.SaveChanges();
-                return Json(new {
+                return Json(new
+                {
                     success = true,
                     message = $"Successfully updated {attendances.Count} attendance record(s) to {request.Status}."
                 });
@@ -631,19 +634,198 @@ namespace SHAPEE.Controllers
         }
 
 
-    public async Task<IActionResult> Profile()
+        // GET: Staff Profile
+        public async Task<IActionResult> Profile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var user = await db.Users
+            var staff = await db.Users
                 .OfType<Staff>()
                 .Include(s => s.Faculty)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+            if (staff == null)
                 return NotFound();
 
-            return View("~/Views/Shared/Profile.cshtml", user);
+            return View("~/Views/Shared/Profile.cshtml", staff);
+        }
+
+        //Update Staff Profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(string firstName, string lastName,
+            string email, string contact, string gender, IFormFile profilePicture)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var staff = await db.Staffs.FindAsync(userId);
+
+                if (staff == null)
+                    return NotFound();
+
+                // Validate email uniqueness (exclude current user)
+                var emailExists = await db.Users
+                    .AnyAsync(u => u.Email == email.Trim().ToLower() && u.Id != userId);
+
+                if (emailExists)
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Update staff fields
+                staff.FirstName = firstName?.Trim();
+                staff.LastName = lastName?.Trim();
+                staff.Email = email?.Trim().ToLower();
+                staff.Contact = contact?.Trim();
+                staff.Gender = gender?.Trim();
+
+                // Handle profile picture upload (inline)
+                if (profilePicture != null && profilePicture.Length > 0)
+                {
+                    // Validate file size (2MB max)
+                    if (profilePicture.Length > 2 * 1024 * 1024)
+                    {
+                        TempData["ErrorMessage"] = "File size must not exceed 2MB.";
+                        return RedirectToAction("Profile");
+                    }
+
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                    var fileExtension = Path.GetExtension(profilePicture.FileName).ToLower();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        TempData["ErrorMessage"] = "Only JPG and PNG files are allowed.";
+                        return RedirectToAction("Profile");
+                    }
+
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await profilePicture.CopyToAsync(fileStream);
+                    }
+
+                    // Delete old profile picture if exists
+                    if (!string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                    {
+                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", staff.ProfilePictureUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+
+                    staff.ProfilePictureUrl = $"/uploads/profiles/{uniqueFileName}";
+                }
+
+                await db.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while updating profile: {ex.Message}";
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        //Upload Profile Picture
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile profilePicture)
+        {
+            try
+            {
+                if (profilePicture == null || profilePicture.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Please select a file to upload.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Validate file size (2MB max)
+                if (profilePicture.Length > 2 * 1024 * 1024)
+                {
+                    TempData["ErrorMessage"] = "File size must not exceed 2MB.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Validate file type
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                var fileExtension = Path.GetExtension(profilePicture.FileName).ToLower();
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    TempData["ErrorMessage"] = "Only JPG and PNG files are allowed.";
+                    return RedirectToAction("Profile");
+                }
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var staff = await db.Staffs.FindAsync(userId);
+
+                if (staff == null)
+                    return NotFound();
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await profilePicture.CopyToAsync(fileStream);
+                }
+
+                // Delete old profile picture if exists
+                if (!string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", staff.ProfilePictureUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+
+                staff.ProfilePictureUrl = $"/uploads/profiles/{uniqueFileName}";
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Profile picture uploaded successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while uploading: {ex.Message}";
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        private async Task LoadProfilePicture()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var profilePictureUrl = "/img/undraw_profile.svg";
+
+            if (User.IsInRole("Staff"))
+            {
+                var staff = await db.Staffs.FindAsync(userId);
+                if (staff != null && !string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                {
+                    profilePictureUrl = staff.ProfilePictureUrl;
+                }
+            }
+            else if (User.IsInRole("Student"))
+            {
+                var student = await db.Students.FindAsync(userId);
+                if (student != null && !string.IsNullOrEmpty(student.ProfilePictureUrl))
+                {
+                    profilePictureUrl = student.ProfilePictureUrl;
+                }
+            }
+
+            ViewBag.ProfilePictureUrl = profilePictureUrl;
         }
     }
 }

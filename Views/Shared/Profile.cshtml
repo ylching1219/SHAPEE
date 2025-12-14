@@ -16,6 +16,26 @@
         <h1 class="h3 mb-0 text-gray-800">My Profile</h1>
     </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success!</strong> @TempData["SuccessMessage"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> @TempData["ErrorMessage"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
     <!-- Profile Content -->
     <div class="row">
         <!-- Profile Card -->
@@ -74,95 +94,6 @@
                     </div>
                 </div>
             </div>
-
-            @if (isAdmin)
-            {
-                <!-- Admin Quick Actions -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                    </div>
-                    <div class="card-body">
-                        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-primary btn-block mb-2">
-                            <i class="fas fa-key"></i> Change Password
-                        </a>
-                        <a href="#" class="btn btn-info btn-block mb-2">
-                            <i class="fas fa-bell"></i> Notification Settings
-                        </a>
-                        <a href="#" class="btn btn-secondary btn-block">
-                            <i class="fas fa-history"></i> Activity Log
-                        </a>
-                    </div>
-                </div>
-            }
-            else if (isStaff)
-            {
-                <!-- Staff Quick Stats -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Quick Stats</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <small class="text-muted">Classes Teaching</small>
-                            <h4 class="mb-0">5</h4>
-                        </div>
-                        <div class="mb-3">
-                            <small class="text-muted">Total Students</small>
-                            <h4 class="mb-0">120</h4>
-                        </div>
-                        <div>
-                            <small class="text-muted">Years of Service</small>
-                            <h4 class="mb-0">@((DateTime.Now.Year - (staff?.DateJoin.Year ?? DateTime.Now.Year))) years</h4>
-                        </div>
-                    </div>
-                </div>
-            }
-            else if (isStudent)
-            {
-                <!-- Student Academic Summary -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Academic Summary</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <small class="text-muted">Current Year</small>
-                            <h4 class="mb-0">Year @(student?.YearLevel ?? 1)</h4>
-                        </div>
-                        <div class="mb-3">
-                            <small class="text-muted">Current Semester</small>
-                            <h4 class="mb-0">Semester @(student?.Semester ?? 1)</h4>
-                        </div>
-                        <div class="mb-3">
-                            <small class="text-muted">Enrolled Courses</small>
-                            <h4 class="mb-0">@(student?.Enrollments?.Count ?? 0)</h4>
-                        </div>
-                        <div>
-                            <small class="text-muted">Overall Attendance</small>
-                            <h4 class="mb-0 text-success">92%</h4>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Student Quick Actions -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                    </div>
-                    <div class="card-body">
-                        <a href="@Url.Action("ViewAttendance", "Student")" class="btn btn-info btn-block mb-2">
-                            <i class="fas fa-clipboard-check"></i> View Attendance
-                        </a>
-                        <a href="#" class="btn btn-success btn-block mb-2">
-                            <i class="fas fa-graduation-cap"></i> View Grades
-                        </a>
-                        <a href="#" class="btn btn-warning btn-block">
-                            <i class="fas fa-file-invoice-dollar"></i> View Invoices
-                        </a>
-                    </div>
-                </div>
-            }
         </div>
 
         <!-- Profile Information Form -->
@@ -322,9 +253,6 @@
                     <div class="card-body">
                         <p><strong>Faculty:</strong> @(staff?.Faculty?.Name ?? "Not Assigned")</p>
                         <p><strong>Date Joined:</strong> @(staff?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
-                        <a href="@Url.Action("MyClasses", "Staff")" class="btn btn-info">
-                            <i class="fas fa-book"></i> View My Classes
-                        </a>
                     </div>
                 </div>
             }
@@ -349,47 +277,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Student Enrollment Statistics -->
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card border-left-primary shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Total Courses
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">@(student?.Enrollments?.Count ?? 0)</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-book fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="card border-left-success shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            Attendance Rate
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">92%</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-
                 </div>
             }
         </div>
@@ -437,7 +324,7 @@
                 $('#profileForm input:not([readonly]), #profileForm select').prop('disabled', false);
                 @if (isStaff || isStudent)
                 {
-                            <text>$('#profilePictureGroup').removeClass('d-none');</text>
+                                <text>$('#profilePictureGroup').removeClass('d-none');</text>
                 }
                 $('#formActions').removeClass('d-none');
                 $(this).addClass('d-none');
@@ -448,7 +335,7 @@
                 $('#profileForm input, #profileForm select').prop('disabled', true);
                 @if (isStaff || isStudent)
                 {
-                            <text>$('#profilePictureGroup').addClass('d-none');</text>
+                                <text>$('#profilePictureGroup').addClass('d-none');</text>
                 }
                 $('#formActions').addClass('d-none');
                 $('#editBtn').removeClass('d-none');

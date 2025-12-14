@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
-using System.Security.Claims;
 
 namespace SHAPEE.Controllers
 {
@@ -810,49 +810,55 @@ namespace SHAPEE.Controllers
             }
         }
 
+        // GET: Admin Profile
         public async Task<IActionResult> Profile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var user = await db.Users
+            var admin = await db.Users
                 .OfType<Admin>()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+            if (admin == null)
                 return NotFound();
 
-            return View("~/Views/Shared/Profile.cshtml", user);
+            return View("~/Views/Shared/Profile.cshtml", admin);
         }
 
+        // POST: Update Admin Profile
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateProfile(Admin model)
+        public async Task<IActionResult> UpdateProfile(string firstName, string lastName,
+            string email, string contact)
         {
-            if (!ModelState.IsValid)
-            {
-                return View("~/Views/Shared/Profile.cshtml", model);
-            }
-
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var user = await db.Users.FindAsync(userId);
+                var admin = await db.Admins.FindAsync(userId);
 
-                if (user == null)
+                if (admin == null)
                     return NotFound();
 
-                user.FirstName = model.FirstName;
-                user.LastName = model.LastName;
-                user.Email = model.Email;
-                user.Contact = model.Contact;
+                var emailExists = await db.Users
+                    .AnyAsync(u => u.Email == email.Trim().ToLower() && u.Id != userId);
+
+                if (emailExists)
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Update admin fields
+                admin.FirstName = firstName?.Trim();
+                admin.LastName = lastName?.Trim();
+                admin.Email = email?.Trim().ToLower();
+                admin.Contact = contact?.Trim();
 
                 await db.SaveChangesAsync();
-
                 TempData["SuccessMessage"] = "Profile updated successfully!";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "An error occurred while updating profile.";
+                TempData["ErrorMessage"] = $"An error occurred while updating profile: {ex.Message}";
             }
 
             return RedirectToAction("Profile");
