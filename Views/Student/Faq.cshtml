@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "TAR UMT FAQ";
+}
+
+<style>
+    .faq-container {
+        width: 90%;
+        margin: 30px auto;
+    }
+
+    .faq-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #222;
+    }
+
+    .faq-item {
+        background: #fff;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .faq-question {
+        padding: 14px 18px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #007bff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .faq-answer {
+        padding: 0 18px 14px 18px;
+        display: none;
+        font-size: 0.95rem;
+        color: #333;
+        border-top: 1px solid #eee;
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+        .toggle-icon.open {
+            transform: rotate(90deg);
+        }
+
+    .ask-more-btn {
+        display: block;
+        width: 180px;
+        margin: 30px auto;
+        padding: 10px 16px;
+        background: #007bff;
+        color: white;
+        text-align: center;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+        .ask-more-btn:hover {
+            background: #0056c7;
+            color: white;
+        }
+</style>
+
+<div class="faq-container">
+    <div class="faq-title">TAR UMT - Frequently Asked Questions</div>
+
+    <div class="faq-item">
+        <div class="faq-question">What is TAR UMT? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Tunku Abdul Rahman University of Management and Technology (TAR UMT) is a Malaysian university established in 1969 offering various academic programmes.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Where is TAR UMT located? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">The main campus is in Setapak, Kuala Lumpur, with branch campuses in Penang, Perak, Johor, Pahang and Sabah.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What programmes does TAR UMT offer? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">TAR UMT offers pre‑university, diploma, bachelor’s and postgraduate programmes across many fields like business, engineering, sciences and ICT.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How do I apply to TAR UMT? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Apply online via the TAR UMT admissions portal by registering and uploading your required documents.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">When are the intakes? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Admissions typically happen in January, May/June, September and November each year.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Are TAR UMT programmes accredited? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Yes, TAR UMT’s programmes are accredited by the Malaysian Qualifications Agency (MQA).</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What facilities are available on campus? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Campuses provide facilities such as libraries, labs, lecture halls, sports and student accommodation.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Is on‑campus accommodation available? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Yes, hostel accommodation is available to students upon application.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How will I know my admission status? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">Successful applicants are notified via email and SMS after processing.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Who do I contact for more info? <span class="toggle-icon">&#9654;</span></div>
+        <div class="faq-answer">For general enquiries, call +603‑4145 0100 or email <strong>ccm@tarc.edu.my</strong>.</div>
+    </div>
+
+    <a href="#" class="ask-more-btn">Ask Me More</a>
+</div>
+
+<script>
+    document.querySelectorAll(".faq-question").forEach(q => {
+        q.addEventListener("click", () => {
+            const ans = q.nextElementSibling;
+            const icon = q.querySelector(".toggle-icon");
+            const open = ans.style.display === "block";
+            document.querySelectorAll(".faq-answer").forEach(a => a.style.display = "none");
+            document.querySelectorAll(".toggle-icon").forEach(i => i.classList.remove("open"));
+            if (!open) {
+                ans.style.display = "block";
+                icon.classList.add("open");
+            }
+        });
+    });
+</script>

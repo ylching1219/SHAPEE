@@ -1,0 +1,151 @@
+﻿@model IEnumerable<SHAPEE.Models.SupportTicket>
+
+@{
+    ViewData["Title"] = "My Tickets";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f7f9fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        text-align: center;
+        color: #222;
+        margin-top: 30px;
+        font-weight: 700;
+    }
+
+    .alert-success {
+        width: 90%;
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 12px 20px;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        color: #155724;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        background-color: #007bff;
+        color: #fff !important;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056c7;
+            transform: translateY(-2px);
+        }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: #fff !important;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+        .btn-info:hover {
+            background-color: #138496;
+            transform: translateY(-1px);
+        }
+
+    table {
+        width: 90%;
+        max-width: 900px;
+        margin: 0 auto 50px;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    thead {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+        thead th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+    tbody tr {
+        transition: background 0.3s;
+    }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9f2fb;
+        }
+
+    tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        color: #333;
+    }
+
+    .mb-3 {
+        margin-bottom: 20px !important;
+    }
+</style>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<h2>My Tickets</h2>
+
+<a class="btn btn-primary mb-3" href="@Url.Action("CreateTicket")">
+    Submit New Ticket
+</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Ticket ID</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Created At</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Id</td>
+                <td>@t.Subject</td>
+                <td>@t.Status</td>
+                <td>@t.Priority</td>
+                <td>@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>
+                    <a class="btn btn-info btn-sm"
+                       href="@Url.Action("TicketDetails", new { id = t.Id })">
+                        View
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
