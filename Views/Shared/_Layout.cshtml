@@ -115,6 +115,9 @@
                                 <a class="collapse-item" href="/Admin/FacultyManagement">Manage Faculty</a>
                                 <a class="collapse-item" href="/Admin/ProgramManagement">Manage Program</a>
                                 <a class="collapse-item" href="/Admin/CourseManagement">Manage Course</a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="collapse-header">Calendar</h6>
+                                <a class="collapse-item" href="/Admin/EventManagement">Academic Calendar</a>
                             </div>
                         </div>
                     </li>
@@ -213,7 +216,6 @@
                                 <a class="collapse-item" href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })">
                                     View Attendance
                                 </a>
-                                <a class="collapse-item" href="@Url.Action("AttendanceReport", "Staff")">Attendance Reports</a>
                             </div>
                         </div>
                     </li>
@@ -473,7 +475,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">@User.Identity.Name</span>
-                                <img class="img-profile rounded-circle" src="~/img/undraw_profile.svg">
+                                <img class="img-profile rounded-circle" src="@(ViewBag.ProfilePictureUrl ?? "/img/undraw_profile.svg")" alt="Profile">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">

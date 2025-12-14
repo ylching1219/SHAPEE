@@ -10,8 +10,9 @@ namespace SHAPEE.Controllers
     public class StaffController(DB db) : Controller
     {
         // GET: /Staff
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            await LoadProfilePicture();
             ViewData["Title"] = "Staff Dashboard";
             return View();
         }
@@ -292,13 +293,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "take" });
 
-            // Get all enrolled students for this section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            // Get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             // Get attendance records for today
@@ -344,6 +342,124 @@ namespace SHAPEE.Controllers
 
             ViewData["Title"] = "Session Summary";
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAllAbsent(string sectionId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sectionId))
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section ID is required." });
+                    return BadRequest("Section ID is required.");
+                }
+
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var today = DateOnly.FromDateTime(DateTime.Now);
+
+                //verify section belongs to this staff member
+                var section = db.ClassSections
+                    .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+                if (section == null)
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section not found or you don't have permission." });
+                    return Unauthorized();
+                }
+
+                //get all enrolled students (tutorial group)
+                var enrolledStudents = db.Students
+                    .Where(s => s.TutorialGroupId.HasValue 
+                        && s.TutorialGroupId.Value == section.TutorialGroupId)
+                    .ToList();
+
+                //get existing attendance records for today
+                var existingAttendances = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId && a.Date == today)
+                    .Select(a => a.StudentId)
+                    .ToList();
+
+                //get students who dont have attendance records 
+                var absentStudents = enrolledStudents
+                    .Where(s => !existingAttendances.Contains(s.Id))
+                    .ToList();
+
+                if (!absentStudents.Any())
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "No absent students to mark." });
+                    TempData["ErrorMessage"] = "No absent students to mark.";
+                    return RedirectToAction("SessionSummary", new { sectionId });
+                }
+
+                var now = DateTime.Now;
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var ua = Request.Headers["User-Agent"].ToString();
+
+                //create attendance records for all absent students
+                foreach (var student in absentStudents)
+                {
+                    var attendance = new Attendance
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        ClassSectionId = sectionId,
+                        StudentId = student.Id,
+                        Date = today,
+                        RegisteredAt = now,
+                        Status = "Absent",
+                        IpAddress = ip,
+                        UserAgent = $"MANUAL||{ua}",
+                        IsFlaged = false,
+                        FlagReason = "Not Registered"
+                    };
+
+                    db.Attendances.Add(attendance);
+                }
+
+                db.SaveChanges();
+
+                var message = $"Successfully marked {absentStudents.Count} student(s) as Absent (Not Registered).";
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, message = message });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var errorMessage = "Error saving to database.";
+                if (dbEx.InnerException != null)
+                {
+                    errorMessage += " " + dbEx.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = "Error marking students as absent: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += " Inner: " + ex.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
         }
 
         [HttpGet]
@@ -396,13 +512,10 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "Section not found." });
             }
 
-            //get all enrolled student for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
@@ -432,7 +545,8 @@ namespace SHAPEE.Controllers
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
             var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
 
-            return Json(new {
+            return Json(new
+            {
                 success = true,
                 totalStudents = totalStudents,
                 overallAttendance = overallAttendancePercentage,
@@ -458,13 +572,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
 
-            //get all enrolled students for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
@@ -569,11 +680,91 @@ namespace SHAPEE.Controllers
             return View(viewModel);
         }
 
-
-        public IActionResult AttendanceReport()
+        [HttpGet]
+        public IActionResult GetAttendanceChartData(string sectionId)
         {
-            ViewData["Title"] = "Attendance Analytics";
-            return View();
+            if (string.IsNullOrEmpty(sectionId))
+            {
+                return Json(new { success = false, message = "Section ID is required." });
+            }
+
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var section = db.ClassSections
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+            if (section == null)
+            {
+                return Json(new { success = false, message = "Section not found." });
+            }
+
+            //get allattendance record for this section
+            var allAttendances = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .OrderBy(a => a.Date)
+                .ToList();
+
+            //get all enrolled students
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
+                .ToList();
+
+            var totalStudents = enrolledStudents.Count;
+
+            //chart data by date
+            var attendanceByDate = allAttendances
+                .GroupBy(a => a.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    PresentCount = g.Count(a => a.Status == "Present"),
+                    TotalCount = g.Count(),
+                    AttendancePercentage = totalStudents > 0 
+                        ? Math.Round((double)g.Count(a => a.Status == "Present") / totalStudents * 100, 1)
+                        : 0
+                })
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            var lineChartLabels = attendanceByDate.Select(x => x.Date.ToString("MMM dd")).ToList();
+            var lineChartData = attendanceByDate.Select(x => x.AttendancePercentage).ToList();
+
+            //chart data by status
+            var statusDistribution = allAttendances
+                .GroupBy(a => a.Status)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var pieChartLabels = statusDistribution.Select(x => x.Status).ToList();
+            var pieChartData = statusDistribution.Select(x => x.Count).ToList();
+            var pieChartColors = pieChartLabels.Select(status => 
+                status == "Present" ? "#28a745" :
+                status == "Absent" ? "#dc3545" :
+                status == "Late" ? "#ffc107" :
+                status == "Excused" ? "#17a2b8" : "#6c757d"
+            ).ToList();
+
+            return Json(new
+            {
+                success = true,
+                lineChart = new
+                {
+                    labels = lineChartLabels,
+                    data = lineChartData
+                },
+                pieChart = new
+                {
+                    labels = pieChartLabels,
+                    data = pieChartData,
+                    colors = pieChartColors
+                }
+            });
         }
 
         [HttpPost]
@@ -612,7 +803,8 @@ namespace SHAPEE.Controllers
             try
             {
                 db.SaveChanges();
-                return Json(new {
+                return Json(new
+                {
                     success = true,
                     message = $"Successfully updated {attendances.Count} attendance record(s) to {request.Status}."
                 });
@@ -631,19 +823,198 @@ namespace SHAPEE.Controllers
         }
 
 
-    public async Task<IActionResult> Profile()
+        // GET: Staff Profile
+        public async Task<IActionResult> Profile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var user = await db.Users
+            var staff = await db.Users
                 .OfType<Staff>()
                 .Include(s => s.Faculty)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+            if (staff == null)
                 return NotFound();
 
-            return View("~/Views/Shared/Profile.cshtml", user);
+            return View("~/Views/Shared/Profile.cshtml", staff);
+        }
+
+        //Update Staff Profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(string firstName, string lastName,
+            string email, string contact, string gender, IFormFile profilePicture)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var staff = await db.Staffs.FindAsync(userId);
+
+                if (staff == null)
+                    return NotFound();
+
+                // Validate email uniqueness (exclude current user)
+                var emailExists = await db.Users
+                    .AnyAsync(u => u.Email == email.Trim().ToLower() && u.Id != userId);
+
+                if (emailExists)
+                {
+                    TempData["ErrorMessage"] = "Email already exists.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Update staff fields
+                staff.FirstName = firstName?.Trim();
+                staff.LastName = lastName?.Trim();
+                staff.Email = email?.Trim().ToLower();
+                staff.Contact = contact?.Trim();
+                staff.Gender = gender?.Trim();
+
+                // Handle profile picture upload (inline)
+                if (profilePicture != null && profilePicture.Length > 0)
+                {
+                    // Validate file size (2MB max)
+                    if (profilePicture.Length > 2 * 1024 * 1024)
+                    {
+                        TempData["ErrorMessage"] = "File size must not exceed 2MB.";
+                        return RedirectToAction("Profile");
+                    }
+
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                    var fileExtension = Path.GetExtension(profilePicture.FileName).ToLower();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        TempData["ErrorMessage"] = "Only JPG and PNG files are allowed.";
+                        return RedirectToAction("Profile");
+                    }
+
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await profilePicture.CopyToAsync(fileStream);
+                    }
+
+                    // Delete old profile picture if exists
+                    if (!string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                    {
+                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", staff.ProfilePictureUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+
+                    staff.ProfilePictureUrl = $"/uploads/profiles/{uniqueFileName}";
+                }
+
+                await db.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while updating profile: {ex.Message}";
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        //Upload Profile Picture
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile profilePicture)
+        {
+            try
+            {
+                if (profilePicture == null || profilePicture.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Please select a file to upload.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Validate file size (2MB max)
+                if (profilePicture.Length > 2 * 1024 * 1024)
+                {
+                    TempData["ErrorMessage"] = "File size must not exceed 2MB.";
+                    return RedirectToAction("Profile");
+                }
+
+                // Validate file type
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                var fileExtension = Path.GetExtension(profilePicture.FileName).ToLower();
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    TempData["ErrorMessage"] = "Only JPG and PNG files are allowed.";
+                    return RedirectToAction("Profile");
+                }
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var staff = await db.Staffs.FindAsync(userId);
+
+                if (staff == null)
+                    return NotFound();
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await profilePicture.CopyToAsync(fileStream);
+                }
+
+                // Delete old profile picture if exists
+                if (!string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", staff.ProfilePictureUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+
+                staff.ProfilePictureUrl = $"/uploads/profiles/{uniqueFileName}";
+                await db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Profile picture uploaded successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while uploading: {ex.Message}";
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        private async Task LoadProfilePicture()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var profilePictureUrl = "/img/undraw_profile.svg";
+
+            if (User.IsInRole("Staff"))
+            {
+                var staff = await db.Staffs.FindAsync(userId);
+                if (staff != null && !string.IsNullOrEmpty(staff.ProfilePictureUrl))
+                {
+                    profilePictureUrl = staff.ProfilePictureUrl;
+                }
+            }
+            else if (User.IsInRole("Student"))
+            {
+                var student = await db.Students.FindAsync(userId);
+                if (student != null && !string.IsNullOrEmpty(student.ProfilePictureUrl))
+                {
+                    profilePictureUrl = student.ProfilePictureUrl;
+                }
+            }
+
+            ViewBag.ProfilePictureUrl = profilePictureUrl;
         }
     }
 }

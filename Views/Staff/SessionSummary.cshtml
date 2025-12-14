@@ -1,5 +1,6 @@
 @using SHAPEE.Models
 @model SessionSummaryVM
+@Html.AntiForgeryToken()
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
@@ -164,6 +165,13 @@
                 <h6 class="m-0 font-weight-bold text-danger">
                     <i class="fas fa-times-circle"></i> Absent Students (@Model.AbsentCount)
                 </h6>
+                @if (Model.AbsentStudents.Any())
+                {
+                    <button type="button" class="btn btn-sm btn-danger" id="markAllAbsentBtn" 
+                            data-section-id="@Model.Section.SectionId">
+                        <i class="fas fa-user-times"></i> Mark All as Absent
+                    </button>
+                }
             </div>
             <div class="card-body">
                 @if (Model.AbsentStudents.Any())
@@ -253,3 +261,108 @@
         </a>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            function getAntiForgeryToken() {
+                const tokenInput = $('input[name="__RequestVerificationToken"]').val();
+                if (tokenInput) return tokenInput;
+                
+                //get from cookie 
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === '.AspNetCore.Antiforgery.xxxxx' || name.includes('Antiforgery')) {
+                        return '';
+                    }
+                }
+                return '';
+            }
+
+            $('#markAllAbsentBtn').on('click', function() {
+                const sectionId = $(this).data('section-id');
+                const btn = $(this);
+                const originalHtml = btn.html();
+                const token = getAntiForgeryToken();
+                
+                SweetAlert.confirm(
+                    'Mark All as Absent?',
+                    'Are you sure you want to mark all absent students as "Absent" with reason "Not Registered"? This action cannot be undone.',
+                    {
+                        confirmButtonText: 'Yes, Mark All',
+                        confirmButtonColor: '#e74a3b',
+                        cancelButtonText: 'Cancel',
+                        onConfirm: function() {
+                            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+                            
+                            $.ajax({
+                                url: '@Url.Action("MarkAllAbsent", "Staff")',
+                                type: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'RequestVerificationToken': token
+                                },
+                                data: {
+                                    sectionId: sectionId,
+                                    __RequestVerificationToken: token
+                                },
+                                dataType: 'json',
+                                success: function(response) {
+                                    if (response && response.success) {
+                                        SweetAlert.success(
+                                            'Success!',
+                                            response.message,
+                                            {
+                                                timer: 2000,
+                                                onConfirm: function() {
+                                                    window.location.reload();
+                                                }
+                                            }
+                                        );
+                                    } else {
+                                        SweetAlert.error(
+                                            'Error',
+                                            (response && response.message) || 'Failed to mark students as absent.'
+                                        );
+                                        btn.prop('disabled', false).html(originalHtml);
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    let errorMsg = 'Error marking students as absent. Please try again.';
+                                    
+                                    //parse JSON error response
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
+                                    } else if (xhr.responseText) {
+                                        try {
+                                            const response = JSON.parse(xhr.responseText);
+                                            if (response.message) {
+                                                errorMsg = response.message;
+                                            }
+                                        } catch (e) {
+                                            //if not JSON, try to extract error from HTML
+                                            if (xhr.status === 400 || xhr.status === 500) {
+                                                errorMsg = 'Server error occurred. Please check the console for details.';
+                                            }
+                                        }
+                                    }
+                                    
+                                    console.error('Error details:', {
+                                        status: xhr.status,
+                                        statusText: xhr.statusText,
+                                        responseText: xhr.responseText,
+                                        error: error
+                                    });
+                                    
+                                    SweetAlert.error('Error', errorMsg);
+                                    btn.prop('disabled', false).html(originalHtml);
+                                }
+                            });
+                        }
+                    }
+                );
+            });
+        });
+    </script>
+}
