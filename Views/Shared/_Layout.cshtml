@@ -19,6 +19,9 @@
     <!--style-->
     <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
     <link href="~/css/custom.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+
 
     @RenderSection("Styles", required: false)
 </head>
@@ -125,7 +128,7 @@
                         <div id="collapseGroup" class="collapse" aria-labelledby="groupFaculty" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Group</h6>
-                                <a class="collapse-item" href="/Admin/GroupManagement">Manage Faculty</a>
+                                <a class="collapse-item" href="/Admin/GroupManagement">Manage Group</a>
                                 <a class="collapse-item" href="/Admin/AssignGroup">Assign Group</a>  
                             </div>
                         </div>
@@ -548,7 +551,7 @@
     <script src="/js/sb-admin-2.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script src="/js/app.js" asp-append-version="true"></script>
 

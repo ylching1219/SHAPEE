@@ -50,35 +50,36 @@
                 </div>
             </div>
 
-            @* <!-- Filters Section -->
+            <!-- Filters Section -->
             <div class="card-body bg-light border-bottom">
                 <form id="filterForm"
                       data-ajax="true"
                       data-ajax-method="GET"
-                      data-ajax-url="/Admin/ProgramManagement"
-                      data-ajax-update="#programData">
+                      data-ajax-url="/Admin/GroupManagement"
+                      data-ajax-update="#groupData">
                     <div class="row g-3">
                         <div class="col-12 col-md-5">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white">
-                                    <i class="fas fa-search text-muted"></i>
-                                </span>
-                                <input type="text"
-                                       class="form-control"
-                                       name="name"
-                                       id="searchInput"
-                                       placeholder="Search programs..." />
-                            </div>
+                            <select asp-for="ProgramId"
+                                    asp-items="ViewBag.ProgramList"
+                                    class="select2 filter" >
+                                <option value="">Select Program</option>
+                            </select>
                         </div>
-                        <div class="col-12 col-md-2"></div>
-                        <div class="col-12 col-md-4">
-                            <select class="form-control" name="filter" id="filter">
-                                <option value="">All Faculty</option>
-                                @foreach (var f in ViewBag.Faculty)
-                                {
-                                    <option value="@f.Id">@f.Id</option>
-                                }
-
+                        <div class="col-12 col-md-3">
+                            <select class="form-control filter" id="yearLevel" name="yearLevel" required>
+                                <option value="">All Year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-control filter" id="semester" name="semester" required>
+                                <option value="">All Semester</option>
+                                <option value="1">Sem 1</option>
+                                <option value="2">Sem 2</option>
+                                <option value="3">Sem 3</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-1">
@@ -89,7 +90,7 @@
 
                     </div>
                 </form>
-            </div> *@
+            </div>
 
             <!-- Faculty Table -->
             <div class="card-body p-0">
@@ -116,14 +117,68 @@
                 </button>
             </div>
             <div id="AddEditData">
-                <partial name="_GroupForm" />
+                <form id="addEditForm"
+                      method="post"
+                      asp-controller="Admin"
+                      asp-action="AddGroup">
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label for="ProgramId" class="font-weight-medium">Group Number<span class="text-danger">*</span></label>
+                            <input asp-for="GroupNumber" type="number" class="form-control" id="GroupNumber" name="GroupNumber"
+                                   required>
+                            <span asp-validation-for="GroupNumber" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="ProgramId" class="font-weight-medium">Program<span class="text-danger">*</span></label>
+                            <select asp-for="ProgramId" id="test"
+                                    asp-items="ViewBag.ProgramList"
+                                    class="select2">
+                                <option value="">Select Program</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="yearLevel" class="font-weight-medium">Year <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="yearLevel" name="yearLevel" required>
+                                        <option value="">Year</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select year level.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="semester" class="font-weight-medium">Semester <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="semester" name="semester" required>
+                                        <option value="">Semester</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select semester.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn closeBtn" type="button" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i> Cancel
+                        </button>
+                        <button class="btn btn-primary" type="submit" id="saveBtn">
+                            <i class="fas fa-save mr-1"></i> Add Program
+                        </button>
+                    </div>
+                </form>
             </div>
 
         </div>
     </div>
 </div>
-
-
 
 
 
@@ -151,7 +206,7 @@
                 <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Cancel
                 </button>
-                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteProgram" style="display:inline;">
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteGroup" style="display:inline;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="deleteId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
@@ -166,44 +221,10 @@
 @section Scripts {
     <script>
 
-
-          $("#exportCsvBtn").on("click", function () {
-
-            const form = $("#filterForm")[0];
-            const params = new URLSearchParams(new FormData(form));
-
-            // Redirect to export action with filters
-            window.location.href = '/Admin/ExportProgramsCsv?' + params.toString();
-           });
-
-
-          function onEditLoaded() {
-            console.log("Partial Loaded");
-
-            $("#addEditModal").modal("show");
-            $("#addEditModalLabel").text("Edit Program");
-
-            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Program');
-
-            $("#ProgramId").prop("readonly", true);
-
-            $("#addEditForm").attr("action", "/Admin/EditProgram");
-          }
-
-          function onAddLoaded(){
-              console.log("Partial Add Loaded");
-              $("#addEditModalLabel").text("Add Program");
-              $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Add Program');
-              $("#ProgramId").prop("readonly", false);
-              $("#addEditForm").attr("action", "/Admin/AddProgram");
-              $("#ProgramId").val("");
-              $("#ProgramName").val("");
-              $("#FacultyId").val("");
-          }
-
+        
         function prepareDeleteModal(element) {
             var id = $(element).data("id");
-            var name = $(element).data("name");
+            var name = $(element).data("groupname");
 
             // Set hidden input value for form submission
             $("#deleteId").val(id);
@@ -211,6 +232,43 @@
             // Display name in modal
             $("#ToDeleteName").text(name);
         }
+
+        function initSelect2() {
+            // Page dropdowns (outside modal)
+            $('#filterForm .select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                minimumResultsForSearch: 0
+            });
+
+            // Modal dropdowns
+            $('#addEditModal .select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownParent: $('#addEditModal')
+            });
+        }
+
+
+
+        $(document).ready(function () {
+            initSelect2();
+
+            $("#exportCsvBtn").on("click", function () {
+
+                const form = $("#filterForm")[0];
+                const params = new URLSearchParams(new FormData(form));
+
+                // Redirect to export action with filters
+                window.location.href = '/Admin/ExportGroupsCsv?' + params.toString();
+            });
+        });
+
+        $('#addEditModal').on('shown.bs.modal', function () {
+            initSelect2();
+        });
+
 
 
     </script>

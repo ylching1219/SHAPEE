@@ -80,7 +80,6 @@ namespace SHAPEE.Models
     public class GroupManageVM
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
-        public TutorialGroup? EditGroup { get; set; }
 
         public string? GroupName { get; set; }
 
@@ -129,6 +128,26 @@ namespace SHAPEE.Models
         public int CreditHours { get; set; }
     }
 
+    public class GroupCsvVM
+    {
+        [Display(Name = "Group Name")]
+        public string GroupName { get; set; }
+
+        [Display(Name = "Program Name")]
+        public string ProgramName { get; set; }
+
+        [Display(Name = "Group Number")]
+        public int GroupNumber { get; set; }
+
+        [Display(Name = "Year Level")]
+        public int YearLevel { get; set; }
+
+        [Display(Name = "Semester")]
+        public int Semester { get; set; }
+
+        [Display(Name = "Number of Student")]
+        public int NumOfStudent { get; set; } 
+    }
 
 
     //KM
