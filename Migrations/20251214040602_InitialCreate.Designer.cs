@@ -12,8 +12,8 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251213053700_initDB")]
-    partial class initDB
+    [Migration("20251214040602_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
