@@ -13,7 +13,7 @@ namespace SHAPEE.Controllers
         public IActionResult Dashboard()
         {
             ViewData["Title"] = "Staff Dashboard";
-            return View();    
+            return View();
         }
 
 
@@ -28,8 +28,8 @@ namespace SHAPEE.Controllers
 
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var now = DateTime.Now;
-            var todayName = now.DayOfWeek.ToString();  
-            var todayAbbrev = todayName[..3];                  
+            var todayName = now.DayOfWeek.ToString();
+            var todayAbbrev = todayName[..3];
             var currentTime = TimeOnly.FromDateTime(now);
 
             var isView = (mode ?? "take").Equals("view", StringComparison.OrdinalIgnoreCase);
@@ -89,9 +89,9 @@ namespace SHAPEE.Controllers
                 //get the db data for the selected day
                 var dayAbbrev = dayMapping.ContainsKey(day) ? dayMapping[day] : day;
                 var dayAbbrevLower = dayAbbrev.ToLower();
-                
+
                 var dayLower = day.ToLower();
-                
+
                 sectionsQuery = sectionsQuery.Where(s =>
                     s.Day.ToLower() == dayAbbrevLower ||
                     s.Day.ToLower() == dayLower ||
@@ -143,12 +143,12 @@ namespace SHAPEE.Controllers
                     //allow starting if current time is between start time and end time
                     var canStart = currentTime >= s.StartTime && currentTime <= s.EndTime;
                     string? reason = null;
-                    
-                    if (currentTime < s.StartTime) 
+
+                    if (currentTime < s.StartTime)
                     {
                         reason = $"Class starts at {s.StartTime:HH:mm}. Please wait until the class time.";
                     }
-                    else if (currentTime > s.EndTime) 
+                    else if (currentTime > s.EndTime)
                     {
                         reason = $"Class ended at {s.EndTime:HH:mm}.";
                     }
@@ -295,8 +295,8 @@ namespace SHAPEE.Controllers
             // Get all enrolled students for this section
             var enrolledStudents = db.Enrollments
                 .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId 
-                 && e.Type == "Enrolled" 
+                .Where(e => e.ClassSectionId == sectionId
+                 && e.Type == "Enrolled"
                  && e.Status == "Approved")
                 .Select(e => e.Student)
                 .ToList();
@@ -324,8 +324,8 @@ namespace SHAPEE.Controllers
             var presentCount = presentStudents.Count;
             var absentCount = absentStudents.Count;
             var flaggedCount = flaggedAttendances.Count;
-            var attendancePercentage = totalEnrolled > 0 
-                ? Math.Round((double)presentCount / totalEnrolled * 100, 1) 
+            var attendancePercentage = totalEnrolled > 0
+                ? Math.Round((double)presentCount / totalEnrolled * 100, 1)
                 : 0;
 
             var viewModel = new SessionSummaryVM
@@ -399,8 +399,8 @@ namespace SHAPEE.Controllers
             //get all enrolled student for this class section
             var enrolledStudents = db.Enrollments
                 .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId 
-                 && e.Type == "Enrolled" 
+                .Where(e => e.ClassSectionId == sectionId
+                 && e.Type == "Enrolled"
                  && e.Status == "Approved")
                 .Select(e => e.Student)
                 .ToList();
@@ -423,16 +423,16 @@ namespace SHAPEE.Controllers
 
             //calculate flaged count
             var flaggedCount = allAttendances.Count(a => a.IsFlaged);
-            
+
             //count total absences this semester
-            var semesterStart = section.Semester?.Id != null 
+            var semesterStart = section.Semester?.Id != null
                 ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
                 : DateOnly.FromDateTime(DateTime.Now);
-            
+
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
             var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
 
-            return Json(new { 
+            return Json(new {
                 success = true,
                 totalStudents = totalStudents,
                 overallAttendance = overallAttendancePercentage,
@@ -461,8 +461,8 @@ namespace SHAPEE.Controllers
             //get all enrolled students for this class section
             var enrolledStudents = db.Enrollments
                 .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId 
-                 && e.Type == "Enrolled" 
+                .Where(e => e.ClassSectionId == sectionId
+                 && e.Type == "Enrolled"
                  && e.Status == "Approved")
                 .Select(e => e.Student)
                 .ToList();
@@ -537,12 +537,12 @@ namespace SHAPEE.Controllers
 
             //calculate flaged count
             var flaggedCount = allAttendances.Count(a => a.IsFlaged);
-            
+
             //count total absences this semester
-            var semesterStart = section.Semester?.Id != null 
+            var semesterStart = section.Semester?.Id != null
                 ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
                 : DateOnly.FromDateTime(DateTime.Now);
-            
+
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
             var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
 
@@ -560,13 +560,13 @@ namespace SHAPEE.Controllers
             };
 
             ViewData["Title"] = "Attendance Management";
-            
+
             if (Request.IsAjax())
             {
                 return PartialView("_Attendance", viewModel);
             }
-            
-            return View(viewModel); 
+
+            return View(viewModel);
         }
 
 
@@ -612,9 +612,9 @@ namespace SHAPEE.Controllers
             try
             {
                 db.SaveChanges();
-                return Json(new { 
-                    success = true, 
-                    message = $"Successfully updated {attendances.Count} attendance record(s) to {request.Status}." 
+                return Json(new {
+                    success = true,
+                    message = $"Successfully updated {attendances.Count} attendance record(s) to {request.Status}."
                 });
             }
             catch (Exception ex)
@@ -628,6 +628,22 @@ namespace SHAPEE.Controllers
         {
             public List<string> AttendanceIds { get; set; } = new();
             public string Status { get; set; } = "";
+        }
+
+
+    public async Task<IActionResult> Profile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var user = await db.Users
+                .OfType<Staff>()
+                .Include(s => s.Faculty)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+            return View("~/Views/Shared/Profile.cshtml", user);
         }
     }
 }
