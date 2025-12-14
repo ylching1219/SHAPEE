@@ -1033,7 +1033,8 @@ namespace SHAPEE.Controllers
                 isActive = semester.IsActive
             });
         }
-    }
+    
+
 
         // GET: Staff Profile
         public async Task<IActionResult> Profile()
@@ -1228,5 +1229,5 @@ namespace SHAPEE.Controllers
 
             ViewBag.ProfilePictureUrl = profilePictureUrl;
         }
-
+    }
 }
