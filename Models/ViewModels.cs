@@ -105,6 +105,17 @@ namespace SHAPEE.Models
         public string? FacultyId { get; set; }
     }
 
+
+    public class AssignGroupVM
+    {
+        public List<TutorialGroup>? Groups { get; set; } = [];
+        public List<Student>? StudentList { get; set; } = [];
+        public string? SelectedGroupId { get; set; }
+        public string? ProgramId { get; set; }
+        public int? YearLevel { get; set; }
+        public int? Semester { get; set; }
+    }
+
     public class ProgramCsvVM
     {
         [Display(Name = "Program ID")]

@@ -1478,6 +1478,69 @@ namespace SHAPEE.Controllers
             var bytes = Helper.ExportToCsv(data);
             return File(bytes, "text/csv", "TutorialGroups.csv");
         }
+
+        //Group Assignment 
+        public IActionResult AssignGroup(string? ProgramId, int? Year , int? Sem)
+        {
+            var program = db.Programs
+                .OrderBy(p => p.Id)
+                .ToList();
+
+           
+            var group = db.TutorialGroups
+                    .Where(t => t.ProgramId == ProgramId)
+                    .OrderBy(p => p.Id)
+                    .AsQueryable();
+
+            var student = db.Students
+                .Where(s => s.ProgramId == ProgramId)
+                .OrderBy(s => s.Id)
+                .AsQueryable();
+
+           
+            if (Year != null)
+            {
+               group = group.Where(g => g.YearLevel == Year);
+               student = student.Where(s => s.YearLevel == Year);
+            }
+
+            if(Sem != null)
+            {
+                group = group.Where(g => g.Semester == Sem);
+                student = student.Where(s => s.Semester == Sem);
+            }
+            Console.WriteLine("ProgramId: " + ProgramId);
+            Console.WriteLine("Student :" + student.ToList().Count);
+
+            ViewBag.ProgramList = new SelectList(program, "Id", "Name");
+
+            var vm = new AssignGroupVM
+            {
+                Groups = group.ToList(),
+                StudentList = student.ToList()
+            };
+            if (Request.IsAjax())
+            {
+                return PartialView("_AssignGroup",vm);
+            }
+            return View(vm);
+        }
+        [HttpGet]
+        public IActionResult GetStudentsByGroup(int groupId)
+        {
+            var students = db.Students
+                .Where(s => s.TutorialGroupId == groupId)
+                .Select(s => new
+                {
+                    s.Id,
+                    FullName = s.LastName + " " + s.FirstName
+                })
+                .OrderBy(s => s.FullName)
+                .ToList();
+
+            return Json(students);
+        }
+
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
         {
