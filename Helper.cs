@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
@@ -57,8 +58,15 @@ namespace SHAPEE
             var sb = new StringBuilder();
             var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
+            // Header: use DisplayAttribute if available
+            var headers = props.Select(p =>
+            {
+                var displayAttr = p.GetCustomAttribute<DisplayAttribute>();
+                return displayAttr != null ? displayAttr.Name : p.Name;
+            });
+
             // Header
-            sb.AppendLine(string.Join(",", props.Select(p => p.Name)));
+            sb.AppendLine(string.Join(",", headers));
 
             // Rows
             foreach (var item in data)

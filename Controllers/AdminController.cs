@@ -1151,7 +1151,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
                 TempData["SuccessMessage"] = $"Program '{program.Name}' deleted successfully.";
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
 
                 TempData["ErrorMessage"] = $"Cannot delete program. It may be used by other records.";
@@ -1313,7 +1313,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
                 TempData["SuccessMessage"] = $"Course '{course.Name}' deleted successfully.";
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
 
                 TempData["ErrorMessage"] = $"Cannot delete course. It may be used by other records.";
@@ -1342,24 +1342,45 @@ namespace SHAPEE.Controllers
         }
 
         //Group Management
-        public IActionResult GroupManagement()
+        public IActionResult GroupManagement(string? ProgramId ,int? yearLevel ,int? semester)
         {
             ViewData["Title"] = "Group Management";
-            TutorialGroup? editGroup = null;
             var groupList = db.TutorialGroups
                 .Include(g => g.Program)
                 .OrderBy(g => g.Id)
-                .ToList();
+                .AsQueryable();
 
+            if (!string.IsNullOrEmpty(ProgramId))
+            {
+                groupList = groupList.Where(g => g.ProgramId == ProgramId);
+            }
+
+            if(yearLevel != null)
+            {
+                groupList =  groupList.Where(g => g.YearLevel == yearLevel);
+            }
+
+            if(semester != null)
+            {
+                groupList = groupList.Where(g => g.Semester == semester);
+            }
+
+            
             var program = db.Programs
                 .OrderBy(p => p.Id)
                 .ToList();
+
             ViewBag.Program = program;
-            ViewBag.ProgramList = new SelectList(program, "Id", "Name", editGroup?.ProgramId);
+            ViewBag.ProgramList = new SelectList(program, "Id", "Name");
             var vm = new GroupManageVM
             {
-                Groups = groupList
+                Groups = groupList.ToList() 
             };
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_Group", vm);
+            }
             return View(vm);
         }
 
@@ -1370,14 +1391,17 @@ namespace SHAPEE.Controllers
                 g.YearLevel == vm.YearLevel &&
                 g.Semester == vm.Semester &&
                 g.GroupNumber == vm.GroupNumber);
+
+            var groupName = vm.ProgramId + "Y" + vm.YearLevel + "S" + vm.Semester + "G" + vm.GroupNumber;
             if (groupExists)
             {
-                TempData["ErrorMessage"] = "Failed to add new Group. Error: Group already exists!";
+                TempData["ErrorMessage"] = $"Failed to add new Group. Error: Group {groupName} already exists!";
                 return RedirectToAction(nameof(GroupManagement));
             }
-                var p = new TutorialGroup
+
+            var p = new TutorialGroup
             {
-                GroupName = vm.ProgramId+"Y"+vm.YearLevel+"G"+vm.GroupNumber,
+                GroupName = groupName,
                 GroupNumber = vm.GroupNumber ?? 1,
                 ProgramId = vm.ProgramId!,
                 YearLevel = vm.YearLevel ?? 1,
@@ -1390,6 +1414,75 @@ namespace SHAPEE.Controllers
 
 
             return RedirectToAction(nameof(GroupManagement));
+        }
+
+        public IActionResult DeleteGroup(int? id)
+        {
+            if (id == null)
+            {
+                TempData["ErrorMessage"] = "Group ID not provided.";
+                return RedirectToAction(nameof(GroupManagement));
+            }
+
+            var group = db.TutorialGroups.FirstOrDefault(g => g.Id == id);
+            if (group == null)
+            {
+                TempData["ErrorMessage"] = "Group not found.";
+                return RedirectToAction(nameof(GroupManagement));
+            }
+
+            try
+            {
+                db.TutorialGroups.Remove(group);
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Group '{group.GroupName}' deleted successfully."; 
+            }
+            catch (DbUpdateException)
+            {
+                TempData["ErrorMessage"] = $"Cannot delete group. It may be used by other records.";
+            }
+
+            return RedirectToAction(nameof(GroupManagement));
+        }
+
+        public IActionResult ExportGroupsCsv(string? ProgramId, int? yearLevel, int? semester)
+        {
+            var query = db.TutorialGroups
+                         .Include(p => p.Program)
+                         .AsQueryable();
+
+
+
+            if (!string.IsNullOrWhiteSpace(ProgramId))
+            {
+                query = query.Where(p => p.ProgramId == ProgramId);
+            }
+
+            if (yearLevel !=null)
+            {
+                query = query.Where(p => p.YearLevel == yearLevel);
+            }
+
+            if (semester!=null)
+            {
+                query = query.Where(p => p.Semester == semester);
+            }
+
+            var data = query
+                .Select(p => new GroupCsvVM
+                {
+                    GroupName = p.GroupName,
+                    ProgramName = p.Program.Name,
+                    GroupNumber = p.GroupNumber,
+                    YearLevel = p.YearLevel,
+                    Semester = p.Semester,
+                    NumOfStudent = p.NumberOfStudents
+                })
+                .ToList();
+
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", "TutorialGroups.csv");
         }
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)

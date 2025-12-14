@@ -38,11 +38,13 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="@Url.Action("GroupManagement", "Admin", new { editId = f.Id })">
-                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteFacultyModal">
+                                <a class="dropdown-item text-danger"
+                                   href="#" 
+                                   onclick="prepareDeleteModal(this); return false;" 
+                                   data-toggle="modal" 
+                                   data-target="#deleteModal"
+                                   data-id="@f.Id"
+                                   data-groupname="@f.GroupName">
                                     <i class="fas fa-trash mr-2"></i> Delete
                                 </a>
                             </div>
