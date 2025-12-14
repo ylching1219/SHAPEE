@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using System.Security.Claims;
+using System.Text;
 
 namespace SHAPEE.Controllers
 {
@@ -822,6 +823,217 @@ namespace SHAPEE.Controllers
             public string Status { get; set; } = "";
         }
 
+        //academic calendar - read only
+        public IActionResult ViewCalendar(string? semesterId = null)
+        {
+            ViewData["Title"] = "Academic Calendar";
+
+            var semesters = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .ToList();
+
+            var viewModel = new EventManagementVM
+            {
+                Events = new List<CalendarEvent>(),
+                Semesters = semesters,
+                SelectedSemesterId = semesterId,
+                EventsWithSemester = new List<EventWithSemesterInfo>()
+            };
+
+            return View(viewModel);
+        }
+
+        //get calendar events for staff
+        [HttpGet]
+        public IActionResult GetCalendarEvents(string? start, string? end, string? semesterId = null)
+        {
+            DateTime startDate;
+            DateTime endDate;
+            
+            if (!DateTime.TryParse(start, out startDate))
+            {
+                startDate = DateTime.Now.AddMonths(-1);
+            }
+            
+            if (!DateTime.TryParse(end, out endDate))
+            {
+                endDate = DateTime.Now.AddMonths(1);
+            }
+
+            var eventsList = new List<object>();
+
+            //get calendar events
+            var eventsQuery = db.CalendarEvents
+                .Where(e => e.StartTime >= startDate && e.EndTime <= endDate)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+                if (semester != null)
+                {
+                    var semesterStart = semester.StartDate.ToDateTime(TimeOnly.MinValue);
+                    var semesterEnd = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
+                    
+                    eventsQuery = eventsQuery.Where(e =>
+                        e.StartTime.Date >= semesterStart.Date &&
+                        e.StartTime.Date <= semesterEnd.Date);
+                }
+            }
+
+            var calendarEvents = eventsQuery.ToList();
+
+            //add calendar events
+            eventsList.AddRange(calendarEvents.Select(e => 
+            {
+                var isAllDay = (e.StartTime.Hour == 0 && e.StartTime.Minute == 0) &&
+                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 || 
+                               e.EndTime.Hour == 23 && e.EndTime.Minute == 59);
+                
+                return new
+                {
+                    id = e.Id,
+                    title = e.Title,
+                    description = e.Description,
+                    start = isAllDay ? e.StartTime.ToString("yyyy-MM-dd") : e.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = isAllDay ? e.EndTime.ToString("yyyy-MM-dd") : e.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    type = e.Type,
+                    backgroundColor = GetEventColor(e.Type),
+                    borderColor = GetEventColor(e.Type),
+                    textColor = GetEventTextColor(e.Type),
+                    allDay = isAllDay,
+                    eventType = "calendar"
+                };
+            }));
+
+            //get semesters and add them as events
+            var allSemesters = db.Semesters.ToList();
+            
+            var semesters = allSemesters.Where(s =>
+            {
+                var sStart = s.StartDate.ToDateTime(TimeOnly.MinValue);
+                var sEnd = s.EndDate.ToDateTime(TimeOnly.MaxValue);
+                return sStart <= endDate && sEnd >= startDate;
+            }).ToList();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                semesters = semesters.Where(s => s.Id == semesterId).ToList();
+            }
+
+            //add semester periods as events
+            eventsList.AddRange(semesters.Select(s =>
+            {
+                var weeks = (s.EndDate.ToDateTime(TimeOnly.MaxValue) - s.StartDate.ToDateTime(TimeOnly.MinValue)).TotalDays / 7;
+                var semesterType = weeks >= 13 ? "Long" : "Short";
+                
+                return new
+                {
+                    id = $"semester_{s.Id}",
+                    title = $"{s.Id} - {semesterType}",
+                    description = $"Semester Period: {s.StartDate:dd MMM yyyy} to {s.EndDate:dd MMM yyyy}",
+                    start = s.StartDate.ToString("yyyy-MM-dd"),
+                    end = s.EndDate.AddDays(1).ToString("yyyy-MM-dd"),
+                    type = "Semester Period",
+                    backgroundColor = semesterType == "Long" ? "#6f42c1" : "#e83e8c",
+                    borderColor = semesterType == "Long" ? "#5a32a3" : "#d91a72",
+                    textColor = "#ffffff",
+                    allDay = true,
+                    eventType = "semester",
+                    classNames = new[] { "semester-period" },
+                    extendedProps = new
+                    {
+                        eventType = "semester",
+                        semesterId = s.Id
+                    }
+                };
+            }));
+
+            return Json(eventsList);
+        }
+
+        //helper methods for event colors
+        private string GetEventColor(string eventType)
+        {
+            return eventType switch
+            {
+                "Public Holiday" => "#dc3545",
+                "Exam Period" => "#fd7e14",
+                "Academic Event" => "#28a745",
+                "Semester Break" => "#17a2b8",
+                _ => "#495057"
+            };
+        }
+
+        private string GetEventTextColor(string eventType)
+        {
+            return "#ffffff";
+        }
+
+        //export iCal for staff
+        public IActionResult ExportICal(string? semesterId = null)
+        {
+            var eventsQuery = db.CalendarEvents.AsQueryable();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+                if (semester != null)
+                {
+                    eventsQuery = eventsQuery.Where(e =>
+                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
+                        e.StartTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
+                }
+            }
+
+            var events = eventsQuery.ToList();
+
+            var ical = new StringBuilder();
+            ical.AppendLine("BEGIN:VCALENDAR");
+            ical.AppendLine("VERSION:2.0");
+            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
+            ical.AppendLine("CALSCALE:GREGORIAN");
+            ical.AppendLine("METHOD:PUBLISH");
+
+            foreach (var evt in events)
+            {
+                ical.AppendLine("BEGIN:VEVENT");
+                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
+                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"SUMMARY:{evt.Title}");
+                ical.AppendLine($"DESCRIPTION:{evt.Description}");
+                ical.AppendLine($"LOCATION:Academic Calendar");
+                ical.AppendLine($"STATUS:CONFIRMED");
+                ical.AppendLine("END:VEVENT");
+            }
+
+            ical.AppendLine("END:VCALENDAR");
+
+            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
+            return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+        }
+
+        //get semester details for calendar navigation
+        [HttpGet]
+        public IActionResult GetSemesterDetails(string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+            {
+                return Json(new { success = false, message = "Semester not found." });
+            }
+
+            return Json(new 
+            { 
+                success = true,
+                id = semester.Id,
+                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
+                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
+                isActive = semester.IsActive
+            });
+        }
+    }
 
         // GET: Staff Profile
         public async Task<IActionResult> Profile()
@@ -1016,5 +1228,5 @@ namespace SHAPEE.Controllers
 
             ViewBag.ProfilePictureUrl = profilePictureUrl;
         }
-    }
+
 }
