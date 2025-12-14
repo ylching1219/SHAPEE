@@ -188,8 +188,8 @@ namespace SHAPEE.Models
     // student view attendacne
     public class StudentAttendanceVM
     {
-        //for summary view (list of clas)
-        public List<StudentAttendanceVM> ClassAttendances { get; set; } = [];
+        //for summary view (list of classes)
+        public List<StudentAttendanceItemVM> ClassAttendances { get; set; } = [];
         
         // overall statistics
         public int OverallPresent { get; set; }
@@ -200,16 +200,6 @@ namespace SHAPEE.Models
         // qr/token for taking attendance
         public string? SectionId { get; set; }
         public string? QrToken { get; set; }
-        
-        // for individual class item
-        public ClassSection? ClassSection { get; set; }
-        public Course? Course { get; set; } 
-        
-        // attendance statistic for a class
-        public int PresentCount { get; set; }
-        public int AbsentCount { get; set; }
-        public int TotalSessions { get; set; }
-        public double AttendancePercentage { get; set; }
         
         // filter options
         public List<SubjectFilterOption> AvailableSubjects { get; set; } = [];
@@ -228,6 +218,18 @@ namespace SHAPEE.Models
         public int Year { get; set; }
         public string DisplayText { get; set; }
     }
+
+    public class StudentAttendanceItemVM
+    {
+    public ClassSection ClassSection { get; set; }
+    public Course Course { get; set; }
+
+    public int PresentCount { get; set; }
+    public int AbsentCount { get; set; }
+    public int TotalSessions { get; set; }
+    public double AttendancePercentage { get; set; }
+    }
+
 
     // student attendance details view model
     public class StudentAttendanceDetailsVM
