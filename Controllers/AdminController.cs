@@ -428,7 +428,7 @@ namespace SHAPEE.Controllers
                     .FirstOrDefaultAsync();
 
                 string newId = (lastStaff != null && lastStaff.Id.StartsWith("STF"))
-                    ? $"STF{(int.Parse(lastStaff.Id.Substring(1)) + 1):D4}"
+                    ? $"STF{(int.Parse(lastStaff.Id.Substring(3)) + 1):D4}"
                     : "STF0001";
 
                 // Generate random password + hash
