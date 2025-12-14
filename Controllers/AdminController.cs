@@ -1311,10 +1311,20 @@ namespace SHAPEE.Controllers
 
         public IActionResult AddGroup(GroupManageVM vm)
         {
-           
-
-            var p = new TutorialGroup
+            var groupExists = db.TutorialGroups.Any(g =>
+                g.ProgramId == vm.ProgramId &&
+                g.YearLevel == vm.YearLevel &&
+                g.Semester == vm.Semester &&
+                g.GroupNumber == vm.GroupNumber);
+            if (groupExists)
             {
+                TempData["ErrorMessage"] = "Failed to add new Group. Error: Group already exists!";
+                return RedirectToAction(nameof(GroupManagement));
+            }
+                var p = new TutorialGroup
+            {
+                GroupName = vm.ProgramId+"Y"+vm.YearLevel+"G"+vm.GroupNumber,
+                GroupNumber = vm.GroupNumber ?? 1,
                 ProgramId = vm.ProgramId!,
                 YearLevel = vm.YearLevel ?? 1,
                 Semester = vm.Semester ?? 1,
@@ -1322,7 +1332,7 @@ namespace SHAPEE.Controllers
             };
             db.TutorialGroups.Add(p);
             db.SaveChanges();
-            TempData["SuccessMessage"] = $"Group added successfully.";
+            TempData["SuccessMessage"] = $"Group {p.GroupName} added successfully.";
 
 
             return RedirectToAction(nameof(GroupManagement));

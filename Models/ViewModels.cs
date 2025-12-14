@@ -81,6 +81,10 @@ namespace SHAPEE.Models
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
         public TutorialGroup? EditGroup { get; set; }
+
+        public string? GroupName { get; set; }
+
+        [Range(1, 20, ErrorMessage = "Group number must be between 1 and 20.")]
         public int? GroupNumber { get; set; }
         public string? ProgramId { get; set; }  
         public int? YearLevel { get; set; }

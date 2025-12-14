@@ -1,8 +1,14 @@
 ﻿@model GroupManageVM
 <form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddGroup">
     <div class="modal-body">
-
-      
+        
+        <div class="form-group">
+            <label for="ProgramId" class="font-weight-medium">Group Number<span class="text-danger">*</span></label>
+            <input asp-for="GroupNumber" type="number" class="form-control" id="GroupNumber" name="GroupNumber"
+            value="@(Model.EditGroup?.GroupNumber??0)"
+            required>
+            <span asp-validation-for="GroupNumber" class="text-danger"></span>
+        </div>
         <div class="form-group">
             <label for="ProgramId" class="font-weight-medium">Program<span class="text-danger">*</span></label>
             <select asp-for="ProgramId"
