@@ -344,6 +344,124 @@ namespace SHAPEE.Controllers
             return View(viewModel);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAllAbsent(string sectionId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sectionId))
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section ID is required." });
+                    return BadRequest("Section ID is required.");
+                }
+
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var today = DateOnly.FromDateTime(DateTime.Now);
+
+                //verify section belongs to this staff member
+                var section = db.ClassSections
+                    .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+                if (section == null)
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Section not found or you don't have permission." });
+                    return Unauthorized();
+                }
+
+                //get all enrolled students (tutorial group)
+                var enrolledStudents = db.Students
+                    .Where(s => s.TutorialGroupId.HasValue 
+                        && s.TutorialGroupId.Value == section.TutorialGroupId)
+                    .ToList();
+
+                //get existing attendance records for today
+                var existingAttendances = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId && a.Date == today)
+                    .Select(a => a.StudentId)
+                    .ToList();
+
+                //get students who dont have attendance records 
+                var absentStudents = enrolledStudents
+                    .Where(s => !existingAttendances.Contains(s.Id))
+                    .ToList();
+
+                if (!absentStudents.Any())
+                {
+                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "No absent students to mark." });
+                    TempData["ErrorMessage"] = "No absent students to mark.";
+                    return RedirectToAction("SessionSummary", new { sectionId });
+                }
+
+                var now = DateTime.Now;
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var ua = Request.Headers["User-Agent"].ToString();
+
+                //create attendance records for all absent students
+                foreach (var student in absentStudents)
+                {
+                    var attendance = new Attendance
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        ClassSectionId = sectionId,
+                        StudentId = student.Id,
+                        Date = today,
+                        RegisteredAt = now,
+                        Status = "Absent",
+                        IpAddress = ip,
+                        UserAgent = $"MANUAL||{ua}",
+                        IsFlaged = false,
+                        FlagReason = "Not Registered"
+                    };
+
+                    db.Attendances.Add(attendance);
+                }
+
+                db.SaveChanges();
+
+                var message = $"Successfully marked {absentStudents.Count} student(s) as Absent (Not Registered).";
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, message = message });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var errorMessage = "Error saving to database.";
+                if (dbEx.InnerException != null)
+                {
+                    errorMessage += " " + dbEx.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = "Error marking students as absent: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += " Inner: " + ex.InnerException.Message;
+                }
+                
+                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("SessionSummary", new { sectionId });
+            }
+        }
+
         [HttpGet]
         [Authorize(Roles = "Staff")]
         public IActionResult LiveAttendanceRecord(string sectionId)
@@ -562,11 +680,91 @@ namespace SHAPEE.Controllers
             return View(viewModel);
         }
 
-
-        public IActionResult AttendanceReport()
+        [HttpGet]
+        public IActionResult GetAttendanceChartData(string sectionId)
         {
-            ViewData["Title"] = "Attendance Analytics";
-            return View();
+            if (string.IsNullOrEmpty(sectionId))
+            {
+                return Json(new { success = false, message = "Section ID is required." });
+            }
+
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var section = db.ClassSections
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+            if (section == null)
+            {
+                return Json(new { success = false, message = "Section not found." });
+            }
+
+            //get allattendance record for this section
+            var allAttendances = db.Attendances
+                .Include(a => a.Student)
+                .Where(a => a.ClassSectionId == sectionId)
+                .OrderBy(a => a.Date)
+                .ToList();
+
+            //get all enrolled students
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
+                .ToList();
+
+            var totalStudents = enrolledStudents.Count;
+
+            //chart data by date
+            var attendanceByDate = allAttendances
+                .GroupBy(a => a.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    PresentCount = g.Count(a => a.Status == "Present"),
+                    TotalCount = g.Count(),
+                    AttendancePercentage = totalStudents > 0 
+                        ? Math.Round((double)g.Count(a => a.Status == "Present") / totalStudents * 100, 1)
+                        : 0
+                })
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            var lineChartLabels = attendanceByDate.Select(x => x.Date.ToString("MMM dd")).ToList();
+            var lineChartData = attendanceByDate.Select(x => x.AttendancePercentage).ToList();
+
+            //chart data by status
+            var statusDistribution = allAttendances
+                .GroupBy(a => a.Status)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var pieChartLabels = statusDistribution.Select(x => x.Status).ToList();
+            var pieChartData = statusDistribution.Select(x => x.Count).ToList();
+            var pieChartColors = pieChartLabels.Select(status => 
+                status == "Present" ? "#28a745" :
+                status == "Absent" ? "#dc3545" :
+                status == "Late" ? "#ffc107" :
+                status == "Excused" ? "#17a2b8" : "#6c757d"
+            ).ToList();
+
+            return Json(new
+            {
+                success = true,
+                lineChart = new
+                {
+                    labels = lineChartLabels,
+                    data = lineChartData
+                },
+                pieChart = new
+                {
+                    labels = pieChartLabels,
+                    data = pieChartData,
+                    colors = pieChartColors
+                }
+            });
         }
 
         [HttpPost]

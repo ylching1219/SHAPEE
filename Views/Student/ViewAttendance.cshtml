@@ -91,10 +91,6 @@
     </div>
 }
 
-@section Styles {
-    <link href="~/css/attendance.css" rel="stylesheet" />
-}
-
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
@@ -219,12 +215,12 @@
     </div>
 </div>
 
-<!-- Subject-wise Attendance -->
+<!-- Attendance Table -->
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Subject-wise Attendance</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Attendance Table</h6>
             </div>
            <div class="card-body">
                 <div id="attendanceContainer">
@@ -290,20 +286,23 @@
 </div>
 
 <!-- Attendance Details Modal -->
-<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" role="dialog" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Attendance Details</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" id="attendanceDetailsContent">
-                <div class="text-center">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p>Loading...</p>
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">Loading attendance details...</p>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -552,6 +551,51 @@
             $('#monthFilter').val('');
             $('#searchBox').val('');
             loadAttendance();
+        });
+
+        //view details button click
+        $(document).on('click', '.view-details-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const sectionId = $(this).data('section-id');
+            if (!sectionId) {
+                console.error('Section ID not found');
+                return;
+            }
+
+            //show modal
+            $('#attendanceDetailsModal').modal('show');
+
+            //reset modal content to loading state
+            $('#attendanceDetailsContent').html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">Loading attendance details...</p>
+                </div>
+            `);
+
+            //load attendance details
+            $.ajax({
+                url: '@Url.Action("GetAttendanceDetails", "Student")',
+                type: 'GET',
+                data: { sectionId: sectionId },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(html) {
+                    $('#attendanceDetailsContent').html(html);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading attendance details:', error);
+                    $('#attendanceDetailsContent').html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Error loading attendance details. Please try again.
+                        </div>
+                    `);
+                }
+            });
         });
 
     </script>
