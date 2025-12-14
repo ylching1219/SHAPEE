@@ -26,24 +26,35 @@ namespace SHAPEE.Controllers
             
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             
-            // get all approved enrollments for the student
-            var enrollments = db.Enrollments
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Course)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Semester)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Staff)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Room)
-                .Where(e => e.StudentId == studentId 
-                    && e.Type == "Enrolled" 
-                    && e.Status == "Approved")
+            // get student tutorial group
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .FirstOrDefault(s => s.Id == studentId);
+            
+            if (student == null || !student.TutorialGroupId.HasValue)
+            {
+                // return empty view if student has no tutorial group
+                var emptyViewModel = new StudentAttendanceVM
+                {
+                    ClassAttendances = new List<StudentAttendanceVM>(),
+                    AvailableSubjects = new List<SubjectFilterOption>(),
+                    AvailableMonths = new List<MonthFilterOption>()
+                };
+                return View(emptyViewModel);
+            }
+            
+            // get all class sections for student tutorial group
+            var enrollments = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Semester)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
                 .ToList();
             
-            // get available subjects from enrollments
+            // get available subjects from class sections
             var availableSubjects = enrollments
-                .Select(e => new { e.ClassSection.Course.Id, e.ClassSection.Course.Name })
+                .Select(cs => new { cs.Course.Id, cs.Course.Name })
                 .Distinct()
                 .OrderBy(c => c.Id)
                 .Select(c => new SubjectFilterOption
@@ -75,12 +86,12 @@ namespace SHAPEE.Controllers
                 })
                 .ToList();
             
-            // calculate attendance for each enrollment
-            var classAttendances = enrollments.Select(e =>
+            // calculate attendance for each class section
+            var classAttendances = enrollments.Select(cs =>
             {
                 var attendances = db.Attendances
                     .Where(a => a.StudentId == studentId 
-                        && a.ClassSectionId == e.ClassSectionId)
+                        && a.ClassSectionId == cs.SectionId)
                     .ToList();
                 
                 var presentCount = attendances.Count(a => a.Status == "Present");
@@ -92,8 +103,8 @@ namespace SHAPEE.Controllers
                 
                 return new StudentAttendanceVM
                 {
-                    ClassSection = e.ClassSection,
-                    Course = e.ClassSection.Course,
+                    ClassSection = cs,
+                    Course = cs.Course,
                     PresentCount = presentCount,
                     AbsentCount = absentCount,
                     TotalSessions = totalSessions,
@@ -154,21 +165,20 @@ namespace SHAPEE.Controllers
             
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             
-            var enrollment = db.Enrollments
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Course)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Semester)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Staff)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Room)
-                .FirstOrDefault(e => e.StudentId == studentId 
-                    && e.ClassSectionId == sectionId 
-                    && e.Type == "Enrolled" 
-                    && e.Status == "Approved");
+            // get student and verify tutorial group match
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student == null || !student.TutorialGroupId.HasValue)
+                return PartialView("_AttendanceDetails", null);
             
-            if (enrollment == null)
+            var classSection = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Semester)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .FirstOrDefault(cs => cs.SectionId == sectionId 
+                    && cs.TutorialGroupId == student.TutorialGroupId.Value);
+            
+            if (classSection == null)
                 return PartialView("_AttendanceDetails", null);
             
             var attendances = db.Attendances
@@ -185,9 +195,9 @@ namespace SHAPEE.Controllers
 
             var viewModel = new StudentAttendanceDetailsVM
             {
-                ClassSection = enrollment.ClassSection,
-                Course = enrollment.ClassSection.Course,
-                Semester = enrollment.ClassSection.Semester,
+                ClassSection = classSection,
+                Course = classSection.Course,
+                Semester = classSection.Semester,
                 Attendances = attendances,
                 PresentCount = presentCount,
                 AbsentCount = absentCount,
@@ -204,37 +214,35 @@ namespace SHAPEE.Controllers
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var now = DateTime.Now;
             
-            // get all approved enrollments
-            var enrollmentsQuery = db.Enrollments
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Course)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Semester)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Staff)
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Room)
-                .Where(e => e.StudentId == studentId 
-                    && e.Type == "Enrolled" 
-                    && e.Status == "Approved")
+            // get student tutorial group
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student == null || !student.TutorialGroupId.HasValue)
+            {
+                return Json(new { classAttendances = new List<object>(), recentAttendances = new List<object>() });
+            }
+            
+            // get all class sections for student tutorial group
+            var enrollmentsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Semester)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
                 .AsQueryable();
             
             // filter by subject
             if (!string.IsNullOrEmpty(subjectCode) && subjectCode != "all")
             {
-                enrollmentsQuery = enrollmentsQuery.Where(e => e.ClassSection.Course.Id == subjectCode);
+                enrollmentsQuery = enrollmentsQuery.Where(cs => cs.Course.Id == subjectCode);
             }
             
             var enrollments = enrollmentsQuery.ToList();
             
             // get available subjects (for filter dropdown)
-            var availableSubjects = db.Enrollments
-                .Include(e => e.ClassSection)
-                    .ThenInclude(cs => cs.Course)
-                .Where(e => e.StudentId == studentId 
-                    && e.Type == "Enrolled" 
-                    && e.Status == "Approved")
-                .Select(e => new { e.ClassSection.Course.Id, e.ClassSection.Course.Name })
+            var availableSubjects = db.ClassSections
+                .Include(cs => cs.Course)
+                .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
+                .Select(cs => new { cs.Course.Id, cs.Course.Name })
                 .Distinct()
                 .OrderBy(c => c.Id)
                 .Select(c => new { courseId = c.Id, courseName = c.Name })
@@ -263,11 +271,11 @@ namespace SHAPEE.Controllers
                 })
                 .ToList();
             
-            // calculate attendance for each enrollment with filters
-            var classAttendances = enrollments.Select(e =>
+            // calculate attendance for each class section with filters
+            var classAttendances = enrollments.Select(cs =>
             {
                 var attendancesQuery = db.Attendances
-                    .Where(a => a.StudentId == studentId && a.ClassSectionId == e.ClassSectionId)
+                    .Where(a => a.StudentId == studentId && a.ClassSectionId == cs.SectionId)
                     .AsQueryable();
                 
                 // filter by month
@@ -292,9 +300,9 @@ namespace SHAPEE.Controllers
                 
                 return new
                 {
-                    sectionId = e.ClassSection.SectionId,
-                    courseId = e.ClassSection.Course.Id,
-                    courseName = e.ClassSection.Course.Name,
+                    sectionId = cs.SectionId,
+                    courseId = cs.Course.Id,
+                    courseName = cs.Course.Name,
                     presentCount = presentCount,
                     absentCount = absentCount,
                     totalSessions = totalSessions,
@@ -369,7 +377,7 @@ namespace SHAPEE.Controllers
                 })
                 .ToList();
             
-                // Calculate filtered overall statistics
+            // calculate filtered overall statistics
             var allAttendancesQuery = db.Attendances
                 .Include(a => a.ClassSection)
                     .ThenInclude(cs => cs.Course)
@@ -440,13 +448,13 @@ namespace SHAPEE.Controllers
                 return BadRequest("Either QR token or attendance code is required.");
             }
 
-            //check enrollment
-            bool enrolled = db.Enrollments.Any(e =>
-                e.StudentId == studentId &&
-                e.ClassSectionId == sectionId &&
-                e.Type == "Enrolled" &&
-                e.Status == "Approved");
-            if (!enrolled) return BadRequest("You are not enrolled in this class section or your enrollment is not approved.");
+            //check tutorial group match
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student == null || !student.TutorialGroupId.HasValue)
+                return BadRequest("You are not assigned to a tutorial group.");
+            
+            if (student.TutorialGroupId.Value != section.TutorialGroupId)
+                return BadRequest("Your tutorial group does not match this class section's tutorial group.");
 
             //check session is active
             if (!section.IsAttendanceSessionActive)

@@ -293,13 +293,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "take" });
 
-            // Get all enrolled students for this section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            // Get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             // Get attendance records for today
@@ -397,13 +394,10 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "Section not found." });
             }
 
-            //get all enrolled student for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
@@ -460,13 +454,10 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
 
-            //get all enrolled students for this class section
-            var enrolledStudents = db.Enrollments
-                .Include(e => e.Student)
-                .Where(e => e.ClassSectionId == sectionId
-                 && e.Type == "Enrolled"
-                 && e.Status == "Approved")
-                .Select(e => e.Student)
+            //get all students in the same tutorial group as this section
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue 
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
                 .ToList();
 
             var totalStudents = enrolledStudents.Count;
