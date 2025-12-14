@@ -15,9 +15,8 @@ using static SHAPEE.Models.DB;
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class AdminController(DB db) : Controller
+    public class AdminController(DB db, Helper hp) : Controller
     {
-
         // Dashboard
         public IActionResult Dashboard()
         {
@@ -165,8 +164,8 @@ namespace SHAPEE.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStudent(string firstName, string lastName, string gender,
-                   string email, string contact, string facultyId, string programName,
-                   int yearLevel, int semester)
+           string email, string contact, string facultyId, string programName,
+           int yearLevel, int semester)
         {
             try
             {
@@ -181,13 +180,11 @@ namespace SHAPEE.Controllers
                     .FirstOrDefaultAsync();
 
                 var yearPrefix = DateTime.Now.Year.ToString().Substring(2);
-
                 string newId;
 
                 if (lastStudent != null && lastStudent.Id.StartsWith(yearPrefix))
                 {
                     int lastNumber = int.Parse(lastStudent.Id.Substring(2));
-
                     newId = $"{yearPrefix}{(lastNumber + 1):D5}";
                 }
                 else
@@ -218,7 +215,7 @@ namespace SHAPEE.Controllers
                     Contact = contact?.Trim(),
                     ProgramId = program.Id,
                     YearLevel = yearLevel,
-                    Semester = semester, // Use the submitted semester
+                    Semester = semester,
                     DateJoin = DateOnly.FromDateTime(DateTime.Now),
                     Hash = passwordHash,
                     LoginAttempts = 0,
@@ -228,9 +225,27 @@ namespace SHAPEE.Controllers
                 db.Students.Add(student);
                 await db.SaveChangesAsync();
 
-                TempData["SuccessMessage"] =
-                    $"Student '{student.FirstName} {student.LastName}' created successfully! " +
-                    $"Generated password: {rawPassword}";
+                // Send email
+                var emailSent = await hp.SendAccountCreationEmail(
+                    student.Email,
+                    student.FullName,
+                    student.Id,
+                    rawPassword,
+                    "Student"
+                );
+
+                if (emailSent)
+                {
+                    TempData["SuccessMessage"] =
+                        $"Student '{student.FirstName} {student.LastName}' created successfully! " +
+                        $"Login credentials have been sent to {student.Email}";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] =
+                        $"Student '{student.FirstName} {student.LastName}' created successfully! " +
+                        $"Generated password: {rawPassword} (Email sending failed)";
+                }
 
                 return RedirectToAction(nameof(StudentManagement));
             }
@@ -411,18 +426,16 @@ namespace SHAPEE.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStaff(string firstName, string lastName, string gender,
-                   string email, string contact, string facultyId)
+           string email, string contact, string facultyId)
         {
             try
             {
-                // Check duplicate email
                 if (await db.Staffs.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
                     return RedirectToAction(nameof(StaffManagement));
                 }
 
-                // Generate Staff ID
                 var lastStaff = await db.Staffs
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
@@ -431,12 +444,10 @@ namespace SHAPEE.Controllers
                     ? $"STF{(int.Parse(lastStaff.Id.Substring(3)) + 1):D4}"
                     : "STF0001";
 
-                // Generate random password + hash
                 string rawPassword = GenerateRandomPassword(8);
                 var passwordHasher = new PasswordHasher<User>();
                 string passwordHash = passwordHasher.HashPassword(null, rawPassword);
 
-                // Create Staff
                 var staff = new Staff
                 {
                     Id = newId,
@@ -455,9 +466,27 @@ namespace SHAPEE.Controllers
                 db.Staffs.Add(staff);
                 await db.SaveChangesAsync();
 
-                TempData["SuccessMessage"] =
-                    $"Staff '{staff.FirstName} {staff.LastName}' created successfully! " +
-                    $"Generated password: {rawPassword}";
+                // Send email
+                var emailSent = await hp.SendAccountCreationEmail(
+                    staff.Email,
+                    staff.FullName,
+                    staff.Id,
+                    rawPassword,
+                    "Staff"
+                );
+
+                if (emailSent)
+                {
+                    TempData["SuccessMessage"] =
+                        $"Staff '{staff.FirstName} {staff.LastName}' created successfully! " +
+                        $"Login credentials have been sent to {staff.Email}";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] =
+                        $"Staff '{staff.FirstName} {staff.LastName}' created successfully! " +
+                        $"Generated password: {rawPassword} (Email sending failed)";
+                }
 
                 return RedirectToAction(nameof(StaffManagement));
             }
@@ -618,32 +647,28 @@ namespace SHAPEE.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateAdmin(string firstName, string lastName,
-                   string email, string contact)
+           string email, string contact)
         {
             try
             {
-                // Check duplicate email
                 if (await db.Admins.AnyAsync(s => s.Email == email.Trim().ToLower()))
                 {
                     TempData["ErrorMessage"] = "Email already exists.";
                     return RedirectToAction(nameof(AdminManagement));
                 }
 
-                // Generate admin ID
                 var lastAdmin = await db.Admins
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefaultAsync();
 
                 string newId = (lastAdmin != null && lastAdmin.Id.StartsWith("Admin"))
-                    ? $"Admin{(int.Parse(lastAdmin.Id.Substring(1)) + 1):D2}"
+                    ? $"Admin{(int.Parse(lastAdmin.Id.Substring(5)) + 1):D2}"
                     : "Admin01";
 
-                // Generate random password + hash
                 string rawPassword = GenerateRandomPassword(8);
                 var passwordHasher = new PasswordHasher<User>();
                 string passwordHash = passwordHasher.HashPassword(null, rawPassword);
 
-                // Create admin
                 var admin = new Admin
                 {
                     Id = newId,
@@ -659,9 +684,27 @@ namespace SHAPEE.Controllers
                 db.Admins.Add(admin);
                 await db.SaveChangesAsync();
 
-                TempData["SuccessMessage"] =
-                    $"Admin '{admin.FirstName} {admin.LastName}' created successfully! " +
-                    $"Generated password: {rawPassword}";
+                // Send email
+                var emailSent = await hp.SendAccountCreationEmail(
+                    admin.Email,
+                    admin.FullName,
+                    admin.Id,
+                    rawPassword,
+                    "Admin"
+                );
+
+                if (emailSent)
+                {
+                    TempData["SuccessMessage"] =
+                        $"Admin '{admin.FirstName} {admin.LastName}' created successfully! " +
+                        $"Login credentials have been sent to {admin.Email}";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] =
+                        $"Admin '{admin.FirstName} {admin.LastName}' created successfully! " +
+                        $"Generated password: {rawPassword} (Email sending failed)";
+                }
 
                 return RedirectToAction(nameof(AdminManagement));
             }
