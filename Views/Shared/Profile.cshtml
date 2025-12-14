@@ -343,7 +343,7 @@
                                 <p><strong>Semester:</strong> Semester @(student?.Semester ?? 1)</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Tutorial Group:</strong> @(student?.TutorialGroupId ?? "Not Assigned")</p>
+                                <p><strong>Tutorial Group:</strong> @(student?.TutorialGroup?.GroupName ?? "Not Assigned")</p>
                                 <p><strong>Date Enrolled:</strong> @(student?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
                                 <p><strong>Status:</strong> <span class="badge badge-success">@Model.Status</span></p>
                             </div>

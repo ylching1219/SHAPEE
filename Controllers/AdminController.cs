@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
+using System.Security.Claims;
 
 namespace SHAPEE.Controllers
 {
