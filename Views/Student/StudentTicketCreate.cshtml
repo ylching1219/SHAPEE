@@ -4,126 +4,155 @@
     ViewData["Title"] = "Submit Ticket";
 }
 
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f7f9fc;
-        margin: 0;
-        padding: 0;
-    }
+<div class="ticket-page">
 
-    h2 {
-        text-align: center;
-        color: #222;
-        margin-top: 30px;
-        font-weight: 700;
-    }
-
-    .alert-success {
-        width: 90%;
-        max-width: 600px;
-        margin: 20px auto;
-        padding: 12px 20px;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        color: #155724;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    form {
-        background: #fff;
-        max-width: 600px;
-        margin: 20px auto 50px;
-        padding: 30px 40px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 6px;
-        color: #333;
-    }
-
-    input.form-control,
-    textarea.form-control,
-    select.form-control {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-
-        input.form-control:focus,
-        textarea.form-control:focus,
-        select.form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0,123,255,0.3);
-            outline: none;
+    <style>
+        .ticket-page h2 {
+            text-align: center;
+            color: #222;
+            margin-top: 30px;
+            font-weight: 700;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-    textarea.form-control {
-        resize: vertical;
-        min-height: 120px;
-    }
-
-    button.btn {
-        display: block;
-        width: 100%;
-        padding: 12px 0;
-        background: #007bff;
-        color: #fff;
-        font-weight: 600;
-        font-size: 1rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 0.3s, transform 0.2s;
-    }
-
-        button.btn:hover {
-            background: #0056c7;
-            transform: translateY(-2px);
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
         }
-</style>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-success">@TempData["Message"]</div>
-}
+            .back-btn:hover {
+                background: #0056c7;
+                color: white;
+            }
 
-<h2>Submit Ticket</h2>
+        .ticket-page .alert-success {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 12px 20px;
+            background-color: #d1e7ff;
+            border: 1px solid #a3d0ff;
+            border-radius: 10px;
+            color: #0c5460;
+            text-align: center;
+            font-weight: 500;
+        }
 
-<form asp-action="CreateTicket" method="post">
-    <div class="form-group">
-        <label>Subject</label>
-        <input asp-for="Subject" class="form-control" />
-    </div>
+        .ticket-page form {
+            background: #fdfdfd;
+            max-width: 650px;
+            margin: 30px auto 60px;
+            padding: 35px 45px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
 
-    <div class="form-group">
-        <label>Description</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-    </div>
+        .ticket-page .form-group {
+            margin-bottom: 22px;
+        }
 
-    <div class="form-group">
-        <label>Priority</label>
-        <select asp-for="Priority" class="form-control">
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-        </select>
-    </div>
+        .ticket-page label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
 
-    <button type="submit" class="btn btn-primary mt-2">
-        Submit
-    </button>
-</form>
+        .ticket-page input.form-control,
+        .ticket-page textarea.form-control,
+        .ticket-page select.form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Bigger select box */
+        .ticket-page select.form-control {
+            padding: 14px 16px;
+            font-size: 1.05rem;
+            height: 50px;
+        }
+
+            .ticket-page input.form-control:focus,
+            .ticket-page textarea.form-control:focus,
+            .ticket-page select.form-control:focus {
+                border-color: #17a2b8;
+                box-shadow: 0 0 6px rgba(23,162,184,0.3);
+                outline: none;
+            }
+
+        .ticket-page textarea.form-control {
+            resize: vertical;
+            min-height: 140px;
+        }
+
+        .ticket-page button.btn {
+            display: block;
+            width: 100%;
+            padding: 14px 0;
+            background: #17a2b8;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.05rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+            .ticket-page button.btn:hover {
+                background: #138496;
+                transform: translateY(-2px);
+            }
+    </style>
+
+    <!-- Back button to FAQ -->
+    <a href="@Url.Action("FAQ", "Student")" class="back-btn">← Back to FAQ</a>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert-success">@TempData["Message"]</div>
+    }
+
+    <h2>Submit a Support Ticket</h2>
+    <form asp-controller="Student" asp-action="CreateTicket" method="post">
+        <div class="form-group">
+            <label>Subject</label>
+            <input asp-for="Subject" class="form-control" placeholder="Enter subject" />
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <textarea asp-for="Description" class="form-control" placeholder="Enter description"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Priority</label>
+            <select asp-for="Priority" class="form-control">
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Submit Ticket</button>
+    </form>
+
+    <script>
+        document.querySelector("form").addEventListener("submit", function () {
+            const btn = this.querySelector("button[type='submit']");
+            btn.disabled = true;
+            btn.innerText = "Submitting...";
+        });
+    </script>
+
+</div>
