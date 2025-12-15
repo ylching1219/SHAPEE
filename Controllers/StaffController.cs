@@ -1347,6 +1347,24 @@ namespace SHAPEE.Controllers
 
             return View("~/Views/Staff/ClassroomUI.cshtml", courses);
         }
+        public IActionResult StaffTicketList()
+        {
+            var tickets = db.SupportTickets.OrderByDescending(t => t.CreatedAt).ToList();
+            return View(tickets);
+        }
+
+        public IActionResult GetStaffTickets(string search = "", string status = "")
+        {
+            var tickets = db.SupportTickets.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
+
+            if (!string.IsNullOrWhiteSpace(status))
+                tickets = tickets.Where(t => t.Status == status);
+
+            return PartialView("_StaffTicketTablePartial", tickets.OrderByDescending(t => t.CreatedAt).ToList());
+        }
 
     }
 }
