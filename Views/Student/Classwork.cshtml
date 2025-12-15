@@ -1,126 +1,202 @@
 ﻿@model List<Material>
 
 @{
-	ViewData["Title"] = "Student Classwork";
-	var courseId = ViewBag.CourseId as string;
+    ViewData["Title"] = "Student Classwork";
+    var courseId = ViewBag.CourseId as string;
 }
 
 <style>
-	body {
-		font-family: Arial, sans-serif;
-		background-color: #f5f5f5;
-		margin: 0;
-		padding: 0;
-	}
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+    }
 
-	.class-header {
-		background: white;
-		height: 80px;
-		border-radius: 12px;
-		margin: 20px auto;
-		width: 90%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.8rem;
-		font-weight: bold;
-		box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-	}
+    .class-header {
+        background: white;
+        height: 80px;
+        border-radius: 12px;
+        margin: 20px auto;
+        width: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        font-weight: bold;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
 
-	.material-box {
-		width: 90%;
-		background: white;
-		margin: 15px auto;
-		padding: 20px;
-		border-radius: 12px;
-		box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-	}
+    .material-box {
+        width: 90%;
+        background: white;
+        margin: 15px auto;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
 
-	.material-title {
-		font-size: 1.2rem;
-		font-weight: 700;
-		color: #000;
-		text-transform: uppercase;
-		margin-bottom: 10px;
-	}
+    .material-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #000;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
 
-	.file-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		background: #f1f6ff;
-		padding: 8px 12px;
-		border-radius: 6px;
-		margin-bottom: 6px;
-	}
+    .file-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f1f6ff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+    }
 
-		.file-row a.file-link {
-			display: flex;
-			align-items: center;
-			gap: 6px;
-			font-weight: bold;
-			color: #007bff;
-			text-decoration: none;
-		}
+        .file-row a.file-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            color: #007bff;
+            text-decoration: none;
+        }
 
-			.file-row a.file-link:hover {
-				text-decoration: underline;
-			}
+            .file-row a.file-link:hover {
+                text-decoration: underline;
+            }
 
-	.file-type {
-		font-size: 0.85rem;
-		color: #555;
-		margin-left: 6px;
-	}
+    .file-type {
+        font-size: 0.85rem;
+        color: #555;
+        margin-left: 6px;
+    }
 
-	.download-btn {
-		padding: 5px 12px;
-		background: #007bff;
-		color: black;
-		border-radius: 5px;
-		text-decoration: none;
-		font-size: 0.85rem;
-	}
+    .download-btn {
+        padding: 5px 12px;
+        background: #007bff;
+        color: black;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
 
-		.download-btn:hover {
-			background: white;
-		}
+        .download-btn:hover {
+            background: white;
+        }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 15px 0 10px 5%;
+        padding: 8px 14px;
+        background: #e9eef5;
+        color: #333;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+        .back-btn:hover {
+            background: #dce4f2;
+        }
+
+    #materialSearch, #fileTypeFilter {
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+    }
 </style>
 
-<div class="class-header">
-	@courseId
-</div>
+<!-- back button -->
+<a href="/Classroom/ClassroomUI" class="back-btn">
+    ← Back
+</a>
 
+
+
+<!-- search and filter -->
+<div style="width:90%; max-width:600px; margin: 20px auto; display:flex; gap:10px;">
+    <input type="text" id="materialSearch" placeholder="Search materials..." style="flex:1;" />
+    <select id="fileTypeFilter">
+        <option value="">All Types</option>
+        <option value="PDF">PDF</option>
+        <option value="PPT">PPT</option>
+        <option value="DOCX">DOCX</option>
+        <option value="IMAGE">IMAGE</option>
+        <option value="VIDEO">VIDEO</option>
+    </select>
+</div>
+<div class="class-header">
+    @courseId
+</div>
 @if (!Model.Any())
 {
-	<div class="material-box">
-		<p>No materials uploaded yet.</p>
-	</div>
+    <div class="material-box">
+        <p>No materials uploaded yet.</p>
+    </div>
 }
 else
 {
-	@foreach (var group in Model.GroupBy(m => m.Title))
-	{
-		<div class="material-box">
-			<div class="material-title">@group.Key</div>
+    @foreach (var group in Model.GroupBy(m => m.Title))
+    {
+        <div class="material-box">
+            <div class="material-title">@group.Key</div>
 
-			@foreach (var doc in group)
-			{
-				<div class="file-row">
-					<!-- File name with icon and file type -->
-					<a href="@doc.FileUrl" download class="file-link">
-						<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqxE-E3auIyZovpapObyyZBRv9XcrclLkDEw&s"
-							 alt="file icon" width="20" height="20" />
-						<span>@doc.Id</span>
-						<span class="file-type">(@doc.MaterialType?.ToUpper())</span>
-					</a>
+            @foreach (var doc in group)
+            {
+                <div class="file-row">
+                    <a href="@doc.FileUrl" download class="file-link">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqxE-E3auIyZovpapObyyZBRv9XcrclLkDEw&s"
+                             alt="file icon" width="20" height="20" />
+                        <span>@doc.Id</span>
+                        <span class="file-type">(@doc.MaterialType?.ToUpper())</span>
+                    </a>
 
-					<!-- Download button -->
-					<a href="@doc.FileUrl" download class="download-btn">
-						Download
-					</a>
-				</div>
-			}
-		</div>
-	}
+                    <a href="@doc.FileUrl" download class="download-btn">
+                        Download
+                    </a>
+                </div>
+            }
+        </div>
+    }
 }
+
+<script>
+    const searchInput = document.getElementById("materialSearch");
+    const typeFilter = document.getElementById("fileTypeFilter");
+
+    function filterMaterials() {
+        const query = searchInput.value.toLowerCase();
+        const type = typeFilter.value.toLowerCase();
+
+        document.querySelectorAll(".material-box").forEach(box => {
+            let title = box.querySelector(".material-title").textContent.toLowerCase();
+            let match = false;
+
+            box.querySelectorAll(".file-row").forEach(row => {
+                const fileType = row.querySelector(".file-type")?.textContent.replace(/[()]/g,"").toLowerCase() || "";
+                const fileName = row.querySelector(".file-link span")?.textContent.toLowerCase() || "";
+
+                const matchesSearch = fileName.includes(query) || title.includes(query);
+                const matchesType = !type || fileType === type;
+
+                if (matchesSearch && matchesType) {
+                    row.style.display = "flex";
+                    match = true;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            box.style.display = match ? "block" : "none";
+        });
+    }
+
+    searchInput.addEventListener("input", filterMaterials);
+    typeFilter.addEventListener("change", filterMaterials);
+</script>

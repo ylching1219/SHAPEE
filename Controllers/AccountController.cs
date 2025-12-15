@@ -1,7 +1,12 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using SHAPEE.Models;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace SHAPEE.Controllers;
 
@@ -95,6 +100,101 @@ public class AccountController(DB db, Helper hp) : Controller
     {
         ViewData["Title"] = "Forgot Password";
         return View();
+    }
+
+    // GET: Account/ChangePassword
+    [Authorize]
+    public IActionResult ChangePassword()
+    {
+        ViewData["Title"] = "Change Password";
+        return View();
+    }
+
+    // POST: Account/ChangePassword
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+    {
+        // Validation
+        if (string.IsNullOrEmpty(currentPassword))
+        {
+            ModelState.AddModelError("currentPassword", "Current password is required.");
+        }
+
+        if (string.IsNullOrEmpty(newPassword))
+        {
+            ModelState.AddModelError("newPassword", "New password is required.");
+        }
+        else if (newPassword.Length < 6)
+        {
+            ModelState.AddModelError("newPassword", "Password must be at least 6 characters long.");
+        }
+
+        if (string.IsNullOrEmpty(confirmPassword))
+        {
+            ModelState.AddModelError("confirmPassword", "Please confirm your password.");
+        }
+        else if (newPassword != confirmPassword)
+        {
+            ModelState.AddModelError("confirmPassword", "New password and confirmation password do not match.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View();
+        }
+
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await db.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("ChangePassword");
+            }
+
+            // Verify current password
+            var passwordHasher = new PasswordHasher<User>();
+            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Hash, currentPassword);
+
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                ModelState.AddModelError("currentPassword", "Current password is incorrect.");
+                return View();
+            }
+
+            // Hash new password
+            var newPasswordHash = passwordHasher.HashPassword(user, newPassword);
+            user.Hash = newPasswordHash;
+
+            await db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Password changed successfully!";
+
+            // Redirect to profile based on role
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Profile", "Admin");
+            }
+            else if (User.IsInRole("Staff"))
+            {
+                return RedirectToAction("Profile", "Staff");
+            }
+            else if (User.IsInRole("Student"))
+            {
+                return RedirectToAction("Profile", "Student");
+            }
+
+            return RedirectToAction("Login", "Account");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"An error occurred while changing password: {ex.Message}";
+            return RedirectToAction("ChangePassword");
+        }
     }
 
     // POST: Account/ForgotPassword - Handles token generation and email sending (A3)

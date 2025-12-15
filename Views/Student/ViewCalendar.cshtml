@@ -1,0 +1,147 @@
+@model EventManagementVM
+@{
+    ViewData["Title"] = "Academic Calendar";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+
+<style>
+    .fc-dayGridMonth-view .fc-event-time {
+        display: none;
+    }
+</style>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Academic Calendar</h1>
+    <a asp-action="ExportICal" asp-controller="Student"
+       asp-route-semesterId="@Model.SelectedSemesterId"
+       class="btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-download fa-sm text-white-50 mr-2"></i> Export iCal
+    </a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+        <div class="col-md-5 pl-0">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-filter text-gray-400"></i></span>
+                </div>
+                <select id="semesterFilter" class="form-select border-0 bg-light font-weight-bold text-primary">
+                    <option value="">All Semesters</option>
+                    @foreach (var s in Model.Semesters)
+                    {
+                        var startDateStr = s.StartDate.ToString("yyyy-MM-dd");
+                        if (s.Id == Model.SelectedSemesterId)
+                        {
+                            <option value="@s.Id" selected="selected" data-start-date="@startDateStr">
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@s.Id" data-start-date="@startDateStr">
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<script>
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            selectable: false, //disable selection
+            editable: false, //disable editing
+            eventResizableFromStart: false, //disable resizing
+            eventStartEditable: false, //disable dragging
+            eventDurationEditable: false, //disable duration editing
+
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: ''
+            },
+
+            buttonText: {
+                today: 'Today'
+            },
+
+            eventTimeFormat: {
+                hour: 'numeric',
+                minute: '2-digit',
+                omitZeroMinute: true,
+                meridiem: 'short'
+            },
+            
+            dayMaxEvents: true,
+            moreLinkClick: 'popover',
+
+            events: function (info, successCallback, failureCallback) {
+                $.ajax({
+                    url: '@Url.Action("GetCalendarEvents", "Student")',
+                    type: 'GET',
+                    data: {
+                        start: info.startStr,
+                        end: info.endStr,
+                        semesterId: $('#semesterFilter').val()
+                    },
+                    success: function(data) {
+                        successCallback(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading events:', error);
+                        SweetAlert.error('Error', 'Failed to load calendar events.');
+                        failureCallback();
+                    }
+                });
+            },
+
+            eventClick: function (info) {
+                const event = info.event;
+                const description = event.extendedProps.description || 'No description available.';
+                const type = event.extendedProps.type || 'Event';
+                
+                Swal.fire({
+                    icon: 'info',
+                    title: event.title,
+                    html: `<strong>Type:</strong> ${type}<br><strong>Date:</strong> ${event.start.toLocaleDateString()}<br><strong>Description:</strong> ${description}`,
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+
+        calendar.render();
+
+        $('#semesterFilter').on('change', function () {
+            const selectedSemesterId = $(this).val();
+            
+            if (selectedSemesterId) {
+                const startDateStr = $(this).find('option:selected').data('start-date');
+                if (startDateStr) {
+                    const startDate = new Date(startDateStr);
+                    calendar.gotoDate(startDate);
+                }
+            }
+            
+            calendar.refetchEvents();
+        });
+    });
+</script>
+}

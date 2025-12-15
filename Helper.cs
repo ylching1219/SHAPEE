@@ -2,15 +2,25 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
+using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
 namespace SHAPEE
 {
-    public class Helper(IHttpContextAccessor ct)
+    public class Helper
     {
+        private readonly IHttpContextAccessor ct;
+        private readonly IConfiguration _configuration;
         private readonly PasswordHasher<object> ph = new();
+
+        public Helper(IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+        {
+            ct = httpContextAccessor;
+            _configuration = configuration;
+        }
 
         public string HashPassword(string password)
         {
@@ -19,7 +29,6 @@ namespace SHAPEE
 
         public bool VerifyPassword(string hash, string password)
         {
-
             return ph.VerifyHashedPassword(0, hash, password)
                 == PasswordVerificationResult.Success;
         }
@@ -29,23 +38,17 @@ namespace SHAPEE
             List<Claim> claims = new()
             {
                 new Claim(ClaimTypes.NameIdentifier, id),
-                new Claim(ClaimTypes.Name,fullName),
+                new Claim(ClaimTypes.Name, fullName),
                 new Claim(ClaimTypes.Role, role)
             };
-
             ClaimsIdentity identity = new(claims, "Cookies");
             ClaimsPrincipal principal = new(identity);
-
             AuthenticationProperties properties = new()
             {
                 IsPersistent = rememberMe
             };
-
             Console.WriteLine("Signing in user with ID: " + id + " and Role: " + role);
             ct.HttpContext!.SignInAsync(principal, properties);
-
-
-
         }
 
         public void SignOut()
@@ -53,21 +56,156 @@ namespace SHAPEE
             ct.HttpContext!.SignOutAsync();
         }
 
+        // Email functionality
+        public async Task<bool> SendAccountCreationEmail(string toEmail, string userName, string userId, string password, string userType)
+        {
+            try
+            {
+                var smtpUser = _configuration["Smtp:User"];
+                var smtpPass = _configuration["Smtp:Pass"];
+                var smtpName = _configuration["Smtp:Name"];
+                var smtpHost = _configuration["Smtp:Host"];
+                var smtpPort = int.Parse(_configuration["Smtp:Port"]);
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(smtpUser, smtpName),
+                    Subject = "Your TARUMT Account Has Been Created",
+                    Body = GetEmailBody(userName, userId, password, userType),
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(new MailAddress(toEmail));
+
+                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+
+                await smtpClient.SendMailAsync(mailMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Email sending failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string GetEmailBody(string userName, string userId, string password, string userType)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }}
+        .header {{
+            background-color: #4e73df;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            padding: 20px;
+            background-color: #f8f9fc;
+        }}
+        .credentials {{
+            background-color: #fff;
+            padding: 15px;
+            border-left: 4px solid #4e73df;
+            margin: 20px 0;
+        }}
+        .credentials strong {{
+            color: #4e73df;
+        }}
+        .warning {{
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }}
+        .footer {{
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }}
+        .button {{
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #4e73df;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h2>Welcome to TARUMT!</h2>
+        </div>
+        <div class='content'>
+            <p>Dear <strong>{userName}</strong>,</p>
+            
+            <p>Your {userType} account has been successfully created. Below are your login credentials:</p>
+            
+            <div class='credentials'>
+                <p><strong>User ID:</strong> {userId}</p>
+                <p><strong>Password:</strong> {password}</p>
+            </div>
+            
+            <div class='warning'>
+                <strong>⚠️ Important Security Notice:</strong>
+                <ul>
+                    <li>Please change your password after your first login</li>
+                    <li>Do not share your credentials with anyone</li>
+                    <li>Keep this email secure or delete it after changing your password</li>
+                </ul>
+            </div>
+            
+            <p>If you have any questions or need assistance, please contact the system administrator.</p>
+            
+            <p>Best regards,<br>
+            <strong>TARUMT Administration</strong></p>
+        </div>
+        <div class='footer'>
+            <p>This is an automated email. Please do not reply to this message.</p>
+            <p>&copy; 2025 TARUMT. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
         public static byte[] ExportToCsv<T>(IEnumerable<T> data)
         {
             var sb = new StringBuilder();
             var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
             // Header: use DisplayAttribute if available
             var headers = props.Select(p =>
             {
                 var displayAttr = p.GetCustomAttribute<DisplayAttribute>();
                 return displayAttr != null ? displayAttr.Name : p.Name;
             });
-
             // Header
             sb.AppendLine(string.Join(",", headers));
-
             // Rows
             foreach (var item in data)
             {
@@ -76,10 +214,8 @@ namespace SHAPEE
                     var value = p.GetValue(item, null);
                     return Escape(value?.ToString());
                 });
-
                 sb.AppendLine(string.Join(",", values));
             }
-
             return Encoding.UTF8.GetBytes(sb.ToString());
         }
 
@@ -87,13 +223,10 @@ namespace SHAPEE
         {
             if (string.IsNullOrEmpty(value))
                 return "";
-
             value = value.Replace("\"", "\"\"");
-
             return value.Contains(',') || value.Contains('\n')
                 ? $"\"{value}\""
                 : value;
         }
-
     }
 }

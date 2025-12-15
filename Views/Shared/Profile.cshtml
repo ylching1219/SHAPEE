@@ -137,7 +137,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label asp-for="Contact" class="font-weight-bold">Contact Number</label>
-                                    <input asp-for="Contact" class="form-control" placeholder="Enter contact number" disabled />
+                                    <input asp-for="Contact" class="form-control" placeholder="Enter contact number"
+                                           pattern="[0-9]*" inputmode="numeric" disabled />
                                     <span asp-validation-for="Contact" class="text-danger"></span>
                                 </div>
                             </div>
@@ -229,14 +230,6 @@
                         <h6 class="m-0 font-weight-bold text-primary">Security Information</h6>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Login Attempts:</strong> @Model.LoginAttempts</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Last Password Change:</strong> Not available</p>
-                            </div>
-                        </div>
                         <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
                             <i class="fas fa-lock"></i> Change Password
                         </a>
@@ -253,6 +246,11 @@
                     <div class="card-body">
                         <p><strong>Faculty:</strong> @(staff?.Faculty?.Name ?? "Not Assigned")</p>
                         <p><strong>Date Joined:</strong> @(staff?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
+                            <i class="fas fa-lock"></i> Change Password
+                        </a>
                     </div>
                 </div>
             }
@@ -275,6 +273,11 @@
                                 <p><strong>Date Enrolled:</strong> @(student?.DateJoin.ToString("MMMM dd, yyyy") ?? "N/A")</p>
                                 <p><strong>Status:</strong> <span class="badge badge-success">@Model.Status</span></p>
                             </div>
+                        </div>
+                        <div class="card-body">
+                            <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-warning">
+                                <i class="fas fa-lock"></i> Change Password
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -318,13 +321,39 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
+                $(document).ready(function() {
+            // Contact number validation - only allow numbers
+            const contactInput = $('input[name="Contact"]');
+
+            contactInput.on('input', function() {
+                // Remove any non-numeric characters
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            contactInput.on('keypress', function(e) {
+                // Prevent non-numeric key presses
+                const charCode = e.which ? e.which : e.keyCode;
+                if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    e.preventDefault();
+                    return false;
+                }
+                return true;
+            });
+
+            contactInput.on('paste', function(e) {
+                // Handle paste events
+                e.preventDefault();
+                const pastedText = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
+                const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+                this.value = numbersOnly;
+            });
+
             // Edit button functionality
             $('#editBtn').click(function() {
                 $('#profileForm input:not([readonly]), #profileForm select').prop('disabled', false);
                 @if (isStaff || isStudent)
                 {
-                                <text>$('#profilePictureGroup').removeClass('d-none');</text>
+                                    <text>$('#profilePictureGroup').removeClass('d-none');</text>
                 }
                 $('#formActions').removeClass('d-none');
                 $(this).addClass('d-none');
@@ -335,7 +364,7 @@
                 $('#profileForm input, #profileForm select').prop('disabled', true);
                 @if (isStaff || isStudent)
                 {
-                                <text>$('#profilePictureGroup').addClass('d-none');</text>
+                                    <text>$('#profilePictureGroup').addClass('d-none');</text>
                 }
                 $('#formActions').addClass('d-none');
                 $('#editBtn').removeClass('d-none');
@@ -353,6 +382,11 @@
                     reader.readAsDataURL(file);
                 }
             });
+
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
         });
     </script>
 }

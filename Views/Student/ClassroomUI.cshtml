@@ -1,0 +1,150 @@
+﻿@model IEnumerable<SHAPEE.Models.Course>
+
+@{
+    ViewData["Title"] = "Classroom";
+}
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f6f9;
+    }
+
+
+    .page-header {
+        background: white;
+        padding: 30px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .page-header p {
+            margin-top: 8px;
+            color: #666;
+        }
+
+    /* GRID */
+    .container {
+        width: 92%;
+        margin: auto;
+    }
+
+    .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+    }
+
+    /* CARD */
+    .course-card {
+        background: white;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .course-card img {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+        }
+
+    .card-body {
+        padding: 18px;
+        flex: 1;
+    }
+
+    .course-code {
+        color: #007bff;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .course-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 6px 0;
+    }
+
+
+    .course-credithour {
+        font-size: 0.85rem;
+        margin-top: 6px;
+        color: green;
+        font-weight: bold;
+    }
+
+    .card-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+
+        .card-footer a {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+            .card-footer a:hover {
+                background: #0056c7;
+            }
+</style>
+
+
+<div class="page-header">
+    <div class="container">
+        <h1>Classroom</h1>
+        <p>View your enrolled courses and manage materials</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="course-grid">
+        @if (!Model.Any())
+        {
+            <p>No courses found.</p>
+        }
+        else
+        {
+            @foreach (var course in Model)
+            {
+                <div class="course-card">
+                    <img src="https://img.freepik.com/free-vector/empty-classroom-interior-with-chalkboard_1308-65378.jpg?w=740" alt="@course.Name" />
+
+                    <div class="card-body">
+                        <div class="course-code">@course.Id.ToUpper()</div>
+                        <div class="course-title">@course.Name.ToUpper()</div>
+                        <div class="course-credithour">Credit Hours: @course.CreditHours</div>
+                    </div>
+
+                    <div class="card-footer">
+   
+                        <a href="@Url.Action("StudentClasswork", "Classroom", new { courseId = course.Id })">
+                            Detail
+                        </a>
+
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
