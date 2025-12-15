@@ -1291,5 +1291,123 @@ namespace SHAPEE.Controllers
 
             return Json(materials);
         }
+        // faq
+        public IActionResult FAQ()
+        {
+            //no db
+            return View("~/Views/Student/FAQ.cshtml");
+        }
+        // =======================
+         // STUDENT SUPPORT / CREATE TICKET
+         // =======================
+        [HttpGet]
+        public IActionResult CreateTicket()
+        {
+            return View("~/Views/Student/StudentTicketCreate.cshtml");
+        }
+
+        [HttpPost]
+        public IActionResult CreateTicket(SupportTicket ticket)
+        {
+            //if (!ModelState.IsValid)
+            //{
+            //    // Debug: what errors exist?
+            //    var errors = ModelState.Values.SelectMany(v => v.Errors)
+            //                                  .Select(e => e.ErrorMessage)
+            //                                  .ToList();
+            //    return Content("ModelState invalid: " + string.Join(", ", errors));
+            //}
+
+            //check last id
+            var lastTicketId = db.SupportTickets
+                .OrderByDescending(t => t.Id)
+                .Select(t => t.Id)
+                .FirstOrDefault();
+
+            //generate new id 
+            string newTicketId;
+
+            if (string.IsNullOrEmpty(lastTicketId))
+            {
+                newTicketId = "ST0001";
+            }
+            else
+            {
+                var number = int.Parse(lastTicketId.Substring(2));
+                newTicketId = "ST" + (number + 1).ToString("D4");
+            }
+
+            ticket.Id = newTicketId;
+            ticket.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ticket.Status = "Open";
+            ticket.Priority = ticket.Priority ?? "Normal";
+            ticket.CreatedAt = DateTime.Now;
+            ticket.ResolvedAt = null;
+
+            try
+            {
+                db.SupportTickets.Add(ticket);
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return Content("Error saving ticket: " + ex.Message);
+            }
+
+            TempData["Message"] = "Ticket submitted successfully!";
+            return RedirectToAction("TicketList");
+        }
+
+        // =======================
+        // STUDENT TICKET LIST
+        // =======================
+        public IActionResult TicketList()
+        {
+            //logged in user id
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var tickets = db.SupportTickets
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToList();
+
+            return View("~/Views/Student/StudentTicketList.cshtml", tickets);
+        }
+        [Authorize]
+        public IActionResult TicketDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var ticket = db.SupportTickets
+                .Include(t => t.TicketMessages)   // replies
+                .FirstOrDefault(t => t.Id == id && t.UserId == userId);
+
+            if (ticket == null)
+                return NotFound();
+
+            return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
+        }
+        [HttpGet]
+        public IActionResult GetTickets(string search = "", string status = "")
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var tickets = db.SupportTickets
+                            .Where(t => t.UserId == userId);
+
+            if (!string.IsNullOrEmpty(search))
+                tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
+
+            if (!string.IsNullOrEmpty(status))
+                tickets = tickets.Where(t => t.Status == status);
+
+            tickets = tickets.OrderByDescending(t => t.CreatedAt);
+
+            return PartialView("_TicketTable", tickets.ToList());
+        }
+
+
     }
 }
