@@ -1,0 +1,178 @@
+﻿@model SHAPEE.Models.SupportTicket
+
+@{
+    ViewData["Title"] = "Ticket Details";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f7f9fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        text-align: center;
+        color: #222;
+        margin-top: 30px;
+        font-weight: 700;
+    }
+
+    .alert-success {
+        width: 90%;
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 12px 20px;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        color: #155724;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .ticket-info {
+        max-width: 700px;
+        margin: 20px auto;
+        background: #fff;
+        padding: 25px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+        .ticket-info p {
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+    hr {
+        border: 0;
+        border-top: 1px solid #eee;
+        margin: 25px 0;
+    }
+
+    h4 {
+        margin-top: 20px;
+        color: #007bff;
+        font-weight: 600;
+    }
+
+    .list-group {
+        padding-left: 0;
+        margin-bottom: 20px;
+        list-style: none;
+    }
+
+    .list-group-item {
+        background: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+        .list-group-item strong {
+            color: #007bff;
+        }
+
+        .list-group-item p {
+            margin: 5px 0 0 0;
+            color: #333;
+        }
+
+    form.reply-form {
+        max-width: 700px;
+        margin: 20px auto 50px;
+        background: #fff;
+        padding: 25px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+        form.reply-form textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+            form.reply-form textarea:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 5px rgba(0,123,255,0.3);
+                outline: none;
+            }
+
+        form.reply-form button {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            background: #007bff;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+            form.reply-form button:hover {
+                background: #0056c7;
+                transform: translateY(-2px);
+            }
+</style>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<div class="ticket-info">
+    <h2>Ticket #@Model.Id - @Model.Subject</h2>
+
+    <p>Status: <strong>@Model.Status</strong></p>
+    <p>Priority: <strong>@Model.Priority</strong></p>
+    <p>Description: @Model.Description</p>
+</div>
+
+<hr />
+
+<h4>Replies</h4>
+
+@if (Model.TicketMessages != null && Model.TicketMessages.Any())
+{
+    <ul class="list-group">
+        @foreach (var r in Model.TicketMessages)
+        {
+            <li class="list-group-item">
+                <strong>@r.SenderId</strong>
+                (@r.SentAt.ToString("dd/MM/yyyy HH:mm"))
+                <p>@r.Content</p>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p style="text-align:center; color:#555;">No replies yet.</p>
+}
+
+<hr />
+
+<h4>Reply</h4>
+
+<form asp-action="Reply" method="post" class="reply-form">
+    <input type="hidden" name="ticketId" value="@Model.Id" />
+
+    <textarea name="message" placeholder="Write your reply"></textarea>
+
+    <button type="submit">
+        Send Reply
+    </button>
+</form>

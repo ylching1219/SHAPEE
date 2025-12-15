@@ -1,0 +1,131 @@
+﻿@model IEnumerable<SHAPEE.Models.SupportTicket>
+
+@{
+    ViewData["Title"] = "All Tickets";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f7f9fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        text-align: center;
+        color: #222;
+        margin-top: 30px;
+        font-weight: 700;
+    }
+
+    .alert-success {
+        width: 90%;
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 12px 20px;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        color: #155724;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    table {
+        width: 90%;
+        max-width: 1000px;
+        margin: 0 auto 50px;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    thead {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+        thead th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+    tbody tr {
+        transition: background 0.3s;
+    }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9f2fb;
+        }
+
+    tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        color: #333;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: #fff !important;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: background 0.3s, transform 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-info:hover {
+            background-color: #138496;
+            transform: translateY(-1px);
+        }
+</style>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<h2>All Tickets</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Subject</th>
+            <th>Student</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Created</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Id</td>
+                <td>@t.Subject</td>
+                <td>@t.UserId</td>
+                <td>@t.Status</td>
+                <td>@t.Priority</td>
+                <td>@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>
+                    <a class="btn btn-info btn-sm"
+                       href="@Url.Action("StaffTicketDetails", new { id = t.Id, area = "Staff" })">
+                        View
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

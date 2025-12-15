@@ -13,25 +13,22 @@
 </style>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">Academic Calendar</h1>
-        <p class="text-muted small mt-2">Manage semesters, holidays, exams and academic events</p>
-    </div>
-
+    <h1 class="h3 mb-0 text-gray-800">Academic Calendar</h1>
     <a asp-action="ExportICal" asp-controller="Admin"
        asp-route-semesterId="@Model.SelectedSemesterId"
-       class="btn btn-outline-primary">
-        <i class="fas fa-calendar-download"></i> Export iCal
+       class="btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-download fa-sm text-white-50 mr-2"></i> Export iCal
     </a>
 </div>
 
-<!-- Filter Card -->
 <div class="card shadow mb-4">
-    <div class="card-body">
-        <div class="row align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Semester</label>
-                <select id="semesterFilter" class="form-select">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+        <div class="col-md-5 pl-0">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-filter text-gray-400"></i></span>
+                </div>
+                <select id="semesterFilter" class="form-select border-0 bg-light font-weight-bold text-primary">
                     <option value="">All Semesters</option>
                     @foreach (var s in Model.Semesters)
                     {
@@ -39,46 +36,42 @@
                         if (s.Id == Model.SelectedSemesterId)
                         {
                             <option value="@s.Id" selected="selected" data-start-date="@startDateStr">
-                                @s.Id (@s.StartDate.ToString("dd MMM yyyy") - @s.EndDate.ToString("dd MMM yyyy"))
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
                             </option>
                         }
                         else
                         {
                             <option value="@s.Id" data-start-date="@startDateStr">
-                                @s.Id (@s.StartDate.ToString("dd MMM yyyy") - @s.EndDate.ToString("dd MMM yyyy"))
+                                Semester @s.Id (@s.StartDate.ToString("MMM yyyy") - @s.EndDate.ToString("MMM yyyy"))
                             </option>
                         }
                     }
                 </select>
             </div>
+        </div>
 
-            <div class="col-md-8 d-flex justify-content-end align-items-end gap-2">
-                <button class="btn btn-success" id="btnAddSemester">
-                    <i class="fas fa-calendar-plus"></i> Add Semester
-                </button>
-                <button class="btn btn-primary" id="btnAddEvent">
-                    <i class="fas fa-plus"></i> Add Event
-                </button>
-            </div>
+        <div>
+            <button class="btn btn-success btn-sm shadow-sm mr-2" id="btnAddSemester">
+                <i class="fas fa-calendar-plus mr-1"></i> Add Semester
+            </button>
+            <button class="btn btn-primary btn-sm shadow-sm" id="btnAddEvent">
+                <i class="fas fa-plus mr-1"></i> Add Event
+            </button>
         </div>
     </div>
-</div>
 
-<!-- Calendar -->
-<div class="card shadow mb-4">
     <div class="card-body">
         <div id="calendar"></div>
     </div>
 </div>
 
-<!-- Semester Modal -->
 <div class="modal fade" id="semesterModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form id="semesterForm">
                 @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 class="modal-title">Semester Configuration</h5>
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-weight-bold text-gray-800">Semester Configuration</h5>
                     <button type="button" class="close" data-dismiss="modal">
                         <span>&times;</span>
                     </button>
@@ -87,70 +80,68 @@
                 <div class="modal-body">
                     <input type="hidden" id="semesterId" />
 
-                    <div class="mb-3">
-                        <label class="form-label">Semester ID</label>
-                        <input type="text" class="form-control" id="semesterIdInput" 
-                               placeholder="e.g., 202501, 202505, 202509" required 
-                               pattern="[0-9]{6}" title="Format: YYYYMM (e.g., 202501)" />
-                        <small class="form-text text-muted">Format: YYYYMM (Year + Month: 01=Jan, 05=May, 09=Sep)</small>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Semester ID</label>
+                            <input type="text" class="form-control" id="semesterIdInput"
+                                   placeholder="e.g., 202501" required
+                                   pattern="[0-9]{6}" title="Format: YYYYMM" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Type</label>
+                            <select class="form-select" id="semesterType" required>
+                                <option value="">Select Type</option>
+                                <option value="Long">Long (14 weeks)</option>
+                                <option value="Short">Short (7 weeks)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="semesterStartDate" required />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Start Date</label>
+                            <input type="date" class="form-control" id="semesterStartDate" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">End Date</label>
+                            <input type="date" class="form-control bg-light" id="semesterEndDate" readonly />
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Semester Type</label>
-                        <select class="form-select" id="semesterType" required>
-                            <option value="">Select Type</option>
-                            <option value="Long">Long Semester (14 weeks)</option>
-                            <option value="Short">Short Semester (7 weeks)</option>
-                        </select>
+                    <div class="alert alert-info py-2 small" id="semesterInfo" style="display:none;">
+                        <i class="fas fa-info-circle mr-1"></i> <span id="semesterWeeks"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="semesterEndDate" readonly />
-                        <small class="form-text text-muted">Automatically calculated based on semester type</small>
-                    </div>
+                    <hr class="my-3">
 
-                    <div class="alert alert-info" id="semesterInfo" style="display:none;">
-                        <strong>Calculated:</strong> <span id="semesterWeeks"></span> weeks
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="semesterIsActive" checked>
-                            <label class="form-check-label" for="semesterIsActive">
-                                Active Semester
-                            </label>
-                            <small class="form-text text-muted d-block">Active semesters are used for attendance and scheduling</small>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="font-weight-bold text-gray-800 mb-0" for="semesterIsActive">Active Status</label>
+                            <div class="small text-muted">Enable for attendance tracking</div>
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="semesterIsActive" checked>
+                            <label class="custom-control-label" for="semesterIsActive"></label>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer d-flex justify-content-end align-items-center gap-2">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save Semester
-                    </button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Semester</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Event Modal -->
 <div class="modal fade" id="eventModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form id="eventForm">
                 @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 class="modal-title">Calendar Event</h5>
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-weight-bold text-gray-800">Event Details</h5>
                     <button type="button" class="close" data-dismiss="modal">
                         <span>&times;</span>
                     </button>
@@ -159,49 +150,46 @@
                 <div class="modal-body">
                     <input type="hidden" id="eventId" />
 
-                    <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input type="text" class="form-control" id="eventTitle" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="eventDescription"></textarea>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Title</label>
+                            <input type="text" class="form-control" id="eventTitle" placeholder="Event Name" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Category</label>
+                            <select class="form-select" id="eventType">
+                                <option>Public Holiday</option>
+                                <option>Exam Period</option>
+                                <option>Academic Event</option>
+                                <option>Semester Break</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Start</label>
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Start Time</label>
                             <input type="datetime-local" class="form-control" id="eventStart" required />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">End</label>
+                            <label class="small font-weight-bold text-uppercase text-gray-500">End Time</label>
                             <input type="datetime-local" class="form-control" id="eventEnd" required />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select class="form-select" id="eventType">
-                            <option>Public Holiday</option>
-                            <option>Exam Period</option>
-                            <option>Academic Event</option>
-                            <option>Semester Break</option>
-                        </select>
+                        <label class="small font-weight-bold text-uppercase text-gray-500">Description</label>
+                        <textarea class="form-control" id="eventDescription" rows="3" placeholder="Add details..."></textarea>
                     </div>
                 </div>
 
-                <div class="modal-footer d-flex justify-content-between align-items-center gap-2">
-                    <button type="button" class="btn btn-danger" id="btnDeleteEvent" style="display:none;">
-                        <i class="fas fa-trash"></i> Delete
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteEvent" style="display:none;">
+                        <i class="fas fa-trash-alt mr-1"></i> Delete
                     </button>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Event
-                        </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Event</button>
                     </div>
                 </div>
             </form>
