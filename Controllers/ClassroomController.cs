@@ -164,4 +164,16 @@ public class ClassroomController : Controller
 
         return View("~/Views/Student/ClassroomUI.cshtml", courses);
     }
+    // =======================
+    // STAFF CLASSROOM UI
+    // =======================
+    public IActionResult StaffClassroomUI()
+    {
+        var courses = _db.Courses
+            .OrderBy(c => c.Id)
+            .ToList();
+
+        return View("~/Views/Staff/ClassroomUI.cshtml", courses);
+    }
+
 }
