@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SHAPEE.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -469,35 +469,6 @@ namespace SHAPEE.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Enrollments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StudentId = table.Column<string>(type: "nvarchar(50)", nullable: true),
-                    ClassSectionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Reason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    EnrollmentDate = table.Column<DateOnly>(type: "date", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Enrollments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Enrollments_ClassSections_ClassSectionId",
-                        column: x => x.ClassSectionId,
-                        principalTable: "ClassSections",
-                        principalColumn: "SectionId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Enrollments_Users_StudentId",
-                        column: x => x.StudentId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PaymentTransactions",
                 columns: table => new
                 {
@@ -647,16 +618,6 @@ namespace SHAPEE.Migrations
                 column: "ClassSectionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_ClassSectionId",
-                table: "Enrollments",
-                column: "ClassSectionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_StudentId",
-                table: "Enrollments",
-                column: "StudentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Invoices_SemesterId",
                 table: "Invoices",
                 column: "SemesterId");
@@ -771,9 +732,6 @@ namespace SHAPEE.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChatMessages");
-
-            migrationBuilder.DropTable(
-                name: "Enrollments");
 
             migrationBuilder.DropTable(
                 name: "LeaveApplications");
