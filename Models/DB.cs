@@ -19,7 +19,6 @@ public class DB(DbContextOptions options) : DbContext(options)
     public DbSet<ProgramCourse> ProgramCourses { get; set; }
     public DbSet<ClassSection> ClassSections { get; set; }
     public DbSet<TutorialGroup> TutorialGroups { get; set; }
-    public DbSet<Enrollment> Enrollments { get; set; }
 
     public DbSet<Room> Rooms { get; set; }
     public DbSet<Announcement> Announcements { get; set; }
@@ -110,9 +109,6 @@ public class Student : User
     //FK to TutorialGroup -- 1 student belong to 1 tutorial group
     public int? TutorialGroupId { get; set; }
     public TutorialGroup TutorialGroup { get; set; }
-
-    //1 student have many enrollments
-    public List<Enrollment> Enrollments { get; set; } = [];
 
     //1 student have many attendance records
     public List<Attendance> Attendances { get; set; } = [];
@@ -255,9 +251,6 @@ public class ClassSection
     [MaxLength(10)]
     public string? JoinCode { get; set; }
 
-    //1 class section have many enrollments
-    public List<Enrollment> Enrollments { get; set; } = [];
-
     //1 class section have many attendance records
     public List<Attendance> Attendances { get; set; } = [];
 
@@ -293,31 +286,6 @@ public class TutorialGroup
     //1 tutorial group have many students
     public List<Student> Students { get; set; } = [];
 
-}
-
-public class Enrollment
-{
-    [Key]
-    public int Id { get; set; } 
-
-    //FK to Student--1 enrollment belong to 1 student
-    public string? StudentId { get; set; }
-    public Student Student { get; set; }
-
-    //FK to ClassSection --1 enrollment belong to 1 class section
-    public string ClassSectionId { get; set; } 
-    public ClassSection ClassSection { get; set; }
-
-    [MaxLength(20)]
-    public string Type { get; set; } //Enrolled, Dropped
-
-    [MaxLength(200)]
-    public string? Reason { get; set; }
-
-    public DateOnly EnrollmentDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-
-    [MaxLength(20)]
-    public string Status { get; set; } = "Pending"; //Approved, Rejected, Pending 
 }
 
 //JS

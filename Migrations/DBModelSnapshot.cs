@@ -294,47 +294,6 @@ namespace SHAPEE.Migrations
                     b.ToTable("CourseTasks");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.Enrollment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClassSectionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateOnly>("EnrollmentDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("StudentId")
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassSectionId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("Enrollments");
-                });
-
             modelBuilder.Entity("SHAPEE.Models.Faculty", b =>
                 {
                     b.Property<string>("Id")
@@ -1017,23 +976,6 @@ namespace SHAPEE.Migrations
                     b.Navigation("ClassSection");
                 });
 
-            modelBuilder.Entity("SHAPEE.Models.Enrollment", b =>
-                {
-                    b.HasOne("SHAPEE.Models.ClassSection", "ClassSection")
-                        .WithMany("Enrollments")
-                        .HasForeignKey("ClassSectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SHAPEE.Models.Student", "Student")
-                        .WithMany("Enrollments")
-                        .HasForeignKey("StudentId");
-
-                    b.Navigation("ClassSection");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("SHAPEE.Models.Invoice", b =>
                 {
                     b.HasOne("SHAPEE.Models.Semester", "Semester")
@@ -1219,8 +1161,6 @@ namespace SHAPEE.Migrations
             modelBuilder.Entity("SHAPEE.Models.ClassSection", b =>
                 {
                     b.Navigation("Attendances");
-
-                    b.Navigation("Enrollments");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Course", b =>
@@ -1276,8 +1216,6 @@ namespace SHAPEE.Migrations
             modelBuilder.Entity("SHAPEE.Models.Student", b =>
                 {
                     b.Navigation("Attendances");
-
-                    b.Navigation("Enrollments");
 
                     b.Navigation("Invoices");
 
