@@ -154,8 +154,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="staffContact" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="staffContact" name="contact" placeholder="+60 12-345-6789">
+                        <label for="contactNumber" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" name="contact"
+                               placeholder="Contact Number" pattern="[0-9]*" inputmode="numeric">
+                        <div class="invalid-feedback">Please enter numbers only.</div>
                     </div>
 
                     <div class="form-group">
@@ -235,6 +237,27 @@
             const modalTitle = document.getElementById('addEditStaffModalLabel');
             const form = document.getElementById('staffForm');
             const statusGroup = document.getElementById('staffStatusGroup');
+            const contactNumberInput = document.getElementById('contactNumber');
+
+            contactNumberInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            contactNumberInput.addEventListener('keypress', function(e) {
+            const charCode = e.which ? e.which : e.keyCode;
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+            });
+
+            contactNumberInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+            this.value = numbersOnly;
+            });
 
             // Prepare Add Staff Modal
             window.prepareAddStaffModal = function() {

@@ -114,8 +114,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="adminContact" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="adminContact" name="contact" placeholder="+60 12-345-6789">
+                        <label for="contactNumber" class="font-weight-medium">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" name="contact"
+                               placeholder="Contact Number" pattern="[0-9]*" inputmode="numeric">
+                        <div class="invalid-feedback">Please enter numbers only.</div>
                     </div>
 
                     <div class="form-group" id="adminStatusGroup" style="display:none;">
@@ -179,12 +181,31 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Modal elements
             const modalTitle = document.getElementById('addEditAdminModalLabel');
             const form = document.getElementById('adminForm');
             const statusGroup = document.getElementById('adminStatusGroup');
+            const contactNumberInput = document.getElementById('contactNumber');
 
-            // Prepare Add Admin Modal
+            contactNumberInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            contactNumberInput.addEventListener('keypress', function(e) {
+            const charCode = e.which ? e.which : e.keyCode;
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+            });
+
+            contactNumberInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+            this.value = numbersOnly;
+            });
+
             window.prepareAddAdminModal = function() {
                 modalTitle.innerText = 'Add New Admin';
                 form.setAttribute('action', '@Url.Action("CreateAdmin", "Admin")');
@@ -199,7 +220,6 @@
                 });
             };
 
-            // Form validation
             form.addEventListener('submit', function(e) {
                 if (!form.checkValidity()) {
                     e.preventDefault();
@@ -208,7 +228,6 @@
                 form.classList.add('was-validated');
             }, false);
 
-            // Prepare Edit Modal
             window.prepareEditModal = function(element) {
                 const row = element.closest('tr');
                 const adminData = JSON.parse(row.getAttribute('data-admin'));
@@ -216,7 +235,6 @@
                 modalTitle.innerText = 'Edit Admin: ' + adminData.FirstName + ' ' + adminData.LastName;
                 form.setAttribute('action', '@Url.Action("EditAdmin", "Admin")');
 
-                // Populate form fields
                 document.getElementById('adminId').value = adminData.Id;
                 document.getElementById('adminFirstName').value = adminData.FirstName;
                 document.getElementById('adminLastName').value = adminData.LastName;
@@ -224,10 +242,8 @@
                 document.getElementById('adminContact').value = adminData.Contact || '';
                 document.getElementById('adminStatus').value = (adminData.Status || '').trim();
 
-                // Show status field for edit
                 statusGroup.style.display = 'block';
 
-                // Remove validation states
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
                     input.classList.remove('is-invalid');
@@ -235,7 +251,6 @@
                 });
             };
 
-            // Prepare Delete Modal
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
                 const adminName = row.getAttribute('data-admin-name');
@@ -245,7 +260,6 @@
                 document.getElementById('deleteAdminId').value = adminData.Id;
             };
 
-            // Toggle Suspend/Activate
             window.toggleSuspend = function(adminId, element) {
                 if (confirm('Are you sure you want to change this admin\'s status?')) {
                     const formData = new FormData();
@@ -270,7 +284,6 @@
                 }
             };
 
-            // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(alert => {
@@ -281,7 +294,6 @@
                 });
             }, 5000);
 
-            // Export CSV functionality
             document.getElementById('exportAdminCsvBtn').addEventListener('click', function() {
                 alert('Export CSV functionality to be implemented');
             });

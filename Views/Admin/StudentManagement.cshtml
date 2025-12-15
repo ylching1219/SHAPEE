@@ -159,7 +159,9 @@
 
                     <div class="form-group">
                         <label for="contactNumber" class="font-weight-medium">Contact Number</label>
-                        <input type="tel" class="form-control" id="contactNumber" name="contact" placeholder="+60 12-345-6789">
+                        <input type="tel" class="form-control" id="contactNumber" name="contact"
+                               placeholder="Contact Number" pattern="[0-9]*" inputmode="numeric">
+                        <div class="invalid-feedback">Please enter numbers only.</div>
                     </div>
 
                     <div class="form-group">
@@ -271,12 +273,31 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Modal elements
             const modalTitle = document.getElementById('addEditStudentModalLabel');
             const form = document.getElementById('studentForm');
             const statusGroup = document.getElementById('statusGroup');
+            const contactNumberInput = document.getElementById('contactNumber');
 
-            // Build Faculty-Program mapping from server data
+            contactNumberInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            contactNumberInput.addEventListener('keypress', function(e) {
+            const charCode = e.which ? e.which : e.keyCode;
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+            });
+
+            contactNumberInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+            this.value = numbersOnly;
+            });
+
             const programsByFaculty = {};
 
             @foreach (var faculty in ViewBag.Faculties)
@@ -297,7 +318,6 @@
                     </text>
             }
 
-            // Faculty dropdown change handler
             const facultySelect = document.getElementById('faculty');
             const programSelect = document.getElementById('program');
 
@@ -318,11 +338,9 @@
                     programSelect.innerHTML = '<option value="">Select Faculty First</option>';
                 }
 
-                // Reset program selection
                 programSelect.value = '';
             });
 
-            // Prepare Add Modal
             window.prepareAddModal = function() {
                 modalTitle.innerText = 'Add New Student';
                 form.setAttribute('action', '@Url.Action("CreateStudent", "Admin")');
@@ -341,7 +359,6 @@
                 });
             };
 
-            // Form validation
             form.addEventListener('submit', function(e) {
                 if (!form.checkValidity()) {
                     e.preventDefault();
@@ -350,7 +367,6 @@
                 form.classList.add('was-validated');
             }, false);
 
-            // Prepare Edit Modal
             window.prepareEditModal = function(element) {
                 const row = element.closest('tr');
                 const studentData = JSON.parse(row.getAttribute('data-student'));
@@ -358,7 +374,6 @@
                 modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
                 form.setAttribute('action', '@Url.Action("EditStudent", "Admin")');
 
-                // Populate form fields
                 document.getElementById('studentId').value = studentData.Id;
                 document.getElementById('firstName').value = studentData.FirstName;
                 document.getElementById('lastName').value = studentData.LastName;
@@ -370,7 +385,6 @@
                 document.getElementById('semester').value = studentData.Semester || '1';
                 document.getElementById('status').value = (studentData.Status || '').trim();
 
-                // Find faculty for the program
                 let foundFaculty = '';
                 for (const [faculty, programs] of Object.entries(programsByFaculty)) {
                     if (programs.some(p => p.name === studentData.Program)) {
@@ -379,21 +393,17 @@
                     }
                 }
 
-                // Set faculty and trigger change to populate programs
                 if (foundFaculty) {
                     facultySelect.value = foundFaculty;
                     facultySelect.dispatchEvent(new Event('change'));
 
-                    // Set program after dropdown is populated
                     setTimeout(() => {
                         programSelect.value = studentData.Program;
                     }, 0);
                 }
 
-                // Show status field for edit
                 statusGroup.style.display = 'block';
 
-                // Remove validation states
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
                     input.classList.remove('is-invalid');
@@ -401,7 +411,6 @@
                 });
             };
 
-            // Prepare Delete Modal
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
                 const studentName = row.getAttribute('data-student-name');
@@ -411,7 +420,6 @@
                 document.getElementById('deleteStudentId').value = studentData.Id;
             };
 
-            // Toggle Suspend/Activate
             window.toggleSuspend = function(studentId, element) {
                 if (confirm('Are you sure you want to change this student\'s status?')) {
                     const formData = new FormData();
@@ -436,7 +444,6 @@
                 }
             };
 
-            // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(alert => {
@@ -447,7 +454,6 @@
                 });
             }, 5000);
 
-            // Export CSV functionality
             document.getElementById('exportCsvBtn').addEventListener('click', function() {
                 alert('Export CSV functionality to be implemented');
             });
