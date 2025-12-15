@@ -42,9 +42,16 @@
                     <i class="bi bi-people-fill me-2"></i>
                     <span id="groupTitle">Select a group</span>
                 </div>
-                <button type="button" class="btn btn-primary btn-sm" id="addStudentBtn" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <button type="button"
+                        class="btn btn-primary btn-sm"
+                        id="addStudentBtn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addStudentModal"
+                        onclick="loadUnassignedStudents()"
+                        disabled>
                     <i class="bi bi-plus-circle me-1"></i>Add Student
                 </button>
+
             </div>
             <div class="card-body">
                 <div id="studentsInGroup">
@@ -73,16 +80,37 @@
                 </button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="groupIdInput" value="" />
+                <div id="selectedStudentsPanel" class="selected-students-panel" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong><i class="bi bi-check-circle me-2"></i>Selected Students (<span id="selectedStudentCount">0</span>)</strong>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearSelectedStudents()">
+                            <i class="bi bi-x-circle me-1"></i>Clear All
+                        </button>
+                    </div>
+                    <div id="selectedStudentsChips" class="d-flex flex-wrap">
+                    </div>
+                </div>
                 <div class="search-box mb-3">
                     <i class="bi bi-search search-icon"></i>
                     <input type="text" class="form-control search-input" id="studentSearch" placeholder="Search students by name or ID...">
                 </div>
                 <div class="student-list-box" id="availableStudentsList">
-                    <!-- Available students will be loaded here -->
+                    <div class="empty-state" id="noStudentsMessage">
+                        <i class="bi bi-folder2-open"></i>
+                        <p class="mb-0">No available students to add.</p>
+                    </div>
+                    <div id="studentsContainer"></div>
                 </div>
             </div>
+
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn closeBtn" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirmAddBtn" onclick="confirmAddStudents()" disabled>
+                    <i class="bi bi-check-circle me-1"></i>Confirm Add (<span id="confirmCount">0</span>)
+                </button>
             </div>
         </div>
     </div>

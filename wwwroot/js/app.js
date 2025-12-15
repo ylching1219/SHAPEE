@@ -137,9 +137,6 @@ $("#filter").on("change", function () {
     $("#filterForm").submit();
 });
 
-$(".filter").on("change", function () {
-    $("#filterForm").submit();
-});
 
 $("#filterForm").on("reset", function () {
     setTimeout(() => {

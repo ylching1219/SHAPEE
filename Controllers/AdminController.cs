@@ -1342,7 +1342,7 @@ namespace SHAPEE.Controllers
         }
 
         //Group Management
-        public IActionResult GroupManagement(string? ProgramId ,int? yearLevel ,int? semester)
+        public IActionResult GroupManagement(string? ProgramId, int? yearLevel, int? semester)
         {
             ViewData["Title"] = "Group Management";
             var groupList = db.TutorialGroups
@@ -1355,17 +1355,17 @@ namespace SHAPEE.Controllers
                 groupList = groupList.Where(g => g.ProgramId == ProgramId);
             }
 
-            if(yearLevel != null)
+            if (yearLevel != null)
             {
-                groupList =  groupList.Where(g => g.YearLevel == yearLevel);
+                groupList = groupList.Where(g => g.YearLevel == yearLevel);
             }
 
-            if(semester != null)
+            if (semester != null)
             {
                 groupList = groupList.Where(g => g.Semester == semester);
             }
 
-            
+
             var program = db.Programs
                 .OrderBy(p => p.Id)
                 .ToList();
@@ -1374,7 +1374,7 @@ namespace SHAPEE.Controllers
             ViewBag.ProgramList = new SelectList(program, "Id", "Name");
             var vm = new GroupManageVM
             {
-                Groups = groupList.ToList() 
+                Groups = groupList.ToList()
             };
 
             if (Request.IsAjax())
@@ -1435,7 +1435,7 @@ namespace SHAPEE.Controllers
             {
                 db.TutorialGroups.Remove(group);
                 db.SaveChanges();
-                TempData["SuccessMessage"] = $"Group '{group.GroupName}' deleted successfully."; 
+                TempData["SuccessMessage"] = $"Group '{group.GroupName}' deleted successfully.";
             }
             catch (DbUpdateException)
             {
@@ -1458,12 +1458,12 @@ namespace SHAPEE.Controllers
                 query = query.Where(p => p.ProgramId == ProgramId);
             }
 
-            if (yearLevel !=null)
+            if (yearLevel != null)
             {
                 query = query.Where(p => p.YearLevel == yearLevel);
             }
 
-            if (semester!=null)
+            if (semester != null)
             {
                 query = query.Where(p => p.Semester == semester);
             }
@@ -1486,51 +1486,58 @@ namespace SHAPEE.Controllers
         }
 
         //Group Assignment 
-        public IActionResult AssignGroup(string? ProgramId, int? Year , int? Sem)
+        public IActionResult AssignGroup(string? ProgramId, int? Year, int? Sem)
         {
             var program = db.Programs
                 .OrderBy(p => p.Id)
                 .ToList();
 
-           
+            ViewBag.ProgramList = new SelectList(program, "Id", "Name");
+
+            if (string.IsNullOrEmpty(ProgramId) || !Year.HasValue || !Sem.HasValue)
+            {
+                if (Request.IsAjax())
+                {
+                    return PartialView("_AssignGroup", new AssignGroupVM
+                    {
+                        Groups = new List<TutorialGroup>()
+                    });
+                }
+            }
+
             var group = db.TutorialGroups
                     .Where(t => t.ProgramId == ProgramId)
-                    .OrderBy(p => p.Id)
+                    .OrderBy(p => p.GroupName)
                     .AsQueryable();
 
-            var student = db.Students
-                .Where(s => s.ProgramId == ProgramId)
-                .OrderBy(s => s.Id)
-                .AsQueryable();
-
-           
+            if(!string.IsNullOrEmpty(ProgramId))
+            {
+                group = group.Where(g => g.ProgramId == ProgramId);
+            }
             if (Year != null)
             {
-               group = group.Where(g => g.YearLevel == Year);
-               student = student.Where(s => s.YearLevel == Year);
+                group = group.Where(g => g.YearLevel == Year);
             }
 
-            if(Sem != null)
+            if (Sem != null)
             {
                 group = group.Where(g => g.Semester == Sem);
-                student = student.Where(s => s.Semester == Sem);
             }
-            Console.WriteLine("ProgramId: " + ProgramId);
-            Console.WriteLine("Student :" + student.ToList().Count);
 
-            ViewBag.ProgramList = new SelectList(program, "Id", "Name");
+
+
 
             var vm = new AssignGroupVM
             {
                 Groups = group.ToList(),
-                StudentList = student.ToList()
             };
             if (Request.IsAjax())
             {
-                return PartialView("_AssignGroup",vm);
+                return PartialView("_AssignGroup", vm);
             }
             return View(vm);
         }
+
         [HttpGet]
         public IActionResult GetStudentsByGroup(int groupId)
         {
@@ -1546,6 +1553,106 @@ namespace SHAPEE.Controllers
 
             return Json(students);
         }
+
+        [HttpGet]
+        public IActionResult GetUnassignedStudents(string? programId, int? year, int? semester)
+        {
+            var query = db.Students.AsQueryable();
+
+            Console.WriteLine("ProramId: " + programId);
+            query = query.Where(s => s.TutorialGroupId == null);
+
+            // Apply filters if provided
+            if (!string.IsNullOrEmpty(programId))
+                query = query.Where(s => s.ProgramId == programId);
+
+            if (year != null)
+                query = query.Where(s => s.YearLevel == year);
+
+            if (semester != null)
+                query = query.Where(s => s.Semester == semester);
+
+            var students = query
+                .Select(s => new
+                {
+                    s.Id,
+                    FullName = s.LastName + " " + s.FirstName
+                })
+                .OrderBy(s => s.FullName)
+                .ToList();
+
+            return Json(students);
+        }
+
+        [HttpPost]
+        public IActionResult RemoveStudentFromGroup(string studentId)
+        {
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+                return Json(new { success = false, message = "Student not found" });
+
+            if (student.TutorialGroupId == null)
+                return Json(new { success = false, message = "Student not assigned to any group" });
+
+            var groupId = student.TutorialGroupId;
+
+            var group = db.TutorialGroups.FirstOrDefault(g => g.Id == groupId);
+
+            student.TutorialGroupId = null;
+
+            if (group != null && group.NumberOfStudents > 0)
+                group.NumberOfStudents--;
+
+            db.SaveChanges();
+
+            return Json(new
+            {
+                success = true,
+                message = $"Student {student.FullName} was removed from group '{group!.GroupName}'.",
+                newCount = group?.NumberOfStudents ?? 0
+            });
+        }
+
+        [HttpPost]
+        public IActionResult AddStudentToGroup([FromBody] AssignGroupVM model)
+        {
+            Console.WriteLine("Selected Group ID: " + model.SelectedGroupId);
+            Console.WriteLine("Number of Students to Add: " + (model.StudentList?.Count ?? 0));
+            if (model.StudentList == null || !model.StudentList.Any())
+            {
+                return Json(new { success = false, message = "No students selected." });
+            }
+
+            var group = db.TutorialGroups.FirstOrDefault(g => g.Id == model.SelectedGroupId);
+            if (group == null)
+            {
+                return Json(new { success = false, message = "Group not found." });
+            }
+
+            int addedCount = 0;
+            foreach (var student in model.StudentList)
+            {
+                var s = db.Students.FirstOrDefault(st => st.Id == student.Id);
+                if (s != null)
+                {
+                    s.TutorialGroupId = model.SelectedGroupId;
+                    addedCount++;
+                }
+            }
+
+            group.NumberOfStudents += addedCount;
+            db.SaveChanges();
+            var count = db.Students.Count(s => s.TutorialGroupId == model.SelectedGroupId);
+
+            return Json(new { success = true, 
+                message = $"{addedCount} student(s) added to group '{group.GroupName}' successfully.", 
+                newCount = count });
+        }
+
+
+
+
 
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
@@ -1804,8 +1911,8 @@ namespace SHAPEE.Controllers
         {
             var dateOnly = DateOnly.FromDateTime(date);
             return db.Semesters
-                .FirstOrDefault(s => s.IsActive && 
-                                    dateOnly >= s.StartDate && 
+                .FirstOrDefault(s => s.IsActive &&
+                                    dateOnly >= s.StartDate &&
                                     dateOnly <= s.EndDate);
         }
 
@@ -1813,7 +1920,7 @@ namespace SHAPEE.Controllers
         public IActionResult SemesterConfig()
         {
             ViewData["Title"] = "Semester Configuration";
-            
+
             var semesters = db.Semesters
                 .OrderByDescending(s => s.Id)
                 .ToList();
@@ -1843,7 +1950,7 @@ namespace SHAPEE.Controllers
             {
                 //calculate end date based on semester type
                 int weeks = semesterType == "Long" ? 14 : 7;
-                var endDate = startDate.AddDays(weeks * 7 - 1); 
+                var endDate = startDate.AddDays(weeks * 7 - 1);
 
                 if (endDate <= startDate)
                 {
@@ -1869,15 +1976,16 @@ namespace SHAPEE.Controllers
                 {
                     semester.StartDate = startDate;
                     semester.EndDate = endDate;
-                    semester.IsActive = isActive; 
+                    semester.IsActive = isActive;
                 }
 
                 db.SaveChanges();
 
                 if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = "Semester saved successfully.",
                         semesterType = semesterType,
                         weeks = Math.Round(calculatedWeeks, 1),
@@ -1904,7 +2012,7 @@ namespace SHAPEE.Controllers
         public IActionResult EventManagement(string? semesterId = null)
         {
             ViewData["Title"] = "Academic Calendar";
-            
+
             var eventsQuery = db.CalendarEvents.AsQueryable();
 
             if (!string.IsNullOrEmpty(semesterId))
@@ -1912,7 +2020,7 @@ namespace SHAPEE.Controllers
                 var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
                 if (semester != null)
                 {
-                    eventsQuery = eventsQuery.Where(e => 
+                    eventsQuery = eventsQuery.Where(e =>
                         e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
                         e.EndTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
                 }
@@ -1949,12 +2057,12 @@ namespace SHAPEE.Controllers
         {
             DateTime startDate;
             DateTime endDate;
-            
+
             if (!DateTime.TryParse(start, out startDate))
             {
                 startDate = DateTime.Now.AddMonths(-1);
             }
-            
+
             if (!DateTime.TryParse(end, out endDate))
             {
                 endDate = DateTime.Now.AddMonths(1);
@@ -1975,7 +2083,7 @@ namespace SHAPEE.Controllers
                     //convert DateOnly to DateTime for comparison
                     var semesterStart = semester.StartDate.ToDateTime(TimeOnly.MinValue);
                     var semesterEnd = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
-                    
+
                     eventsQuery = eventsQuery.Where(e =>
                         e.StartTime.Date >= semesterStart.Date &&
                         e.StartTime.Date <= semesterEnd.Date);
@@ -1985,13 +2093,13 @@ namespace SHAPEE.Controllers
             var calendarEvents = eventsQuery.ToList();
 
             //add calendar events
-            eventsList.AddRange(calendarEvents.Select(e => 
+            eventsList.AddRange(calendarEvents.Select(e =>
             {
                 //check if event is effectively all-day (starts at midnight or spans full day)
                 var isAllDay = (e.StartTime.Hour == 0 && e.StartTime.Minute == 0) &&
-                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 || 
+                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 ||
                                e.EndTime.Hour == 23 && e.EndTime.Minute == 59);
-                
+
                 return new
                 {
                     id = e.Id,
@@ -2011,7 +2119,7 @@ namespace SHAPEE.Controllers
 
             //get semesters and add them as events
             var allSemesters = db.Semesters.ToList();
-            
+
             var semesters = allSemesters.Where(s =>
             {
                 var sStart = s.StartDate.ToDateTime(TimeOnly.MinValue);
@@ -2058,11 +2166,11 @@ namespace SHAPEE.Controllers
         {
             return eventType switch
             {
-                "Public Holiday" => "#c82333",      
-                "Exam Period" => "#e0a800",         
-                "Academic Event" => "#218838",      
-                "Semester Break" => "#138496",      
-                _ => "#343a40"                      
+                "Public Holiday" => "#c82333",
+                "Exam Period" => "#e0a800",
+                "Academic Event" => "#218838",
+                "Semester Break" => "#138496",
+                _ => "#343a40"
             };
         }
 
@@ -2074,7 +2182,7 @@ namespace SHAPEE.Controllers
         //create or update event
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SaveEvent(string? id, string title, string description, 
+        public IActionResult SaveEvent(string? id, string title, string description,
             DateTime startTime, DateTime endTime, string type)
         {
             try
@@ -2088,8 +2196,9 @@ namespace SHAPEE.Controllers
                 var conflictCheck = CheckConflict(id, startTime, endTime);
                 if (conflictCheck.HasConflict)
                 {
-                    return Json(new { 
-                        success = false, 
+                    return Json(new
+                    {
+                        success = false,
                         message = conflictCheck.Message,
                         conflicts = conflictCheck.ConflictingEvents.Select(e => new { e.Title, e.StartTime, e.EndTime })
                     });
@@ -2127,8 +2236,9 @@ namespace SHAPEE.Controllers
 
                 db.SaveChanges();
 
-                return Json(new { 
-                    success = true, 
+                return Json(new
+                {
+                    success = true,
                     message = string.IsNullOrEmpty(id) ? "Event created successfully." : "Event updated successfully.",
                     eventId = calendarEvent.Id
                 });
@@ -2162,8 +2272,9 @@ namespace SHAPEE.Controllers
                 var conflictCheck = CheckConflict(eventId, newStart, updatedEnd);
                 if (conflictCheck.HasConflict)
                 {
-                    return Json(new { 
-                        success = false, 
+                    return Json(new
+                    {
+                        success = false,
                         message = conflictCheck.Message,
                         conflicts = conflictCheck.ConflictingEvents.Select(e => new { e.Title, e.StartTime, e.EndTime })
                     });
@@ -2210,7 +2321,7 @@ namespace SHAPEE.Controllers
         private ConflictCheckVM CheckConflict(string? excludeEventId, DateTime startTime, DateTime endTime)
         {
             var conflictingEvents = db.CalendarEvents
-                .Where(e => e.Id != excludeEventId && 
+                .Where(e => e.Id != excludeEventId &&
                            ((e.StartTime <= startTime && e.EndTime > startTime) ||
                             (e.StartTime < endTime && e.EndTime >= endTime) ||
                             (e.StartTime >= startTime && e.EndTime <= endTime)))
@@ -2285,8 +2396,8 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "Semester not found." });
             }
 
-            return Json(new 
-            { 
+            return Json(new
+            {
                 success = true,
                 id = semester.Id,
                 startDate = semester.StartDate.ToString("yyyy-MM-dd"),

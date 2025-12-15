@@ -110,7 +110,7 @@ namespace SHAPEE.Models
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
         public List<Student>? StudentList { get; set; } = [];
-        public string? SelectedGroupId { get; set; }
+        public int? SelectedGroupId { get; set; }
         public string? ProgramId { get; set; }
         public int? YearLevel { get; set; }
         public int? Semester { get; set; }

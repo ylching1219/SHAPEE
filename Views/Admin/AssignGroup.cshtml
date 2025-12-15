@@ -1,17 +1,5 @@
 ﻿@model AssignGroupVM
 <style>
-    body {
-        background-color: #f8f9fa;
-    }
-
-    .page-header {
-        background: white;
-        padding: 2rem;
-        border-radius: 8px;
-        margin-bottom: 2rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
     .card {
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         border: none;
@@ -43,6 +31,7 @@
             border-color: #0d6efd;
             background: #f0f7ff;
         }
+
 
     .group-header {
         display: flex;
@@ -147,13 +136,68 @@
         margin-bottom: 1.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+
+    .selected-students-panel {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .selected-student-chip {
+        display: inline-flex;
+        align-items: center;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 0.375rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+        .selected-student-chip .remove-chip {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+            .selected-student-chip .remove-chip:hover {
+                color: #a71d2a;
+            }
 </style>
 
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
 
-<div class="page-header">
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<div id="alertContainer"></div>
+
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
     <h1 class="h3 mb-2">Group Assignment</h1>
     <p class="text-muted mb-0">Select a group to manage students</p>
 </div>
+
 
 <!-- Filter Section -->
 <div class="filter-section">
@@ -167,13 +211,13 @@
                 <label for="programSelect" class="form-label fw-semibold">Program</label>
                 <select asp-for="ProgramId"
                         asp-items="ViewBag.ProgramList"
-                        class="select2 filter">
+                        class="select2" required>
                     <option value="">Select Program</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <label for="yearSelect" class="form-label fw-semibold">Year</label>
-                <select class="form-control filter" id="yearSelect" name="Year">
+                <select class="form-control" id="yearSelect" name="Year" required>
                     <option value="">Select Year</option>
                     <option value="1">Year 1</option>
                     <option value="2">Year 2</option>
@@ -183,13 +227,18 @@
             </div>
             <div class="col-md-4">
                 <label for="semesterSelect" class="form-label fw-semibold">Semester</label>
-                <select class="form-control filter" id="semesterSelect" name="Sem">
+                <select class="form-control" id="semesterSelect" name="Sem" required>
                     <option value="">Select Semester</option>
                     <option value="1">Semester 1</option>
                     <option value="2">Semester 2</option>
                     <option value="3">Semester 3</option>
                 </select>
             </div>
+
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary" id="filterSubmit">Submit</button>
+            <button type="reset" class="btn btn-secondary" id="filterReset">Reset</button>
         </div>
     </form>
 </div>
@@ -197,6 +246,7 @@
 <div id="groupData">
     <partial name="_AssignGroup" />
 </div>
+
 
 @section Scripts {
     <script>
@@ -207,10 +257,36 @@
                 minimumResultsForSearch: 0
          });
 
-       
-
         $(document).ready(function () {
-          
+
+            $('#filterForm').on('submit', function () {
+
+                const programId = $('#ProgramId').val();
+                const year = $('#yearSelect').val();
+                const semester = $('#semesterSelect').val();
+
+                setTimeout(function () {
+                    $('#ProgramId, #yearSelect, #semesterSelect, #filterSubmit')
+                        .prop('disabled', true);
+                }, 0);
+
+                return true;
+            });
+
+
+
+            $(document).on('reset', '#filterForm', function () {
+
+                setTimeout(function () {
+
+                    $('#ProgramId, #yearSelect, #semesterSelect, #filterSubmit')
+                        .prop('disabled', false);
+
+                    $('#ProgramId').val('').trigger('change');
+
+                }, 50);
+            });
+
 
             $(document).on('click', '#groupsList .group-card', function() {
                 const groupId = $(this).data('group-id');
@@ -219,19 +295,27 @@
                 // Highlight selected
                 $('#groupsList .group-card').removeClass('selected');
                 $(this).addClass('selected');
-
+                $('#groupIdInput').val(groupId);
                 // Update headers
                 $('#groupTitle').text(`Students in ${groupName}`);
                 $('#addStudentBtn').prop('disabled', false);
                 $('#modalGroupName').text(groupName);
 
                 $('#addStudentBtn').on('click', function() {
-                    console.log('Add Student button clicked');
-                    var myModal = new bootstrap.Modal(document.getElementById('addStudentModal'));
-                    myModal.show();
+                    $('#addStudentModal').modal('show');
                 });
 
-                // AJAX call to get students
+                getStudentByGroup(groupId);
+
+            });
+
+
+        });
+
+        let studentsToAdd = [];
+
+        function getStudentByGroup(groupId){
+        // AJAX call to get students
                 $.ajax({
                     url: '@Url.Action("GetStudentsByGroup", "Admin")',
                     type: 'GET',
@@ -251,7 +335,7 @@
                                       <div class="student-name">${s.fullName}</div>
                                       <div class="student-id">${s.id}</div>
                                     </div>
-                                    <button class="btn btn-danger btn-sm btn-action" onclick="removeStudent('${s.id}')">
+                                    <button class="btn btn-danger btn-sm btn-action" onclick="removeStudent('${s.id}','${groupId}')">
                                         <i class="bi bi-trash"></i> Remove
                                     </button>
                                 </div>
@@ -264,89 +348,233 @@
                         console.error("AJAX Error:", error);
                     }
                 });
+        }
+
+        function loadUnassignedStudents() {
+            const programId = $('#ProgramId').val();
+            const year = $('#yearSelect').val();
+            const semester = $('#semesterSelect').val();
+
+            console.log("Loading unassigned students for:", programId, year, semester);
+            $.ajax({
+                url: '/Admin/GetUnassignedStudents',
+                type: 'GET',
+                data: {
+                    programId: programId,
+                    year: year,
+                    semester: semester
+                },
+                dataType: 'json',
+                success: function(data) {
+                    const container = $('#studentsContainer');
+                    container.empty();
+
+                    if (data.length === 0) {
+                        $('#noStudentsMessage').show();
+                    } else {
+                        $('#noStudentsMessage').hide();
+                        data.forEach(function(s) {
+                            container.append(`
+                                <div class="student-item" id="student-${s.Id}">
+                                    <div class="student-info">
+                                        <div class="student-name">${s.fullName}</div>
+                                        <div class="student-id">${s.id}</div>
+                                    </div>
+                                    <button class="btn btn-success btn-sm btn-action"
+                                            onclick="addStudent('${s.id}','${s.fullName}')">
+                                        <i class="bi bi-plus-circle"></i> Add
+                                    </button>
+                                </div>
+                            `);
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading students:', error);
+                    showAlert('danger', 'Failed to load unassigned students.');
+                }
             });
+        }
 
-           
-        });
+        function addStudent(studentId,studentName) {
+            console.log("Adding student:", studentId, studentName);
+
+            if (!studentsToAdd.some(s => s.id === studentId)) {
+                studentsToAdd.push({
+                    id: studentId,
+                    name: studentName
+                });
+
+                console.log("Students to add:", studentsToAdd);
+                const addBtn = document.querySelector(`button[onclick="addStudent('${studentId}','${studentName}')"]`);
+                if (addBtn) {
+                    addBtn.disabled = true;
+                    addBtn.classList.remove('btn-success');
+                    addBtn.classList.add('btn-secondary');
+                }
+                updateSelectedStudentsPanel();
+            }
+        }
+
+        function updateSelectedStudentsPanel() {
+            const panel = document.getElementById('selectedStudentsPanel');
+            const chipsContainer = document.getElementById('selectedStudentsChips');
+            const countElement = document.getElementById('selectedStudentCount');
+            const confirmBtn = document.getElementById('confirmAddBtn');
+            const confirmCount = document.getElementById('confirmCount');
+
+            if (studentsToAdd.length === 0) {
+                panel.style.display = 'none';
+                confirmBtn.disabled = true;
+                countElement.textContent = 0;
+                confirmCount.textContent = 0;
+            } else {
+                panel.style.display = 'block';
+                confirmBtn.disabled = false;
+                countElement.textContent = studentsToAdd.length;
+                confirmCount.textContent = studentsToAdd.length;
+
+                chipsContainer.innerHTML = studentsToAdd.map(student => {
+                    return `
+                        <div class="selected-student-chip">
+                            <strong>${student.name}</strong> (${student.id})
+                            <span class="remove-chip" onclick="removeFromSelection('${student.id}')">×</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+        }
+
+        function removeFromSelection(studentId) {
+            console.log("Removing student from selection:", studentId);
+
+            studentsToAdd = studentsToAdd.filter(student => student.id !== studentId);
+            const addBtn = document.querySelector(`button[onclick^="addStudent('${studentId}'"]`);
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.classList.remove('btn-secondary');
+                addBtn.classList.add('btn-success');
+            }
+            updateSelectedStudentsPanel();
+        }
+
+        function clearSelectedStudents() {
+            studentsToAdd.forEach(student => {
+                const addBtn = document.querySelector(`button[onclick^="addStudent('${student.id}'"]`);
+                if (addBtn) {
+                    addBtn.disabled = false;
+                    addBtn.classList.remove('btn-secondary');
+                    addBtn.classList.add('btn-success');
+                }
+            });
+            studentsToAdd = [];
+            updateSelectedStudentsPanel();
+        }
+
+        function confirmAddStudents() {
+            if (studentsToAdd.length === 0) {
+                alert("No students selected!");
+                return;
+            }
+
+            const data = {
+                SelectedGroupId: parseInt($('#groupIdInput').val()),
+                StudentList: studentsToAdd.map(s => ({ Id: s.id, FullName: s.name }))
+            };
+
+            const groupCard = $('.group-card[data-group-id="' + data.SelectedGroupId + '"]');
+            const badge = groupCard.find('.student-count-badge');
 
 
-        // function addStudent(studentId) {
-        //     const student = allStudents.find(s => s.id === studentId);
-        //     if (student) {
-        //         student.groupId = selectedGroup;
-        //         renderGroups();
-        //         renderStudentsInGroup();
-        //         renderAvailableStudents(document.getElementById('studentSearch').value);
-        //     }
-        // }
+            $.ajax({
+                url: '/Admin/AddStudentToGroup',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        clearSelectedStudents();
+                        $('#addStudentModal').modal('hide');
+
+                        if(response.newCount !== undefined){
+                            badge.text(response.newCount + ' students');
+                        }
+
+                        getStudentByGroup(data.SelectedGroupId);
+                    } else {
+                        showAlert('danger', response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", error);
+                    alert("An error occurred while adding students.");
+                }
+            });
+        }
+
+        function removeStudent(studentId, groupId) {
+
+            console.log("Removing student:", studentId, "from group:", groupId);
+            if (!confirm('Remove this student from the group?')) {
+                return;
+            }
+
+            const groupCard = $('.group-card[data-group-id="' + groupId + '"]');
+            const badge = groupCard.find('.student-count-badge');
+
+            $.ajax({
+                url: '/Admin/RemoveStudentFromGroup',
+                type: 'POST',
+                data: { studentId: studentId },
+                success: function (res) {
+
+                    if (res.success) {
+                        if(res.newCount !== undefined){
+                            badge.text(res.newCount + ' students');
+                        }
+
+                        getStudentByGroup(groupId);
+
+                        showAlert('success', res.message || 'Student removed successfully.');
+                    } else {
+                        showAlert('danger', res.message || 'Failed to remove student.');
+                    }
+                },
+                error: function () {
+                    showAlert('danger', 'Server error while removing student.');
+                }
+            });
+        }
 
 
 
+        function showAlert(type, message) {
+            let icon = '';
+            if (type === 'success') {
+                icon = '<i class="fas fa-check-circle me-2"></i>'; // success icon
+            } else if (type === 'danger') {
+                icon = '<i class="fas fa-exclamation-circle me-2"></i>'; // danger icon
+            }
 
-        // function renderAvailableStudents(searchTerm = '') {
-        //     const container = document.getElementById('availableStudentsList');
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${icon}${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
 
-        //     if (!selectedGroup) {
-        //         container.innerHTML = '<div class="empty-state"><p>Please select a group first</p></div>';
-        //         return;
-        //     }
-
-
-        //     const availableStudents = allStudents.filter(s =>
-        //         s.program === currentProgram &&
-        //         s.year == currentYear &&
-        //         s.semester == currentSemester &&
-        //         s.groupId !== selectedGroup &&
-        //         (searchTerm === '' ||
-        //          s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        //          s.id.toLowerCase().includes(searchTerm.toLowerCase()))
-        //     );
-
-        //     if (availableStudents.length === 0) {
-        //         container.innerHTML = `
-        //             <div class="empty-state">
-        //                 <i class="bi bi-person-check"></i>
-        //                 <p class="mb-0">No available students found</p>
-        //             </div>
-        //         `;
-        //         return;
-        //     }
-
-        //     container.innerHTML = availableStudents.map(student => `
-        //         <div class="student-item">
-        //             <div class="student-info">
-        //                 <div class="student-name">${student.name}</div>
-        //                 <div class="student-id">${student.id} • ${student.program} ${student.groupId ? `(Currently in ${student.groupId})` : '(No group)'}</div>
-        //             </div>
-        //             <button class="btn btn-success btn-sm btn-action" onclick="addStudent('${student.id}')">
-        //                 <i class="bi bi-plus-circle"></i> Add
-        //             </button>
-        //         </div>
-        //     `).join('');
-        // }
+            $('#alertContainer').html(alertHtml);
+        }
 
 
-       
 
+               
 
-        // function removeStudent(studentId) {
-        //     if (confirm('Are you sure you want to remove this student from the group?')) {
-        //         const student = allStudents.find(s => s.id === studentId);
-        //         if (student) {
-        //             student.groupId = null;
-        //             renderGroups();
-        //             renderStudentsInGroup();
-        //         }
-        //     }
-        // }
-
-
-        // document.getElementById('addStudentModal').addEventListener('show.bs.modal', function () {
-        //     document.getElementById('studentSearch').value = '';
-        //     renderAvailableStudents();
-        // });
-
-
+      
 
     </script>
 }
