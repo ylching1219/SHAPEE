@@ -827,5 +827,51 @@ namespace SHAPEE.Controllers
             }
             ViewBag.ProfilePictureUrl = profilePictureUrl;
         }
+        //lks
+        // =======================
+        // STUDENT CLASSWORK PAGE
+        // =======================
+        public IActionResult StudentClasswork(string courseId)
+        {
+            if (string.IsNullOrEmpty(courseId))
+                return BadRequest("Course ID is required.");
+
+            var materials = db.Materials
+                .Where(m => m.CourseId == courseId)
+                .OrderBy(m => m.Title)
+                .ThenBy(m => m.Id)
+                .ToList();
+
+            ViewBag.CourseId = courseId.ToUpper();
+
+            return View("~/Views/Student/Classwork.cshtml", materials);
+        }
+
+        // =======================
+        // STUDENT CLASSROOM UI
+        // =======================
+        public IActionResult ClassroomUI()
+        {
+            var courses = db.Courses
+                .OrderBy(c => c.Id)
+                .ToList();
+
+            return View("~/Views/Student/ClassroomUI.cshtml", courses);
+        }
+
+        // =======================
+        // GET MATERIALS (AJAX)
+        // =======================
+        [HttpGet]
+        public IActionResult GetMaterials(string courseId)
+        {
+            var materials = db.Materials
+                .Where(m => m.CourseId == courseId)
+                .OrderByDescending(m => m.Id)
+                .Select(m => new { m.Id, m.Title, m.FileUrl })
+                .ToList();
+
+            return Json(materials);
+        }
     }
 }
