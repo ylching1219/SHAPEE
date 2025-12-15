@@ -1,0 +1,187 @@
+﻿@model IEnumerable<SHAPEE.Models.Course>
+
+@{
+    ViewData["Title"] = "Classroom";
+}
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f6f9;
+    }
+
+    .page-header {
+        background: white;
+        padding: 30px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .page-header p {
+            margin-top: 8px;
+            color: #666;
+        }
+
+    /* SEARCH */
+    .search-box {
+        width: 92%;
+        margin: 0 auto 25px auto;
+        display: flex;
+        justify-content: center;
+    }
+
+        .search-box input {
+            width: 100%;
+            max-width: 450px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+    /* GRID */
+    .container {
+        width: 92%;
+        margin: auto;
+    }
+
+    .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+    }
+
+    /* CARD */
+    .course-card {
+        background: white;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .course-card img {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+        }
+
+    .card-body {
+        padding: 18px;
+        flex: 1;
+    }
+
+    .course-code {
+        color: #007bff;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .course-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 6px 0;
+    }
+
+    .course-credithour {
+        font-size: 0.85rem;
+        margin-top: 6px;
+        color: green;
+        font-weight: bold;
+    }
+
+    .card-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+
+        .card-footer a {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+            .card-footer a:hover {
+                background: #0056c7;
+            }
+</style>
+
+<div class="page-header">
+    <div class="container">
+        <h1>Course Management</h1>
+        <p>Upload and manage teaching materials for your courses</p>
+
+    </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="search-box">
+    <input type="text" id="courseSearch" placeholder="Search by course code or course name..." />
+</div>
+
+<div class="container">
+    <div class="course-grid" id="courseGrid">
+        @if (!Model.Any())
+        {
+            <p>No courses found.</p>
+        }
+        else
+        {
+            @foreach (var course in Model)
+            {
+                <div class="course-card">
+                    <img src="https://img.freepik.com/free-vector/empty-classroom-interior-with-chalkboard_1308-65378.jpg?w=740" />
+
+                    <div class="card-body">
+                        <div class="course-code">@course.Id.ToUpper()</div>
+                        <div class="course-title">@course.Name.ToUpper()</div>
+                        <div class="course-credithour">Credit Hours: @course.CreditHours</div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="@Url.Action("Classwork", "Classroom", new { id = course.Id })">
+                            Manage Classwork
+                        </a>
+                    </div>
+
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById("courseSearch");
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase();
+
+        document.querySelectorAll(".course-card").forEach(card => {
+            const code = card.querySelector(".course-code").textContent.toLowerCase();
+            const title = card.querySelector(".course-title").textContent.toLowerCase();
+
+            if (code.includes(query) || title.includes(query)) {
+                card.style.display = "flex";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    });
+</script>
