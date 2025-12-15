@@ -74,10 +74,18 @@ public class AccountController(DB db, Helper hp) : Controller
 
         // Reset attempts and ensure active status
         u!.LoginAttempts = 0;
-        u.Status = "Active";
+        if (u.Status != "LockedPayment")
+            u.Status = "Active";
         db.SaveChanges();
 
         hp.SignIn(u.Id, u.FullName, u.Role, vm.RememberMe);
+
+        //if payment locked student log in force it into Current Billing tab
+        if (u.Role == "Student" && u.Status == "LockedPayment")
+        {
+            TempData["PaymentLockMessage"] = "Your account is locked due to overdue fees. Please complete payment to regain access.";
+            return RedirectToAction("CurrentBilling", "Student");
+        }
 
         // Redirection based on role
         if (!string.IsNullOrEmpty(returnURL))

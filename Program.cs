@@ -1,9 +1,13 @@
 global using SHAPEE.Models;
 global using SHAPEE;
 using Microsoft.AspNetCore.HttpOverrides;
+using QuestPDF.Infrastructure;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

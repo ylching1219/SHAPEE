@@ -1,15 +1,56 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
 using SHAPEE.Models;
 using System.Security.Claims;
 using System.Text;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using Stripe.Checkout;
+
 
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Student")]
-    public class StudentController(DB db) : Controller
+    public class StudentController(DB db, Helper hp) : Controller
     {
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            var action = context.RouteData.Values["action"]?.ToString() ?? "";
+            var allow = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "CurrentBilling",
+                "PaymentHistory",
+                "Payment",
+                "Pay",
+                "DownloadReceipt",
+                "StripeSuccess"
+            };
+
+            if (!allow.Contains(action))
+            {
+                var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrEmpty(studentId))
+                {
+                    var status = db.Students
+                        .Where(s => s.Id == studentId)
+                        .Select(s => s.Status)
+                        .FirstOrDefault();
+
+                    if (status == "LockedPayment")
+                    {
+                        TempData["PaymentLockMessage"] = "Your account is locked due to overdue fees. Please complete payment to regain access.";
+                        context.Result = RedirectToAction("CurrentBilling");
+                        return;
+                    }
+                }
+            }
+
+            base.OnActionExecuting(context);
+        }
         // GET: /Student
         public async Task<IActionResult> Dashboard()
         {
@@ -205,13 +246,6 @@ namespace SHAPEE.Controllers
             }
 
             return View(viewModel);
-        }
-
-
-        public IActionResult AttendanceHistory()
-        {
-            ViewData["Title"] = "Attendance History";
-            return View("AttendanceHistory");
         }
 
         [HttpGet]
@@ -632,6 +666,390 @@ namespace SHAPEE.Controllers
                 isActive = semester.IsActive
             });
         }
+
+
+        public IActionResult CurrentBilling()
+        {
+            ViewData["Title"] = "Current Billing";
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.Program)
+                    .ThenInclude(p => p.Faculty)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null) return NotFound("Student not found.");
+            if (string.IsNullOrEmpty(student.ProgramId)) return BadRequest("Student has no Program assigned.");
+
+            var activeSemester = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .FirstOrDefault(s => s.IsActive);
+
+            if (activeSemester == null) return BadRequest("No active semester configured.");
+
+            ApplyPaymentLockIfOverdue(studentId);
+
+            var pcs = db.ProgramCourses
+                .Where(pc =>
+                    pc.ProgramId == student.ProgramId &&
+                    pc.YearLevel == student.YearLevel &&
+                    pc.Semester == student.Semester)
+                .Include(pc => pc.Course)
+                .ToList();
+
+            var totalCredits = pcs.Sum(x => x.Course.CreditHours);
+            var rate = student.Program.Faculty.CostPerCreditHour;
+            var totalAmount = totalCredits * rate;
+
+            var inv = db.Invoices.FirstOrDefault(i =>
+                i.StudentId == studentId &&
+                i.SemesterId == activeSemester.Id);
+
+            if (inv == null)
+            {
+                inv = new Invoice
+                {
+                    Id = "INV-" + DateTime.Now.ToString("yyMMdd-HHmmssfff"),
+                    StudentId = studentId,
+                    SemesterId = activeSemester.Id,
+                    TotalAmount = totalAmount,
+                    DueDate = DateTime.Today.AddDays(7),
+                    IsPaid = false,
+                    GenerateDate = DateTime.Now
+                };
+
+                db.Invoices.Add(inv);
+                db.SaveChanges();
+            }
+
+            var outstanding = db.Invoices
+                .Where(i => i.StudentId == studentId && !i.IsPaid)
+                .OrderBy(i => i.DueDate)
+                .ToList();
+
+            var vm = new CurrentBillingVM
+            {
+                StudentStatus = student.Status,
+                YearLevel = student.YearLevel,
+                SemesterNo = student.Semester,
+                ActiveSemesterId = activeSemester.Id,
+
+                TotalCredits = totalCredits,
+                CostPerCreditHour = rate,
+
+                CurrentInvoiceId = inv.Id,
+                CurrentInvoiceDueDate = inv.DueDate,
+                CurrentInvoiceAmount = inv.TotalAmount,
+                CurrentInvoiceIsPaid = inv.IsPaid,
+
+                OutstandingInvoices = outstanding.Select(x => new InvoiceRowVM
+                {
+                    InvoiceId = x.Id,
+                    SemesterId = x.SemesterId,
+                    DueDate = x.DueDate,
+                    TotalAmount = x.TotalAmount,
+                    IsPaid = x.IsPaid,
+                    IsOverdue = !x.IsPaid && DateTime.Today > x.DueDate.Date
+                }).ToList()
+            };
+
+            vm.TotalPayable = vm.OutstandingInvoices.Sum(x => x.TotalAmount);
+
+            return View("CurrentBilling", vm);
+        }
+
+        public IActionResult PaymentHistory()
+        {
+            ViewData["Title"] = "Payment History";
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var txs = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                .Where(t => t.Invoice.StudentId == studentId)
+                .OrderByDescending(t => t.TransactionDate)
+                .ToList();
+
+            var vm = new PaymentHistoryVM
+            {
+                Transactions = txs.Select(t => new PaymentTransactionRowVM
+                {
+                    ReceiptId = t.Id,
+                    InvoiceId = t.InvoiceId,
+                    SemesterId = t.Invoice?.SemesterId ?? "",
+                    TransactionDate = t.TransactionDate,
+                    PaymentMethod = t.PaymentMethod,
+                    AmountPaid = t.AmountPaid
+                }).ToList()
+            };
+
+            return View("PaymentHistory", vm);
+        }
+
+        public IActionResult Payment(string id)
+        {
+            ViewData["Title"] = "Payment";
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var invoice = db.Invoices
+                .FirstOrDefault(i => i.Id == id && i.StudentId == studentId);
+
+            if (invoice == null) return NotFound("Invoice not found.");
+
+            if (invoice.IsPaid)
+            {
+                TempData["SuccessMessage"] = "Invoice already paid.";
+                return RedirectToAction("PaymentHistory");
+            }
+
+            var vm = new PaymentCheckoutVM
+            {
+                InvoiceId = invoice.Id,
+                SemesterId = invoice.SemesterId,
+                DueDate = invoice.DueDate,
+                TotalAmount = invoice.TotalAmount,
+                TotalCredits = 0,
+                CostPerCreditHour = 0m
+            };
+
+            return View("Payment", vm);
+        }
+
+
+        public IActionResult DownloadReceipt(string id)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var tx = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                .FirstOrDefault(t => t.Id == id && t.Invoice.StudentId == studentId);
+
+            if (tx == null) return NotFound();
+
+            var relative = (tx.ReceiptUrl ?? "").Trim().TrimStart('/');
+            var physical = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                relative.Replace('/', Path.DirectorySeparatorChar));
+
+            if (!System.IO.File.Exists(physical)) return NotFound("Receipt file missing.");
+
+            // preview in browser + allow download
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Path.GetFileName(physical)}\"";
+            return PhysicalFile(physical, "application/pdf");
+        }
+
+        private string CreatePdfReceipt(
+            string receiptId,
+            string studentName,
+            string description,
+            decimal billAmount,
+            decimal amountPaid,
+            DateTime receiptDate)
+        {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "receipts");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{receiptId}.pdf";
+            var physical = Path.Combine(folder, fileName);
+
+            Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(40);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().Text("TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY")
+                            .FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
+
+                        col.Item().PaddingTop(18).Text("RECEIPT").FontSize(16).Bold();
+                    });
+
+                    page.Content().PaddingTop(18).Element(e =>
+                    {
+                        e.Border(1).BorderColor(Colors.Grey.Medium).Padding(18).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);   // label
+                                columns.ConstantColumn(12);  // :
+                                columns.RelativeColumn(6);   // value
+                            });
+
+                            void Row(string label, string value)
+                            {
+                                table.Cell().PaddingVertical(6).Text(label);
+                                table.Cell().PaddingVertical(6).AlignCenter().Text(":");
+                                table.Cell().PaddingVertical(6).Text(value);
+                            }
+
+                            Row("Receipt Number", receiptId);
+                            Row("Name", studentName);
+                            Row("Description", description); // e.g. Fees 202501 Y1S1
+                            Row("Bill Amount", $"RM {billAmount:N2}");
+                            Row("Amount Paid", $"RM {amountPaid:N2}");
+                            Row("Receipt Date", receiptDate.ToString("dd-MM-yyyy"));
+                            Row("Comment", "");
+                        });
+                    });
+
+                    page.Footer().PaddingTop(28).Column(col =>
+                    {
+                        col.Item().Text("1. This is a computer generated receipt and does not require a signature.").FontSize(9);
+                        col.Item().Text("2. This official receipt is valid subject to clearance.").FontSize(9);
+                    });
+                });
+            })
+            .GeneratePdf(physical);
+
+            return $"/uploads/receipts/{fileName}";
+        }
+
+        //stripe payment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Pay(string invoiceId)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var invoice = db.Invoices.FirstOrDefault(i => i.Id == invoiceId && i.StudentId == studentId);
+            if (invoice == null) return NotFound("Invoice not found.");
+            if (invoice.IsPaid) return RedirectToAction("PaymentHistory");
+
+            var domain = $"{Request.Scheme}://{Request.Host}";
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            var options = new SessionCreateOptions
+            {
+                Mode = "payment",
+                SuccessUrl = $"{domain}/Student/StripeSuccess?invoiceId={invoice.Id}&session_id={{CHECKOUT_SESSION_ID}}",
+                CancelUrl = $"{domain}/Student/Payment?id={invoice.Id}",
+                CustomerEmail = student?.Email,
+                LineItems = new List<SessionLineItemOptions>
+                {
+                    new SessionLineItemOptions
+                    {
+                        Quantity = 1,
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = "myr",
+                            UnitAmount = (long)(invoice.TotalAmount * 100m),
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = $"Fees {invoice.SemesterId}",
+                                Description = $"Invoice {invoice.Id}"
+                            }
+                        }
+                    }
+                }
+            };
+
+            var service = new SessionService();
+            var session = service.Create(options);
+
+            return Redirect(session.Url);
+        }
+
+        //stripe success
+        [HttpGet]
+        public IActionResult StripeSuccess(string invoiceId, string session_id)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var invoice = db.Invoices.FirstOrDefault(i => i.Id == invoiceId && i.StudentId == studentId);
+            if (invoice == null) return NotFound("Invoice not found.");
+
+            var service = new SessionService();
+            var session = service.Get(session_id);
+
+            if (session.PaymentStatus != "paid")
+            {
+                TempData["PaymentLockMessage"] = "Payment not completed.";
+                return RedirectToAction("Payment", new { id = invoice.Id });
+            }
+
+            // prevent double payment if user refreshes success page
+            if (!invoice.IsPaid)
+            {
+                var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+
+                var receiptId = "RCP-" + DateTime.Now.ToString("yyMMdd-HHmmssfff");
+                var description = student != null
+                    ? $"Fees {invoice.SemesterId} Y{student.YearLevel}S{student.Semester}"
+                    : $"Fees {invoice.SemesterId}";
+
+                var receiptUrl = CreatePdfReceipt(
+                    receiptId: receiptId,
+                    studentName: student?.FullName?.Trim() ?? studentId,
+                    description: description,
+                    billAmount: invoice.TotalAmount,
+                    amountPaid: invoice.TotalAmount,
+                    receiptDate: DateTime.Now
+                );
+
+                var domain = $"{Request.Scheme}://{Request.Host}";
+                var receiptLink = domain + Url.Action("DownloadReceipt", "Student", new { id = receiptId });
+
+                if (student != null && !string.IsNullOrWhiteSpace(student.Email))
+                {
+                    _ = hp.SendPaymentReceiptEmail(
+                        toEmail: student.Email,
+                        studentName: student.FullName.Trim(),
+                        invoiceId: invoice.Id,
+                        description: description,
+                        amountPaid: invoice.TotalAmount,
+                        receiptId: receiptId,
+                        receiptLink: receiptLink
+                    );
+                }
+
+                db.PaymentTransactions.Add(new PaymentTransaction
+                {
+                    Id = receiptId,
+                    InvoiceId = invoice.Id,
+                    AmountPaid = invoice.TotalAmount,
+                    PaymentMethod = "Stripe",
+                    TransactionDate = DateTime.Now,
+                    ReceiptUrl = receiptUrl
+                });
+
+                invoice.IsPaid = true;
+
+                if (student != null && student.Status == "LockedPayment")
+                    student.Status = "Active";
+
+                db.SaveChanges();
+            }
+
+            TempData["SuccessMessage"] = "Payment successful (Stripe).";
+            return RedirectToAction("PaymentHistory");
+        }
+
+        
+        //helper methods
+
+        private void ApplyPaymentLockIfOverdue(string studentId)
+        {
+            var today = DateTime.Today;
+
+            var overdue = db.Invoices.Any(i =>
+                i.StudentId == studentId &&
+                !i.IsPaid &&
+                today > i.DueDate.Date.AddDays(7));
+
+            if (!overdue) return;
+
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student != null && student.Status != "LockedPayment")
+            {
+                student.Status = "LockedPayment";
+                db.SaveChanges();
+            }
+        }
+
 
         //get student profile
         public async Task<IActionResult> Profile()

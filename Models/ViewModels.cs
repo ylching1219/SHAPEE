@@ -232,13 +232,13 @@ namespace SHAPEE.Models
 
     public class StudentAttendanceItemVM
     {
-    public ClassSection ClassSection { get; set; }
-    public Course Course { get; set; }
+        public ClassSection ClassSection { get; set; }
+        public Course Course { get; set; }
 
-    public int PresentCount { get; set; }
-    public int AbsentCount { get; set; }
-    public int TotalSessions { get; set; }
-    public double AttendancePercentage { get; set; }
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int TotalSessions { get; set; }
+        public double AttendancePercentage { get; set; }
     }
 
 
@@ -256,7 +256,7 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
     }
 
-    // Academic Calendar ViewModels
+    // academic calendar
     public class SemesterConfigVM
     {
         public List<Semester> Semesters { get; set; } = [];
@@ -303,7 +303,67 @@ namespace SHAPEE.Models
         public List<CalendarEvent> ConflictingEvents { get; set; } = [];
         public string Message { get; set; } = "";
     }
-    
+
+    public class InvoiceRowVM
+    {
+        public string InvoiceId { get; set; }
+        public string SemesterId { get; set; }
+        public DateTime DueDate { get; set; }
+        public decimal TotalAmount { get; set; }
+        public bool IsPaid { get; set; }
+        public bool IsOverdue { get; set; }
+    }
+
+    public class CurrentBillingVM
+    {
+        public string StudentStatus { get; set; } = "Active";
+
+        public int YearLevel { get; set; }
+        public int SemesterNo { get; set; }
+
+        // active semester record (from Semesters table
+        public string ActiveSemesterId { get; set; }
+
+        public int TotalCredits { get; set; }
+        public decimal CostPerCreditHour { get; set; }
+
+        // current invoice 
+        public string CurrentInvoiceId { get; set; }
+        public DateTime CurrentInvoiceDueDate { get; set; }
+        public decimal CurrentInvoiceAmount { get; set; }
+        public bool CurrentInvoiceIsPaid { get; set; }
+
+        // list table
+        public decimal TotalPayable { get; set; }
+        public List<InvoiceRowVM> OutstandingInvoices { get; set; } = [];
+    }
+
+    public class PaymentCheckoutVM
+    {
+        public string InvoiceId { get; set; }
+        public string SemesterId { get; set; }
+        public DateTime DueDate { get; set; }
+        public decimal TotalAmount { get; set; }
+
+        public int TotalCredits { get; set; }
+        public decimal CostPerCreditHour { get; set; }
+    }
+
+    public class PaymentTransactionRowVM
+    {
+        public string ReceiptId { get; set; }
+        public string InvoiceId { get; set; }
+        public string SemesterId { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public string PaymentMethod { get; set; }
+        public decimal AmountPaid { get; set; }
+    }
+
+    public class PaymentHistoryVM
+    {
+        public List<PaymentTransactionRowVM> Transactions { get; set; } = [];
+    }
+        
     // JS
     public class RoomManageVM
     {
