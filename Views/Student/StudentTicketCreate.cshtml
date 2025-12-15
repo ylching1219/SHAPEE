@@ -75,7 +75,6 @@
             transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-        /* Bigger select box */
         .ticket-page select.form-control {
             padding: 14px 16px;
             font-size: 1.05rem;
@@ -113,6 +112,28 @@
                 background: #138496;
                 transform: translateY(-2px);
             }
+
+        .view-tickets-btn {
+            display: block;
+            width: 50%;
+            max-width: 300px;
+            margin: 20px auto 40px;
+            padding: 12px 0;
+            text-align: center;
+            background: #28a745;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+            .view-tickets-btn:hover {
+                background: #218838;
+                transform: translateY(-2px);
+                color:white;
+            }
     </style>
 
     <!-- Back button to FAQ -->
@@ -146,6 +167,11 @@
 
         <button type="submit" class="btn btn-primary mt-3">Submit Ticket</button>
     </form>
+
+    <!-- View Ticket List Button -->
+    <a href="@Url.Action("TicketList", "Student")" class="view-tickets-btn">
+        View My Tickets
+    </a>
 
     <script>
         document.querySelector("form").addEventListener("submit", function () {

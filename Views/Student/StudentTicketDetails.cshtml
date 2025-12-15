@@ -39,11 +39,15 @@
         padding: 25px 30px;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        word-wrap: break-word; 
+        overflow-wrap: break-word; 
     }
 
         .ticket-info p {
             font-size: 1rem;
             margin-bottom: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
     hr {
@@ -126,12 +130,40 @@
                 background: #0056c7;
                 transform: translateY(-2px);
             }
+
+    .back-wrapper {
+        max-width: 700px;
+        margin: 20px auto;
+    }
+
+    .back-btn {
+        display: inline-block;
+        padding: 8px 14px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+        .back-btn:hover {
+            background-color: #0056c7;
+            color: white;
+            transform: translateY(-1px);
+        }
+
 </style>
 
 @if (TempData["Message"] != null)
 {
     <div class="alert alert-success">@TempData["Message"]</div>
 }
+<div class="back-wrapper">
+    <a href="@Url.Action("TicketList", "Student")" class="back-btn">
+        ← Back to My Tickets
+    </a>
+</div>
 
 <div class="ticket-info">
     <h2>Ticket #@Model.Id - @Model.Subject</h2>

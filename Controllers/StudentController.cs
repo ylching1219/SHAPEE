@@ -955,7 +955,40 @@ namespace SHAPEE.Controllers
 
             return View("~/Views/Student/StudentTicketList.cshtml", tickets);
         }
+        [Authorize]
+        public IActionResult TicketDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var ticket = db.SupportTickets
+                .Include(t => t.TicketMessages)   // replies
+                .FirstOrDefault(t => t.Id == id && t.UserId == userId);
+
+            if (ticket == null)
+                return NotFound();
+
+            return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
+        }
+        [HttpGet]
+        public IActionResult GetTickets(string search = "", string status = "")
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var tickets = db.SupportTickets
+                            .Where(t => t.UserId == userId);
+
+            if (!string.IsNullOrEmpty(search))
+                tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
+
+            if (!string.IsNullOrEmpty(status))
+                tickets = tickets.Where(t => t.Status == status);
+
+            tickets = tickets.OrderByDescending(t => t.CreatedAt);
+
+            return PartialView("_TicketTable", tickets.ToList());
+        }
 
 
     }
