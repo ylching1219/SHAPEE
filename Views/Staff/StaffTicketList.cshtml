@@ -109,10 +109,6 @@
     <div class="alert-success">@TempData["Message"]</div>
 }
 
-<div style="width:90%; max-width:1000px; margin:0 auto 20px;">
-    <a class="btn-primary" href="@Url.Action("CreateTicket", "Staff")">Create New Ticket</a>
-</div>
-
 <div class="filter-container">
     <input type="text" id="searchText" placeholder="Search by Ticket ID or Subject..." />
     <select id="statusFilter">
@@ -146,7 +142,7 @@
                     <td>@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                     <td>@(t.ResolvedAt.HasValue? t.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm") : "—")</td>
                     <td>
-                        <a class="btn-info" href="@Url.Action("TicketDetails", "Staff", new { id = t.Id })">View</a>
+                        <a class="btn-info" href="@Url.Action("StaffTicketDetails", "Staff", new { id = t.Id })">View</a>
                     </td>
                 </tr>
             }

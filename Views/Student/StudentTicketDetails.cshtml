@@ -200,11 +200,9 @@ else
 <h4>Reply</h4>
 
 <form asp-action="Reply" method="post" class="reply-form">
+    @Html.AntiForgeryToken()
     <input type="hidden" name="ticketId" value="@Model.Id" />
-
     <textarea name="message" placeholder="Write your reply"></textarea>
-
-    <button type="submit">
-        Send Reply
-    </button>
+    <button type="submit">Send Reply</button>
 </form>
+
