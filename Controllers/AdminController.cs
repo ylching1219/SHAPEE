@@ -1698,7 +1698,11 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "Program Course Assignment";
 
-            var query = db.ProgramCourses
+            var f = db.Faculties
+                .OrderBy(f => f.Id)
+                .ToList();
+
+            var pc = db.ProgramCourses
                 .Include(pc => pc.Program)
                 .Include(pc => pc.Course)
                 .OrderBy(pc => pc.ProgramId)
@@ -1707,7 +1711,8 @@ namespace SHAPEE.Controllers
 
             var vm = new ProgramCourseVM
             {
-                ProgramCourses = query
+                ProgramCourses = pc,
+                Faculties = f
             };
             return View(vm);
         }
