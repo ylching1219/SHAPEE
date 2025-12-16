@@ -347,6 +347,7 @@ namespace SHAPEE.Models
 
         public int TotalCredits { get; set; }
         public decimal CostPerCreditHour { get; set; }
+        public int SubjectCount { get; set; }
     }
 
     public class PaymentTransactionRowVM

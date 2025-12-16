@@ -32,6 +32,11 @@
         flex-wrap: wrap;
     }
 
+    .payment-icons img {
+    height: 48px;
+    flex-shrink: 0;
+    }
+
     .payment-icons i {
         font-size: 2rem;
         flex-shrink: 0;
@@ -139,7 +144,7 @@
                     </div>
 
                     <div class="col-md-4 ps-md-4">
-                        <div class="text-uppercase text-xs text-muted fw-bold mb-1">Total Due</div>
+                        <div class="text-uppercase text-xs text-muted fw-bold mb-1">Total Amount</div>
                         <div class="fw-bold text-primary fs-5">
                             RM @Model.TotalAmount.ToString("N2")
                         </div>
@@ -185,7 +190,7 @@
                                 <i class="fab fa-cc-visa text-dark"></i>
                                 <i class="fab fa-cc-mastercard text-dark"></i>
                                 <div class="divider"></div>
-                                <i class="fas fa-university text-dark"></i>
+                                <img src="~/img/fpx.png" alt="FPX Online Banking" />
                             </div>
                         </div>
                     </div>
@@ -212,9 +217,9 @@
     <div class="col-lg-4 checkout-right">
 
         <!-- Order Summary -->
-        <div class="card border-0 shadow-sm mb-3 order-summary">
+        <div class="card border-0 shadow-sm mb-2 order-summary">
             <div class="card-header bg-light border-0 py-3">
-                <h6 class="mb-0 fw-bold text-gray-800">Order Summary</h6>
+                <h6 class="mb-0 fw-bold text-gray-800">Payment Summary</h6>
             </div>
 
             <div class="card-body">
@@ -239,21 +244,45 @@
                     @if (Model.TotalCredits > 0 && Model.CostPerCreditHour > 0)
                     {
                         <div class="d-flex justify-content-between small text-muted">
-                            <span>Rate per credit</span>
-                            <span>RM @Model.CostPerCreditHour.ToString("N2")</span>
+                            <span>Number of subjects</span>
+                            <span>@Model.SubjectCount</span>
                         </div>
+
                         <div class="d-flex justify-content-between small text-muted">
                             <span>Total credits</span>
                             <span>@Model.TotalCredits</span>
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            @Model.SubjectCount subjects,
+                            @Model.TotalCredits credits × RM @Model.CostPerCreditHour.ToString("N2") per credit
                         </div>
                     }
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                    <span class="h6 fw-bold mb-0">Total Due</span>
+                    <span class="h6 fw-bold mb-0">Total Amount</span>
                     <span class="h4 fw-bold text-primary mb-0">
                         RM @Model.TotalAmount.ToString("N2")
                     </span>
+                </div>
+            </div>
+        </div>
+
+                <!-- Help / Support -->
+        <div class="card border-0 shadow-sm help-card">
+            <div class="card-body py-3">
+                <div class="d-flex">
+                    <div>
+                        <div class="fw-bold small text-gray-800">Need help?</div>
+                        <div class="small text-muted">
+                            If you have questions about this invoice or payment,
+                            please contact the Finance Office:
+                            <br />
+                            Email: <a href="mailto:fees@university.edu">fees@university.edu</a><br />
+                            Phone: +60-3-1234 5678
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

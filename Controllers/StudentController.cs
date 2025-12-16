@@ -793,7 +793,11 @@ namespace SHAPEE.Controllers
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Load invoice with related student/program/faculty
             var invoice = db.Invoices
+                .Include(i => i.Student)
+                    .ThenInclude(s => s.Program)
+                        .ThenInclude(p => p.Faculty)
                 .FirstOrDefault(i => i.Id == id && i.StudentId == studentId);
 
             if (invoice == null) return NotFound("Invoice not found.");
@@ -804,14 +808,34 @@ namespace SHAPEE.Controllers
                 return RedirectToAction("PaymentHistory");
             }
 
+            // Get the planned courses for this student's current program/year/semester
+            var student = invoice.Student;
+
+            if (student == null || string.IsNullOrEmpty(student.ProgramId))
+                return BadRequest("Student has no Program assigned.");
+
+            var pcs = db.ProgramCourses
+                .Where(pc =>
+                    pc.ProgramId == student.ProgramId &&
+                    pc.YearLevel == student.YearLevel &&
+                    pc.Semester == student.Semester)
+                .Include(pc => pc.Course)
+                .ToList();
+
+            var totalCredits = pcs.Sum(x => x.Course.CreditHours);
+            var rate = student.Program.Faculty.CostPerCreditHour;
+            var subjectCount = pcs.Count;
+
             var vm = new PaymentCheckoutVM
             {
                 InvoiceId = invoice.Id,
                 SemesterId = invoice.SemesterId,
                 DueDate = invoice.DueDate,
                 TotalAmount = invoice.TotalAmount,
-                TotalCredits = 0,
-                CostPerCreditHour = 0m
+
+                TotalCredits = totalCredits,
+                CostPerCreditHour = rate,
+                SubjectCount = subjectCount
             };
 
             return View("Payment", vm);
