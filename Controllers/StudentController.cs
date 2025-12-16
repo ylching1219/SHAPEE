@@ -1388,6 +1388,11 @@ namespace SHAPEE.Controllers
             if (ticket == null)
                 return NotFound();
 
+            // sorting by sent at
+            ticket.TicketMessages = ticket.TicketMessages
+                .OrderBy(m => m.SentAt)
+                .ToList();
+
             return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
         }
         [HttpGet]
@@ -1406,6 +1411,35 @@ namespace SHAPEE.Controllers
             tickets = tickets.OrderByDescending(t => t.CreatedAt);
 
             return PartialView("_TicketTable", tickets.ToList());
+        }
+        //reply ticket
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Reply(string ticketId, string message)
+        {
+            if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
+            {
+                TempData["Message"] = "Please enter a message.";
+                return RedirectToAction("TicketDetails", new { id = ticketId });
+            }
+
+            var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
+            if (ticket == null) return NotFound();
+
+            var reply = new TicketMessage
+            {
+                Id = Guid.NewGuid().ToString(),
+                SupportTicketId = ticketId,
+                SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                Content = message,
+                SentAt = DateTime.Now
+            };
+
+            db.TicketMessages.Add(reply);
+            db.SaveChanges();
+
+            TempData["Message"] = "Reply sent successfully!";
+            return RedirectToAction("TicketDetails", new { id = ticketId });
         }
 
 
