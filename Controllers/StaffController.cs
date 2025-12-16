@@ -63,6 +63,7 @@ namespace SHAPEE.Controllers
                 sectionsQuery = sectionsQuery.Where(s =>
                     s.SectionId.ToLower().Contains(searchLower) ||
                     (s.Course != null && s.Course.Id.ToLower().Contains(searchLower)) ||
+                    (s.Course != null && s.Course.Name.ToLower().Contains(searchLower)) ||
                     (s.Room != null && s.Room.Id.ToLower().Contains(searchLower)));
             }
 
@@ -679,6 +680,7 @@ namespace SHAPEE.Controllers
 
             return View(viewModel);
         }
+        
 
         [HttpGet]
         public IActionResult GetAttendanceChartData(string sectionId)
