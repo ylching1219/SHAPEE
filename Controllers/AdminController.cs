@@ -1693,7 +1693,24 @@ namespace SHAPEE.Controllers
                 newCount = count });
         }
 
+        //Program Course Assignment
+        public IActionResult ProgramCourse()
+        {
+            ViewData["Title"] = "Program Course Assignment";
 
+            var query = db.ProgramCourses
+                .Include(pc => pc.Program)
+                .Include(pc => pc.Course)
+                .OrderBy(pc => pc.ProgramId)
+                .ThenBy(pc => pc.CourseId)
+                .ToList();
+
+            var vm = new ProgramCourseVM
+            {
+                ProgramCourses = query
+            };
+            return View(vm);
+        }
 
 
 

@@ -1,0 +1,73 @@
+﻿@* @model ProgramCourseVM
+
+
+<table class="table table-hover mb-0" id="programTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Program Code</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Faculty</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="programTableBody">
+        @if (Model.Program.Count() == 0)
+        {
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No program found</p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var f in Model.Program)
+            {
+                <tr class="border-bottom">
+                    <td class="px-4 py-3">
+                        <div class="font-weight-medium text-gray-900">@f.Id</div>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@f.Name</td>
+                    <td class="px-4 py-3 text-muted">@f.Faculty.Name</td>
+
+                    <td class="px-4 py-3 text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item editBtn"
+                                   data-ajax="true"
+                                   data-ajax-method="GET"
+                                   data-ajax-url="@Url.Action("ProgramManagement", "Admin", new { editId = f.Id })"
+                                   data-ajax-update="#AddEditData"
+                                   data-ajax-success="onEditLoaded">
+
+                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger"
+                                   href="#"
+                                   data-toggle="modal"
+                                   data-target="#deleteModal"
+                                   data-id="@f.Id"
+                                   data-name="@f.Name"
+                                   onclick="prepareDeleteModal(this); return false;">
+                                    <i class="fas fa-trash mr-2"></i> Delete
+                                </a>
+
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+            }
+        }
+    </tbody>
+</table>
+
+
+ZW *@

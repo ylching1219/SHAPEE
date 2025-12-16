@@ -105,7 +105,10 @@ namespace SHAPEE.Models
         public string? FacultyId { get; set; }
     }
 
-
+    public class ProgramCourseVM
+    {
+        public List<ProgramCourse>? ProgramCourses { get; set; } = [];
+    }
     public class AssignGroupVM
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
