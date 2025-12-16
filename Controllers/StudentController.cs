@@ -16,7 +16,7 @@ namespace SHAPEE.Controllers
     [Authorize(Roles = "Student")]
     public class StudentController(DB db, Helper hp) : Controller
     {
-
+        //action filter to prevent access to pages if student has overdue payment locked
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             var action = context.RouteData.Values["action"]?.ToString() ?? "";
@@ -56,13 +56,69 @@ namespace SHAPEE.Controllers
         {
             await LoadProfilePicture();
             ViewData["Title"] = "Student Dashboard";
-            return View();
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // all sections the student has attendance records for
+            var sectionIds = db.Attendances
+                .Where(a => a.StudentId == studentId)
+                .Select(a => a.ClassSectionId)
+                .Distinct()
+                .ToList();
+
+            var sections = db.ClassSections
+                .Include(cs => cs.Course)
+                .Where(cs => sectionIds.Contains(cs.SectionId))
+                .ToList();
+
+            var attendances = db.Attendances
+                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .ToList();
+
+            var subjectSummaries = sections
+                .GroupBy(cs => cs.Course.Id)
+                .Select(g =>
+                {
+                    var course = g.First().Course;
+                    var relatedSectionIds = g.Select(cs => cs.SectionId).ToList();
+
+                    var subjectAtts = attendances
+                        .Where(a => relatedSectionIds.Contains(a.ClassSectionId))
+                        .ToList();
+
+                    var present = subjectAtts.Count(a => a.Status == "Present");
+                    var absent = subjectAtts.Count(a => a.Status == "Absent");
+                    var total = subjectAtts.Count;
+
+                    var percentage = total > 0
+                        ? Math.Round((double)present / total * 100, 2)
+                        : 0;
+
+                    return new SubjectAttendanceSummaryVM
+                    {
+                        CourseId = course.Id,
+                        CourseName = course.Name,
+                        Present = present,
+                        Absent = absent,
+                        Leave = 0,          // you don’t currently have a "Leave" status
+                        Percentage = percentage
+                    };
+                })
+                .OrderBy(s => s.CourseId)
+                .ToList();
+
+            var vm = new StudentDashboardVM
+            {
+                SubjectAttendances = subjectSummaries
+            };
+
+            return View(vm);
         }
 
         
         //===============KOH KAI MINN================
         // student main attendance page
-        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? month = null, string? search = null)
+        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? month = null, string? search = null, string? classType = null)
         {
             ViewData["Title"] = "View Attendance";
 
@@ -103,6 +159,13 @@ namespace SHAPEE.Controllers
                     .Where(cs => cs.Course.Id == subject);
             }
 
+            classType = classType?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(classType))
+            {
+                enrolledSectionsQuery = enrolledSectionsQuery
+                    .Where(cs => cs.SectionType == classType);
+            }
+
             //apply search filter
             search = search?.Trim() ?? "";
             if (!string.IsNullOrEmpty(search))
@@ -114,6 +177,7 @@ namespace SHAPEE.Controllers
             }
 
             var enrolledSections = enrolledSectionsQuery.ToList();
+            var filteredSectionIds = enrolledSections.Select(cs => cs.SectionId).ToList();
 
             //get attendance records with month filter
             var attendancesQuery = db.Attendances
@@ -132,7 +196,7 @@ namespace SHAPEE.Controllers
             }
 
             var attendances = attendancesQuery
-                .Where(a => sectionIds.Contains(a.ClassSectionId))
+                .Where(a => filteredSectionIds.Contains(a.ClassSectionId))
                 .ToList();
 
 
@@ -203,14 +267,12 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //get overall stats
-            var allAttendances = db.Attendances
-                .Where(a => a.StudentId == studentId)
-                .ToList();
+            var overallPresent = attendances.Count(a => a.Status == "Present");
+            var overallAbsent  = attendances.Count(a => a.Status == "Absent");
+            var overallTotal   = attendances.Count;
 
-            var overallPresent = allAttendances.Count(a => a.Status == "Present");
-            var overallAbsent = allAttendances.Count(a => a.Status == "Absent");
-            var overallPercentage = allAttendances.Count > 0
-                ? Math.Round((double)overallPresent / allAttendances.Count * 100, 2)
+            var overallPercentage = overallTotal > 0
+                ? Math.Round((double)overallPresent / overallTotal * 100, 2)
                 : 0;
 
             //get recent attendances

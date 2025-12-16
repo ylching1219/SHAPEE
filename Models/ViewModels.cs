@@ -195,6 +195,12 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
     }
+
+    //student dashboard
+    public class StudentDashboardVM
+    {
+        public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
+    }
     
     // student view attendacne
     public class StudentAttendanceVM
@@ -254,6 +260,18 @@ namespace SHAPEE.Models
         public int TotalSessions { get; set; }
         public double AttendancePercentage { get; set; }
         public List<Attendance> Attendances { get; set; } = [];
+    }
+
+    //attendance by subject
+    public class SubjectAttendanceSummaryVM
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+
+        public int Present { get; set; }
+        public int Absent { get; set; }
+        public int Leave { get; set; }  // currently 0, since you only store Present/Absent
+        public double Percentage { get; set; }
     }
 
     // academic calendar

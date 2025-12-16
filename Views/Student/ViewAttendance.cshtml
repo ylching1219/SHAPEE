@@ -144,79 +144,11 @@
     </div>
 </div>
 
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPresent Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-check-circle fa-2x text-success"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-danger shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Absent</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallAbsent Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-times-circle fa-2x text-danger"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Leave</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">0 Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-calendar-times fa-2x text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overall</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPercentage%</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-pie fa-2x text-info"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Filter Section -->
 <div class="card shadow mb-4">
     <div class="card-body bg-light border-bottom">
         <div class="row g-3">
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-2">
                 <select id="subjectFilter" class="form-control">
                     <option value="">All Subjects</option>
                     @foreach (var s in Model.AvailableSubjects)
@@ -226,7 +158,16 @@
                 </select>
             </div>
 
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-2">
+                <select id="classTypeFilter" class="form-control">
+                    <option value="">All Types</option>
+                    <option value="Lecture">Lecture</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Practical">Practical</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2">
                 <select id="monthFilter" class="form-control">
                     <option value="">All Months</option>
                     @foreach (var m in Model.AvailableMonths)
@@ -366,13 +307,14 @@
             $.get('@Url.Action("ViewAttendance", "Student")', {
                 subject: $('#subjectFilter').val(),
                 month: $('#monthFilter').val(),
-                search: $('#searchBox').val()
+                search: $('#searchBox').val(),
+                classType: $('#classTypeFilter').val()
             }, function (html) {
                 $('#attendanceContainer').html(html);
             });
         }
 
-        $('#subjectFilter, #monthFilter').on('change', loadAttendance);
+        $('#subjectFilter, #classTypeFilter, #monthFilter').on('change', loadAttendance); // include classTypeFilter
         $('#searchBox').on('keyup', loadAttendance);
 
         //take att
@@ -593,13 +535,13 @@
             }
         }
 
-        //reset filters button
         $('#resetFilters').on('click', function() {
-            $('#subjectFilter').val('');
-            $('#monthFilter').val('');
-            $('#searchBox').val('');
-            loadAttendance();
-        });
+        $('#subjectFilter').val('');
+        $('#classTypeFilter').val('');
+        $('#monthFilter').val('');
+        $('#searchBox').val('');
+        loadAttendance();
+    });
 
         //view details button click
         $(document).on('click', '.view-details-btn', function(e) {
