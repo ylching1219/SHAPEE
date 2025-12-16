@@ -1,0 +1,38 @@
+﻿@model IEnumerable<SHAPEE.Models.SupportTicket>
+
+<table id="ticketTable">
+    <thead>
+        <tr>
+            <th>Ticket ID</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Created At</th>
+            <th>Resolved At</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Id</td>
+                <td>@t.Subject</td>
+                <td>@t.Status</td>
+                <td>@t.Priority</td>
+                <td>@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>
+                    @(t.ResolvedAt.HasValue
+                                    ? t.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                    : "—")
+            </td>
+            <td>
+                <a class="btn-info"
+                   href="@Url.Action("StaffTicketDetails", "Staff", new { id = t.Id })">
+                    View
+                </a>
+            </td>
+        </tr>
+                }
+    </tbody>
+</table>

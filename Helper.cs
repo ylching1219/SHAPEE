@@ -228,5 +228,81 @@ namespace SHAPEE
                 ? $"\"{value}\""
                 : value;
         }
+
+        public async Task<bool> SendPaymentReceiptEmail(
+            string toEmail,
+            string studentName,
+            string invoiceId,
+            string description,
+            decimal amountPaid,
+            string receiptId,
+            string receiptLink)
+        {
+            try
+            {
+                var smtpUser = _configuration["Smtp:User"];
+                var smtpPass = _configuration["Smtp:Pass"];
+                var smtpName = _configuration["Smtp:Name"];
+                var smtpHost = _configuration["Smtp:Host"];
+                var smtpPort = int.Parse(_configuration["Smtp:Port"]);
+
+                var body = $@"
+        <!DOCTYPE html>
+        <html>
+        <body style='font-family: Arial, sans-serif; color:#333;'>
+        <div style='max-width: 640px; margin: 0 auto; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;'>
+            <div style='background:#4e73df; color:#fff; padding:16px 20px;'>
+            <h2 style='margin:0;'>Payment Successful</h2>
+            </div>
+            <div style='padding:20px; background:#f8f9fc;'>
+            <p>Dear <b>{studentName}</b>,</p>
+            <p>Your payment has been received successfully.</p>
+
+            <table style='width:100%; border-collapse:collapse; background:#fff;'>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Receipt</b></td><td style='padding:10px; border-bottom:1px solid #eee;'>{receiptId}</td></tr>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Invoice</b></td><td style='padding:10px; border-bottom:1px solid #eee;'>{invoiceId}</td></tr>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Description</b></td><td style='padding:10px; border-bottom:1px solid #eee;'>{description}</td></tr>
+                <tr><td style='padding:10px;'><b>Amount Paid</b></td><td style='padding:10px;'>RM {amountPaid:N2}</td></tr>
+            </table>
+
+            <p style='margin-top:16px;'>
+                Download your receipt (PDF):
+                <a href='{receiptLink}'>{receiptLink}</a>
+            </p>
+
+            <p style='margin-top:16px;'>Regards,<br/><b>TARUMT Finance</b></p>
+            </div>
+            <div style='padding:12px 20px; font-size:12px; color:#666;'>
+            This is an automated email. Please do not reply.
+            </div>
+        </div>
+        </body>
+        </html>";
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(smtpUser, smtpName),
+                    Subject = $"Payment Successful - {invoiceId}",
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(new MailAddress(toEmail));
+
+                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+
+                await smtpClient.SendMailAsync(mailMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Payment email sending failed: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

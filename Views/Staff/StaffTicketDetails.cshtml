@@ -1,7 +1,7 @@
 ﻿@model SHAPEE.Models.SupportTicket
 
 @{
-    ViewData["Title"] = "Ticket Details (Staff)";
+    ViewData["Title"] = "Ticket Details - Staff";
 }
 
 <style>
@@ -39,11 +39,15 @@
         padding: 25px 30px;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
         .ticket-info p {
             font-size: 1rem;
             margin-bottom: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
     hr {
@@ -79,9 +83,10 @@
         .list-group-item p {
             margin: 5px 0 0 0;
             color: #333;
+            word-wrap: break-word;
         }
 
-    form.reply-form, form.close-form {
+    form.reply-form {
         max-width: 700px;
         margin: 20px auto 50px;
         background: #fff;
@@ -107,11 +112,12 @@
                 outline: none;
             }
 
-        form.reply-form button,
-        form.close-form button {
+        form.reply-form button {
             display: block;
             width: 100%;
             padding: 12px 0;
+            background: #007bff;
+            color: #fff;
             font-weight: 600;
             font-size: 1rem;
             border: none;
@@ -121,25 +127,32 @@
             transition: background 0.3s, transform 0.2s;
         }
 
-        form.reply-form button {
-            background: #007bff;
-            color: #fff;
-        }
-
             form.reply-form button:hover {
                 background: #0056c7;
                 transform: translateY(-2px);
             }
 
-        form.close-form button {
-            background: #28a745;
-            color: #fff;
-        }
+    .back-wrapper {
+        max-width: 700px;
+        margin: 20px auto;
+    }
 
-            form.close-form button:hover {
-                background: #218838;
-                transform: translateY(-2px);
-            }
+    .back-btn {
+        display: inline-block;
+        padding: 8px 14px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+        .back-btn:hover {
+            background-color: #0056c7;
+            color: white;
+            transform: translateY(-1px);
+        }
 </style>
 
 @if (TempData["Message"] != null)
@@ -147,10 +160,15 @@
     <div class="alert alert-success">@TempData["Message"]</div>
 }
 
+<div class="back-wrapper">
+    <a href="@Url.Action("StaffTicketList", "Staff")" class="back-btn">
+        ← Back to Ticket List
+    </a>
+</div>
+
 <div class="ticket-info">
     <h2>Ticket #@Model.Id - @Model.Subject</h2>
 
-    <p>Student: <strong>@Model.UserId</strong></p>
     <p>Status: <strong>@Model.Status</strong></p>
     <p>Priority: <strong>@Model.Priority</strong></p>
     <p>Description: @Model.Description</p>
@@ -182,22 +200,12 @@ else
 
 <h4>Reply</h4>
 
-<form asp-action="ReplyStaff" method="post" class="reply-form">
+<form asp-controller="Staff" asp-action="Reply" method="post" class="reply-form">
+    @Html.AntiForgeryToken()
     <input type="hidden" name="ticketId" value="@Model.Id" />
 
-    <textarea name="message" placeholder="Write reply"></textarea>
+    <textarea name="message" placeholder="Write your reply"></textarea>
 
-    <button type="submit">
-        Send Reply
-    </button>
+    <button type="submit">Send Reply</button>
 </form>
 
-@if (Model.Status != "Resolved")
-{
-    <form asp-action="CloseTicket" method="post" class="close-form">
-        <input type="hidden" name="id" value="@Model.Id" />
-        <button type="submit">
-            Close Ticket
-        </button>
-    </form>
-}

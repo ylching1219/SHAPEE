@@ -1,0 +1,151 @@
+@model SHAPEE.Models.CurrentBillingVM
+
+@{
+    ViewData["Title"] = "My Billings";
+    var isLockedPayment = Model.StudentStatus == "LockedPayment";
+}
+
+@if (TempData["PaymentLockMessage"] != null)
+{
+    <div class="alert alert-warning shadow-sm">
+        @TempData["PaymentLockMessage"]
+    </div>
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">My Billings</h1>
+    <span class="text-muted small">Manage your tuition fees and invoices</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Payable
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">RM @Model.TotalPayable.ToString("N2")</div>
+                        <small class="text-muted">Current invoice: @Model.CurrentInvoiceId</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card @(isLockedPayment ? "border-left-danger" : "border-left-success") shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold @(isLockedPayment ? "text-danger" : "text-success") text-uppercase mb-1">
+                            Account Status
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@(isLockedPayment ? "LOCKED" : "ACTIVE")</div>
+                        @if (isLockedPayment)
+                        {
+                            <small class="text-danger">Access restricted due to overdue payment.</small>
+                        }
+                        else
+                        {
+                            <small class="text-muted">Your account is in good standing.</small>
+                        }
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas @(isLockedPayment ? "fa-lock" : "fa-unlock") fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-white">
+        <h6 class="m-0 font-weight-bold text-primary">Outstanding Invoices</h6>
+        <small class="text-muted d-block mt-1">
+            Current: Year @Model.YearLevel, Sem @Model.SemesterNo |
+            Active SemesterId: @Model.ActiveSemesterId |
+            Credits: @Model.TotalCredits |
+            Rate: RM @Model.CostPerCreditHour.ToString("N2")
+        </small>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3">Invoice #</th>
+                        <th class="py-3">Semester</th>
+                        <th class="py-3 text-center">Credits</th>
+                        <th class="py-3">Due Date</th>
+                        <th class="py-3 text-end">Amount</th>
+                        <th class="py-3 text-center">Status</th>
+                        <th class="pe-4 py-3 text-end" style="width: 200px;">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.OutstandingInvoices == null || !Model.OutstandingInvoices.Any())
+                    {
+                        <tr>
+                            <td class="ps-4 py-4 text-muted" colspan="7">No outstanding invoices.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var inv in Model.OutstandingInvoices)
+                        {
+                            var isCurrent = inv.SemesterId == Model.ActiveSemesterId;
+                            var creditsText = isCurrent && inv.InvoiceId == Model.CurrentInvoiceId ? Model.TotalCredits.ToString() : "-";
+
+                            <tr class="@(inv.IsOverdue ? "table-danger border-bottom-0" : "")">
+                                <td class="ps-4 fw-bold">@inv.InvoiceId</td>
+
+                                <td>
+                                    <span class="d-block fw-bold text-gray-800">
+                                        @(isCurrent ? $"Year {Model.YearLevel}, Sem {Model.SemesterNo}" : inv.SemesterId)
+                                    </span>
+                                    <small class="text-muted">@(isCurrent ? "Current Sem" : "Previous Sem")</small>
+                                </td>
+
+                                <td class="text-center">@creditsText</td>
+
+                                <td class="@(inv.IsOverdue ? "text-danger fw-bold" : "fw-bold")">
+                                    @inv.DueDate.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td class="text-end fw-bold">RM @inv.TotalAmount.ToString("N2")</td>
+
+                                <td class="text-center">
+                                    @if (inv.IsOverdue)
+                                    {
+                                        <span class="badge bg-danger">Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Unpaid</span>
+                                    }
+                                </td>
+
+                                <td class="pe-4 text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a asp-action="Payment" asp-route-id="@inv.InvoiceId" class="btn btn-sm btn-primary shadow-sm px-3">
+                                            Pay Now
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+</div>
