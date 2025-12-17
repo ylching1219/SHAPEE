@@ -260,6 +260,21 @@
         $(document).ready(function() {
             let currentApplicationId = null;
 
+            // Show TempData messages if present
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>
+                    showMessage('success', '@TempData["SuccessMessage"]');
+                    </text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>
+                    showMessage('error', '@TempData["ErrorMessage"]');
+                    </text>
+            }
+
             // Function to show messages
             function showMessage(type, message) {
                 const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
@@ -284,36 +299,42 @@
                 }, 5000);
             }
 
-            // Function to apply filters
+            // Function to refresh leave data
+                    function refreshLeaveData() {
+            const search = $('#searchInput').val();
+            const status = $('#statusFilter').val();
+            const leaveType = $('#leaveTypeFilter').val();
+            const dateFrom = $('#dateFromFilter').val();
+            const dateTo = $('#dateToFilter').val();
+
+            const params = {};
+            if (search) params.search = search;
+            if (status) params.status = status;
+            if (leaveType) params.leaveType = leaveType;
+            if (dateFrom) params.dateFrom = dateFrom;
+            if (dateTo) params.dateTo = dateTo;
+
+            $.ajax({
+                url: '@Url.Action("LeaveManagement", "Admin")', // Changed from AdminLeaveManagement to LeaveManagement
+                type: 'GET',
+                data: params,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    $('#leaveData').html(data);
+                    updateStatistics();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading leave applications:', error);
+                    showMessage('error', 'Error loading leave applications. Please try again.');
+                }
+            });
+        }
+
+            // Function to apply filters (same as refresh but with user interaction)
             function applyFilters() {
-                const search = $('#searchInput').val();
-                const status = $('#statusFilter').val();
-                const leaveType = $('#leaveTypeFilter').val();
-                const dateFrom = $('#dateFromFilter').val();
-                const dateTo = $('#dateToFilter').val();
-
-                const params = new URLSearchParams();
-                if (search) params.append('search', search);
-                if (status) params.append('status', status);
-                if (leaveType) params.append('leaveType', leaveType);
-                if (dateFrom) params.append('dateFrom', dateFrom);
-                if (dateTo) params.append('dateTo', dateTo);
-
-                $.ajax({
-                    url: '@Url.Action("AdminLeaveManagement", "Admin")',
-                    type: 'GET',
-                    data: params.toString(),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(data) {
-                        $('#leaveData').html(data);
-                        updateStatistics();
-                    },
-                    error: function() {
-                        showMessage('error', 'Error loading leave applications');
-                    }
-                });
+                refreshLeaveData();
             }
 
             // Update statistics
@@ -410,85 +431,93 @@
             };
 
             // Handle approve confirmation
-            $('#confirmApproveBtn').on('click', function() {
-                if (!currentApplicationId) {
-                    showMessage('error', 'Error: No application selected');
-                    return;
-                }
+                    $('#confirmApproveBtn').on('click', function() {
+            if (!currentApplicationId) {
+                showMessage('error', 'Error: No application selected');
+                return;
+            }
 
-                const btn = $(this);
-                const originalHtml = btn.html();
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Approving...');
+            const btn = $(this);
+            const originalHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Approving...');
 
-                $.ajax({
-                    url: '@Url.Action("ApproveLeaveApplication", "Admin")/' + currentApplicationId,
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(response) {
-                        $('#approveModal').modal('hide');
+            $.ajax({
+                url: '@Url.Action("ApproveLeaveApplication", "Admin")', // Removed the /id part
+                type: 'POST',
+                data: {
+                    id: currentApplicationId, // Pass as data parameter
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    $('#approveModal').modal('hide');
 
-                        if (response.success) {
-                            showMessage('success', response.message);
-                            applyFilters();
-                        } else {
-                            showMessage('error', response.message);
-                        }
-
-                        btn.prop('disabled', false).html(originalHtml);
-                        currentApplicationId = null;
-                    },
-                    error: function() {
-                        $('#approveModal').modal('hide');
-                        showMessage('error', 'An error occurred. Please try again.');
-                        btn.prop('disabled', false).html(originalHtml);
-                        currentApplicationId = null;
+                    if (response.success) {
+                        showMessage('success', response.message);
+                        setTimeout(function() {
+                            refreshLeaveData();
+                        }, 300);
+                    } else {
+                        showMessage('error', response.message);
                     }
-                });
-            });
 
-            // Handle reject confirmation
-            $('#confirmRejectBtn').on('click', function() {
-                if (!currentApplicationId) {
-                    showMessage('error', 'Error: No application selected');
-                    return;
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Approve error:', error);
+                    $('#approveModal').modal('hide');
+                    showMessage('error', 'An error occurred. Please try again.');
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
                 }
-
-                const btn = $(this);
-                const originalHtml = btn.html();
-                const rejectReason = $('#rejectReasonInput').val().trim();
-
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Rejecting...');
-
-                $.ajax({
-                    url: '@Url.Action("RejectLeaveApplication", "Admin")/' + currentApplicationId,
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-                        rejectReason: rejectReason
-                    },
-                    success: function(response) {
-                        $('#rejectModal').modal('hide');
-
-                        if (response.success) {
-                            showMessage('success', response.message);
-                            applyFilters();
-                        } else {
-                            showMessage('error', response.message);
-                        }
-
-                        btn.prop('disabled', false).html(originalHtml);
-                        currentApplicationId = null;
-                    },
-                    error: function() {
-                        $('#rejectModal').modal('hide');
-                        showMessage('error', 'An error occurred. Please try again.');
-                        btn.prop('disabled', false).html(originalHtml);
-                        currentApplicationId = null;
-                    }
-                });
             });
+        });
+
+        // Handle reject confirmation
+        $('#confirmRejectBtn').on('click', function() {
+            if (!currentApplicationId) {
+                showMessage('error', 'Error: No application selected');
+                return;
+            }
+
+            const btn = $(this);
+            const originalHtml = btn.html();
+            const rejectReason = $('#rejectReasonInput').val().trim();
+
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Rejecting...');
+
+            $.ajax({
+                url: '@Url.Action("RejectLeaveApplication", "Admin")', // Removed the /id part
+                type: 'POST',
+                data: {
+                    id: currentApplicationId, // Pass as data parameter
+                    rejectReason: rejectReason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    $('#rejectModal').modal('hide');
+
+                    if (response.success) {
+                        showMessage('success', response.message);
+                        setTimeout(function() {
+                            refreshLeaveData();
+                        }, 300);
+                    } else {
+                        showMessage('error', response.message);
+                    }
+
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Reject error:', error);
+                    $('#rejectModal').modal('hide');
+                    showMessage('error', 'An error occurred. Please try again.');
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
+                }
+            });
+        });
         });
     </script>
 }

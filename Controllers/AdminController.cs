@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
+using SHAPEE.Services;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
@@ -11,11 +12,12 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
+using SHAPEE.Services;
 
 namespace SHAPEE.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class AdminController(DB db, Helper hp) : Controller
+    public class AdminController(DB db, Helper hp, LeaveService _leaveService) : Controller
     {
         // Dashboard
         public IActionResult Dashboard()
@@ -1970,53 +1972,70 @@ namespace SHAPEE.Controllers
         {
             ViewData["Title"] = "Leave Applications Management";
 
-            search = search?.Trim() ?? "";
-            status = status?.Trim() ?? "";
-            leaveType = leaveType?.Trim() ?? "";
-
-            var query = db.LeaveApplications.AsQueryable();
-
-            // Search by User ID
-            if (!string.IsNullOrEmpty(search))
+            try
             {
-                query = query.Where(la => la.UserId.Contains(search));
-            }
+                search = search?.Trim() ?? "";
+                status = status?.Trim() ?? "";
+                leaveType = leaveType?.Trim() ?? "";
 
-            // Filter by status
-            if (!string.IsNullOrEmpty(status))
+                var query = db.LeaveApplications.AsQueryable();
+
+                // Search by User ID
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(la => la.UserId.Contains(search));
+                }
+
+                // Filter by status
+                if (!string.IsNullOrEmpty(status))
+                {
+                    query = query.Where(la => la.Status == status);
+                }
+
+                // Filter by leave type
+                if (!string.IsNullOrEmpty(leaveType))
+                {
+                    query = query.Where(la => la.LeaveType == leaveType);
+                }
+
+                // Filter by date range
+                if (!string.IsNullOrEmpty(dateFrom) && DateOnly.TryParse(dateFrom, out var fromDate))
+                {
+                    query = query.Where(la => la.StartDate >= fromDate);
+                }
+
+                if (!string.IsNullOrEmpty(dateTo) && DateOnly.TryParse(dateTo, out var toDate))
+                {
+                    query = query.Where(la => la.EndDate <= toDate);
+                }
+
+                // Order by most recent application date, then by pending status first
+                var applications = query
+                    .OrderByDescending(la => la.Status == "Pending")
+                    .ThenByDescending(la => la.ApplicationDate)
+                    .ToList();
+
+                // Check if it's an AJAX request
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return PartialView("_AdminLeaveList", applications);
+                }
+
+                return View(applications);
+            }
+            catch (Exception ex)
             {
-                query = query.Where(la => la.Status == status);
+                // Log the error
+                Console.WriteLine($"Error in LeaveManagement: {ex.Message}");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return StatusCode(500, "Error loading leave applications");
+                }
+
+                TempData["ErrorMessage"] = "Error loading leave applications. Please try again.";
+                return View(new List<LeaveApplication>());
             }
-
-            // Filter by leave type
-            if (!string.IsNullOrEmpty(leaveType))
-            {
-                query = query.Where(la => la.LeaveType == leaveType);
-            }
-
-            // Filter by date range
-            if (!string.IsNullOrEmpty(dateFrom) && DateOnly.TryParse(dateFrom, out var fromDate))
-            {
-                query = query.Where(la => la.StartDate >= fromDate);
-            }
-
-            if (!string.IsNullOrEmpty(dateTo) && DateOnly.TryParse(dateTo, out var toDate))
-            {
-                query = query.Where(la => la.EndDate <= toDate);
-            }
-
-            // Order by most recent application date, then by pending status first
-            var applications = query
-                .OrderByDescending(la => la.Status == "Pending")
-                .ThenByDescending(la => la.ApplicationDate)
-                .ToList();
-
-            if (Request.IsAjax())
-            {
-                return PartialView("_AdminLeaveList", applications);
-            }
-
-            return View(applications);
         }
 
         [HttpPost]
@@ -2053,6 +2072,19 @@ namespace SHAPEE.Controllers
                 leaveApplication.RejectReason = null; // Clear any previous reject reason
 
                 await db.SaveChangesAsync();
+
+                // Check if the user is a Student and apply leave to attendance
+                var isStudent = await db.Students.AnyAsync(s => s.Id == leaveApplication.UserId);
+
+                if (isStudent)
+                {
+                    // Apply approved leave to attendance for students only
+                    _leaveService.ApplyApprovedLeaveToAttendance(
+                        leaveApplication.UserId,
+                        leaveApplication.StartDate,
+                        leaveApplication.EndDate
+                    );
+                }
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
