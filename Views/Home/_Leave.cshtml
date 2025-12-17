@@ -1,0 +1,102 @@
+﻿@model List<LeaveApplication>
+
+<table class="table table-hover table-striped mb-0">
+    <thead class="thead-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Application Date</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Leave Type</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Start Date</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">End Date</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Duration</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Status</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="leaveTableBody">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var application in Model)
+            {
+                var duration = (application.EndDate.ToDateTime(TimeOnly.MinValue) -
+                application.StartDate.ToDateTime(TimeOnly.MinValue)).Days + 1;
+
+                var statusClass = application.Status switch
+                {
+                    "Approved" => "badge-success",
+                    "Rejected" => "badge-danger",
+                    "Pending" => "badge-warning",
+                    "Cancelled" => "badge-secondary",
+                    _ => "badge-secondary"
+                };
+
+                var statusIcon = application.Status switch
+                {
+                    "Approved" => "fa-check-circle",
+                    "Rejected" => "fa-times-circle",
+                    "Pending" => "fa-clock",
+                    "Cancelled" => "fa-ban",
+                    _ => "fa-question-circle"
+                };
+
+                <tr class="border-bottom"
+                    data-application-id="@application.Id"
+                    data-leave-type="@application.LeaveType"
+                    data-start-date="@application.StartDate.ToString("dd/MM/yyyy")"
+                    data-end-date="@application.EndDate.ToString("dd/MM/yyyy")"
+                    data-duration="@duration"
+                    data-status="@application.Status"
+                    data-reason="@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(application.Reason))"
+                    data-document="@application.SupportDocumentUrl"
+                    data-reject-reason="@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(application.RejectReason ?? ""))"
+                    data-application-date="@application.ApplicationDate.ToString("dd/MM/yyyy")">
+                    <td class="px-4 py-3">@application.ApplicationDate.ToString("dd/MM/yyyy")</td>
+                    <td class="px-4 py-3">
+                        <span class="badge badge-info">@application.LeaveType</span>
+                    </td>
+                    <td class="px-4 py-3">@application.StartDate.ToString("dd/MM/yyyy")</td>
+                    <td class="px-4 py-3">@application.EndDate.ToString("dd/MM/yyyy")</td>
+                    <td class="px-4 py-3">
+                        <span class="font-weight-bold">@duration day@(duration != 1 ? "s" : "")</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="badge @statusClass">
+                            <i class="fas @statusIcon mr-1"></i>@application.Status
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item" href="#" onclick="showDetails(this); return false;" data-toggle="modal" data-target="#detailsModal">
+                                    <i class="fas fa-eye mr-2 text-info"></i> View Details
+                                </a>
+                                @if (application.Status == "Pending")
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="#" onclick="confirmCancel(this); return false;" data-toggle="modal" data-target="#cancelModal">
+                                        <i class="fas fa-ban mr-2"></i> Cancel Application
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3 d-block"></i>
+                    <h5 class="text-muted">No Leave Applications Found</h5>
+                    <p class="text-muted">You haven't submitted any leave applications yet.</p>
+                    <a href="@Url.Action("LeaveApplication", "Home")" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus mr-1"></i> Submit Your First Application
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

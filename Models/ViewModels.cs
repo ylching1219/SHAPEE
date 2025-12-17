@@ -395,6 +395,27 @@ namespace SHAPEE.Models
         public Room? EditRoom { get; set; }
     }
 
+    public class LeaveApplicationVM
+    {
+        [Required(ErrorMessage = "Start date is required")]
+        [Display(Name = "Start Date")]
+        public DateOnly StartDate { get; set; }
+
+        [Required(ErrorMessage = "End date is required")]
+        [Display(Name = "End Date")]
+        public DateOnly EndDate { get; set; }
+
+        [Required(ErrorMessage = "Leave type is required")]
+        [Display(Name = "Leave Type")]
+        public string? LeaveType { get; set; }
+
+        [Required(ErrorMessage = "Reason is required")]
+        [StringLength(500, ErrorMessage = "Reason cannot exceed 500 characters")]
+        [MinLength(10, ErrorMessage = "Reason must be at least 10 characters")]
+        [Display(Name = "Reason for Leave")]
+        public string? Reason { get; set; }
+    }
+
 
     public class EmailVs
     {
