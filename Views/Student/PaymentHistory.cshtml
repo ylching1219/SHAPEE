@@ -9,69 +9,70 @@
 </div>
 
 <div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white d-flex align-items-center justify-content-between">
+    <!-- Card Header -->
+    <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-primary">Transaction Logs</h6>
+    </div>
 
-        <div class="dropdown no-arrow">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
-                <i class="fas fa-calendar mr-1"></i> Year
-            </button>
-            <div class="dropdown-menu shadow" aria-labelledby="dropdownMenuButton">
-                <span class="dropdown-item-text text-muted small">Optional filter (not implemented)</span>
+    <!-- Filter Section: same pattern as ViewAttendance -->
+    <div class="card-body bg-light border-bottom">
+        <div class="row g-3">
+            <div class="col-12 col-md-2">
+                <select id="dateFilter" class="form-control">
+                    <option value="">All Dates</option>
+                    <option value="last30">Last 30 days</option>
+                    @foreach (var year in Model.Transactions
+                        .Select(t => t.TransactionDate.Year)
+                        .Distinct()
+                        .OrderByDescending(y => y))
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2">
+                <select id="amountFilter" class="form-control">
+                    <option value="">All Amounts</option>
+                    <option value="lt500">Below RM 500</option>
+                    <option value="500to1000">RM 500 – RM 1,000</option>
+                    <option value="gt1000">Above RM 1,000</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2">
+                <button id="resetFilters" class="btn btn-secondary w-100" type="button">
+                    <i class="fas fa-undo"></i>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Table -->
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 py-3">Receipt ID</th>
-                        <th class="py-3">Invoice Ref</th>
-                        <th class="py-3">Date Paid</th>
-                        <th class="py-3">Method</th>
-                        <th class="py-3 text-end">Amount</th>
-                        <th class="py-3 text-center">Status</th>
-                        <th class="pe-4 py-3 text-end">Receipt</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @if (Model.Transactions == null || !Model.Transactions.Any())
-                    {
-                        <tr>
-                            <td class="ps-4 py-4 text-muted" colspan="7">No payment transactions yet.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        foreach (var t in Model.Transactions)
-                        {
-                            <tr>
-                                <td class="ps-4 font-family-monospace fw-bold text-gray-800">#@t.ReceiptId</td>
-                                <td>
-                                    <span class="d-block small text-primary">@t.InvoiceId</span>
-                                    <small class="text-muted">SemesterId: @t.SemesterId</small>
-                                </td>
-                                <td>@t.TransactionDate.ToString("dd MMM yyyy")</td>
-                                <td>@t.PaymentMethod</td>
-                                <td class="text-end fw-bold">RM @t.AmountPaid.ToString("N2")</td>
-                                <td class="text-center"><span class="badge bg-success">Paid</span></td>
-                                <td class="pe-4 text-end">
-                                    <a asp-action="DownloadReceipt"
-                                    asp-route-id="@t.ReceiptId"
-                                    target="_blank"
-                                    class="btn btn-sm btn-outline-primary shadow-sm px-3">
-                                        Download
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-
-            </table>
+        <div class="table-responsive" id="paymentHistoryContainer">
+            <partial name="_PaymentHistory" model="Model" />
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function loadPayments() {
+            $.get('@Url.Action("PaymentHistory", "Student")', {
+                dateFilter: $('#dateFilter').val(),
+                amountFilter: $('#amountFilter').val()
+            }, function (html) {
+                $('#paymentHistoryContainer').html(html);
+            });
+        }
+
+        $('#dateFilter, #amountFilter').on('change', loadPayments);
+
+        $('#resetFilters').on('click', function () {
+            $('#dateFilter').val('');
+            $('#amountFilter').val('');
+            loadPayments();
+        });
+    </script>
+}
