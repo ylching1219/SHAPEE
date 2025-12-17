@@ -105,7 +105,12 @@ namespace SHAPEE.Models
         public string? FacultyId { get; set; }
     }
 
-
+    public class ProgramCourseVM
+    {
+        public List<Faculty>? Faculties { get; set; } = [];
+        public List<Program>? Programs { get; set; } = [];
+        public List<ProgramCourse>? ProgramCourses { get; set; } = [];
+    }
     public class AssignGroupVM
     {
         public List<TutorialGroup>? Groups { get; set; } = [];
@@ -195,6 +200,12 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
     }
+
+    //student dashboard
+    public class StudentDashboardVM
+    {
+        public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
+    }
     
     // student view attendacne
     public class StudentAttendanceVM
@@ -254,6 +265,18 @@ namespace SHAPEE.Models
         public int TotalSessions { get; set; }
         public double AttendancePercentage { get; set; }
         public List<Attendance> Attendances { get; set; } = [];
+    }
+
+    //attendance by subject
+    public class SubjectAttendanceSummaryVM
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+
+        public int Present { get; set; }
+        public int Absent { get; set; }
+        public int Leave { get; set; }  // currently 0, since you only store Present/Absent
+        public double Percentage { get; set; }
     }
 
     // academic calendar
@@ -347,6 +370,7 @@ namespace SHAPEE.Models
 
         public int TotalCredits { get; set; }
         public decimal CostPerCreditHour { get; set; }
+        public int SubjectCount { get; set; }
     }
 
     public class PaymentTransactionRowVM

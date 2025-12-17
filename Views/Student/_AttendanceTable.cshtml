@@ -1,5 +1,72 @@
 @model StudentAttendanceVM
 
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPresent Days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Absent</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallAbsent Days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Leave</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">0 Days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-times fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overall</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPercentage%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-pie fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="table-responsive">
     <table class="table table-hover" id="subjectTable">
         <thead>
@@ -7,6 +74,7 @@
                 <th>Subject Code</th>
                 <th>Subject Name</th>
                 <th>Section</th>
+                <th>Type</th>
                 <th>Total Classes</th>
                 <th>Present</th>
                 <th>Absent</th>
@@ -35,6 +103,14 @@
                     var statusText = item.AttendancePercentage >= 80 ? "Excellent" :
                                     item.AttendancePercentage >= 70 ? "Good" :
                                     item.AttendancePercentage >= 60 ? "Fair" : "Poor";
+
+                    var typeBadgeClass = item.ClassSection.SectionType switch
+                    {
+                        "Lecture"   => "primary",
+                        "Practical" => "info",
+                        "Tutorial"  => "success",
+                        _           => "secondary"
+                    };
                     
                     <tr class="subject-row" 
                         data-section-id="@item.ClassSection.SectionId"
@@ -42,6 +118,11 @@
                         <td><span class="badge badge-secondary">@item.Course.Id</span></td>
                         <td>@item.Course.Name</td>
                         <td>@item.ClassSection.SectionId</td>
+                        <td>
+                            <span class="badge badge-@typeBadgeClass">
+                                @item.ClassSection.SectionType
+                            </span>
+                        </td>
                         <td>@item.TotalSessions</td>
                         <td><span class="text-success font-weight-bold">@item.PresentCount</span></td>
                         <td><span class="text-danger">@item.AbsentCount</span></td>

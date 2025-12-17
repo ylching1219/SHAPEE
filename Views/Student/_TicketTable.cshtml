@@ -23,7 +23,10 @@
                 <td>@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@(t.ResolvedAt.HasValue? t.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm") : "—")</td>
                 <td>
-                    <a class="btn-info" href="@Url.Action("TicketDetails", "Student", new { id = t.Id })">View</a>
+                    <a class="btn-info"
+                       href="@Url.Action("StaffTicketDetails", "Staff", new { id = t.Id })">
+                        View
+                    </a>
                 </td>
             </tr>
         }

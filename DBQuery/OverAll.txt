@@ -134,200 +134,96 @@ INSERT INTO [dbo].[Rooms] (Id, Type, Block, Floor, Status) VALUES
 ('B005', 'Lab', 'B', 1, 'Maintenance'),
 ('S305', 'Classroom', 'S', 3, 'Occupied');
 
--- Group
-INSERT INTO TutorialGroups
-(GroupName, GroupNumber, ProgramId, YearLevel, Semester, NumberOfStudents)
+INSERT INTO [dbo].[TutorialGroups]
+(
+    [GroupName],
+    [GroupNumber],
+    [ProgramId],
+    [YearLevel],
+    [Semester],
+    [NumberOfStudents]
+)
 VALUES
-('BACY1S1G1',1,'BAC',1,1,0),
-('BACY1S1G2',2,'BAC',1,1,0),
-('BACY2S1G1',1,'BAC',2,1,0),
-('BACY2S1G2',2,'BAC',2,1,0),
+('BACY1S1G1',1,'BAC',1,1,2),
+('BACY1S1G2',2,'BAC',1,1,1),
+('BACY2S1G1',1,'BAC',2,1,3),
+('BACY2S1G2',2,'BAC',2,1,1),
 
-('BCEY1S1G1',1,'BCE',1,1,0),
-('BCEY1S1G2',2,'BCE',1,1,0),
-('BCEY2S1G1',1,'BCE',2,1,0),
-('BCEY2S1G2',2,'BCE',2,1,0),
+('BCEY1S1G1',1,'BCE',1,1,3),
+('BCEY1S1G2',2,'BCE',1,1,2),
+('BCEY2S1G1',1,'BCE',2,1,3),
+('BCEY2S1G2',2,'BCE',2,1,1),
 
-('BCHY1S1G1',1,'BCH',1,1,0),
-('BCHY1S1G2',2,'BCH',1,1,0),
-('BCHY2S1G1',1,'BCH',2,1,0),
-('BCHY2S1G2',2,'BCH',2,1,0),
+('BCHY1S1G1',1,'BCH',1,1,1),
+('BCHY1S1G2',2,'BCH',1,1,1),
+('BCHY2S1G1',1,'BCH',2,1,2),
+('BCHY2S1G2',2,'BCH',2,1,1),
 
-('BCSY1S1G1',1,'BCS',1,1,0),
-('BCSY1S1G2',2,'BCS',1,1,0),
-('BCSY2S1G1',1,'BCS',2,1,0),
-('BCSY2S1G2',2,'BCS',2,1,0),
+('BCSY1S1G1',1,'BCS',1,1,2),
+('BCSY1S1G2',2,'BCS',1,1,1),
+('BCSY2S1G1',1,'BCS',2,1,3),
+('BCSY2S1G2',2,'BCS',2,1,2),
 
-('BEEY1S1G1',1,'BEE',1,1,0),
-('BEEY1S1G2',2,'BEE',1,1,0),
-('BEEY2S1G1',1,'BEE',2,1,0),
-('BEEY2S1G2',2,'BEE',2,1,0),
+('BEEY1S1G1',1,'BEE',1,1,3),
+('BEEY1S1G2',2,'BEE',1,1,1),
+('BEEY2S1G1',1,'BEE',2,1,3),
+('BEEY2S1G2',2,'BEE',2,1,1),
 
-('BFNY1S1G1',1,'BFN',1,1,0),
-('BFNY1S1G2',2,'BFN',1,1,0),
-('BFNY2S1G1',1,'BFN',2,1,0),
-('BFNY2S1G2',2,'BFN',2,1,0),
+('BFNY1S1G1',1,'BFN',1,1,1),
+('BFNY1S1G2',2,'BFN',1,1,1),
+('BFNY2S1G1',1,'BFN',2,1,2),
+('BFNY2S1G2',2,'BFN',2,1,1),
 
-('BITY1S1G1',1,'BIT',1,1,0),
-('BITY1S1G2',2,'BIT',1,1,0),
-('BITY2S1G1',1,'BIT',2,1,0),
-('BITY2S1G2',2,'BIT',2,1,0),
+('BITY1S1G1',1,'BIT',1,1,3),
+('BITY2S1G1',1,'BIT',2,1,3),
+('BITY1S1G2',2,'BIT',1,1,2),
+('BITY2S1G2',2,'BIT',2,1,1),
 
-('BPHY1S1G1',1,'BPH',1,1,0),
-('BPHY1S1G2',2,'BPH',1,1,0),
-('BPHY2S1G1',1,'BPH',2,1,0),
-('BPHY2S1G2',2,'BPH',2,1,0),
+('BPHY1S1G1',1,'BPH',1,1,3),
+('BPHY1S1G2',2,'BPH',1,1,1),
+('BPHY2S1G1',1,'BPH',2,1,2),
+('BPHY2S1G2',2,'BPH',2,1,1),
 
-('DACY1S1G1',1,'DAC',1,1,0),
-('DACY1S1G2',2,'DAC',1,1,0),
-('DACY2S1G1',1,'DAC',2,1,0),
-('DACY2S1G2',2,'DAC',2,1,0),
+('DACY1S1G1',1,'DAC',1,1,2),
+('DACY1S1G2',2,'DAC',1,1,1),
+('DACY2S1G1',1,'DAC',2,1,3),
+('DACY2S1G2',2,'DAC',2,1,1),
 
-('DCEY1S1G1',1,'DCE',1,1,0),
+('DCEY1S1G1',1,'DCE',1,1,1),
 ('DCEY1S1G2',2,'DCE',1,1,0),
 ('DCEY2S1G1',1,'DCE',2,1,0),
 ('DCEY2S1G2',2,'DCE',2,1,0),
 
-('DCHY1S1G1',1,'DCH',1,1,0),
-('DCHY1S1G2',2,'DCH',1,1,0),
-('DCHY2S1G1',1,'DCH',2,1,0),
-('DCHY2S1G2',2,'DCH',2,1,0),
+('DCHY1S1G1',1,'DCH',1,1,1),
+('DCHY1S1G2',2,'DCH',1,1,1),
+('DCHY2S1G1',1,'DCH',2,1,2),
+('DCHY2S1G2',2,'DCH',2,1,1),
 
-('DCSY1S1G1',1,'DCS',1,1,0),
-('DCSY1S1G2',2,'DCS',1,1,0),
-('DCSY2S1G1',1,'DCS',2,1,0),
-('DCSY2S1G2',2,'DCS',2,1,0),
+('DCSY1S1G1',1,'DCS',1,1,3),
+('DCSY1S1G2',2,'DCS',1,1,1),
+('DCSY2S1G1',1,'DCS',2,1,3),
+('DCSY2S1G2',2,'DCS',2,1,1),
 
-('DEEY1S1G1',1,'DEE',1,1,0),
+('DEEY1S1G1',1,'DEE',1,1,1),
 ('DEEY1S1G2',2,'DEE',1,1,0),
-('DEEY2S1G1',1,'DEE',2,1,0),
-('DEEY2S1G2',2,'DEE',2,1,0),
+('DEEY2S1G1',1,'DEE',2,1,3),
+('DEEY2S1G2',2,'DEE',2,1,2),
 
-('DFIY1S1G1',1,'DFI',1,1,0),
-('DFIY1S1G2',2,'DFI',1,1,0),
-('DFIY2S1G1',1,'DFI',2,1,0),
-('DFIY2S1G2',2,'DFI',2,1,0),
+('DFIY1S1G1',1,'DFI',1,1,2),
+('DFIY1S1G2',2,'DFI',1,1,2),
+('DFIY2S1G1',1,'DFI',2,1,1),
+('DFIY2S1G2',2,'DFI',2,1,1),
 
-('DFTY1S1G1',1,'DFT',1,1,0),
-('DFTY1S1G2',2,'DFT',1,1,0),
-('DFTY2S1G1',1,'DFT',2,1,0),
-('DFTY2S1G2',2,'DFT',2,1,0),
+('DFTY1S1G1',1,'DFT',1,1,2),
+('DFTY1S1G2',2,'DFT',1,1,1),
+('DFTY2S1G1',1,'DFT',2,1,3),
+('DFTY2S1G2',2,'DFT',2,1,2),
 
-('DPHY1S1G1',1,'DPH',1,1,0),
-('DPHY1S1G2',2,'DPH',1,1,0),
-('DPHY2S1G1',1,'DPH',2,1,0),
-('DPHY2S1G2',2,'DPH',2,1,0);
+('DPHY1S1G1',1,'DPH',1,1,3),
+('DPHY1S1G2',2,'DPH',1,1,2),
+('DPHY2S1G1',1,'DPH',2,1,2),
+('DPHY2S1G2',2,'DPH',2,1,1);
 
-
---User
-INSERT INTO [dbo].[Users] VALUES
-('STF0002','Jwen Siong','Low','js@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','0123657465',0,'Active','Staff',
- NULL,NULL,NULL,NULL,
- NULL,NULL,NULL,'Male',NULL,NULL,NULL),
-
-('Admin01','01','Admin','Admin01@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','0145365768',0,'Active','Admin',
- NULL,NULL,NULL,NULL,
- NULL,NULL,NULL,'Male',NULL,NULL,NULL),
-
-('2500001','Jam','Wilson','wenkailow@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','+60 12-233-4922',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-05',3,2,'Female',NULL,'DCH',NULL),
-
-('2500002','James','Wilson','yongqinpee@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','+60 12-233-4922',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-05',3,1,'Female',NULL,'BPH',NULL),
-
-('2500003','Test','Doe','asd@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','+60 12-233-4922',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-05',1,3,'Male',NULL,'DPH',NULL),
-
-('2500004','Patricia','Lee','asdddew@gmail.com','AQAAAAIAAYagAAAAEGyBGBzs6LQiyNF3QVuXc6Cz0yVIGikGDI6GdsXMFG6eDzkN0617JG54Tz/Zp/V35g==','0127733112',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-05',4,1,'Male',NULL,'DAC',NULL),
-
-('2500006','Wei Jian','Tan','weijian1@student.tarc.edu.my','9XMlcZ0fkU4mrZ8a1KUfWp1nBas8kqRTYotMwK3GZ/Jo04J6MHqWrjCRtZkrjn2J3g6Q8VEfY0uWr9PHFBzifE==','0123456781',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-02',1,1,'Male',NULL,'DAC',NULL),
-
-('2500007','Siti Nur','Amina','sitinur2@student.tarc.edu.my','yqH9nSYOZ5kqEwGpXCaVMK0aEkIDhNKiJWuIpgNYz1WpKBfe7eUPFez6iuVNN/XysJ+kj7pV2J08QeJlRZzGQv==','0169988772',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-08-03',1,2,'Female',NULL,'DCE',NULL),
-
-('2500008','Jun Hao','Lim','junhao3@student.tarc.edu.my','ybrhfwLvhb+kDcsoVX2y568PWQNzz5shOYVRDcJj+m2ploE4KFV8tS8ihiqvbuBlweXDp/hTU6U6aHAB2/J3Xm==','0115566773',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-04-18',2,1,'Male',NULL,'BIT',NULL),
-
-('2500009','Mei Ling','Ng','meiling4@student.tarc.edu.my','0upklwXwEbcg+Y0ge8SfpRGIheEPRaXXRINWEchpAz7K/4upeeI5ulKx5Z2Tg9zm2AZWhkUe+wiB/1Lz/4MNRB==','0177890344',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-03-22',2,2,'Female',NULL,'BCS',NULL),
-
-('2500010','Kah Yao','Chong','kahyao5@student.tarc.edu.my','QxlJOuYQMpdWB/IT5nATRODip+KrL1+TptDvNbCWaIMHyjwC0Wm0vMoAJoH/DgAZPKnNjUGHwKzr0NV7TK2k76==','0182244665',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-01-29',3,1,'Male',NULL,'DFT',NULL),
-
-('2500011','Nur Izzah','Binti Ali','izzah6@student.tarc.edu.my','S1/wV5gmdmKXN6xYvOla1FAhqTEuyVxWTw1kDdtc5kG15TcrqtQdQ1gBZwDoWI3PHDqWHGnEH9fHFuMpGsdKXx==','0136678896',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-05-10',1,3,'Female',NULL,'DAC',NULL),
-
-('2500012','Samuel','Koh','samuel7@student.tarc.edu.my','kUui8wKQeW8H222KgExWhEA2LlkVZzPk2Qi0ePs9EMm3LJXHC17KBF3z9QJptwxX9Z05Pvzbf1yw+R0DHfgHdj==','0102345567',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-04-03',2,3,'Male',NULL,'DCS',NULL),
-
-('2500013','Wan Yi','Chin','wany8@student.tarc.edu.my','evvGuFjzjg3qCpNgu3vKTOLHLUftaE/x+jAQ+Bn31rjSfIZSL/3kZ+Z72BmQ6iFwXG4Sq94jPkl8Dn1M1NoQyC==','0143456678',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-05-14',3,2,'Female',NULL,'DCH',NULL),
-
-('2500014','Darren','Foo','darren9@student.tarc.edu.my','hquiXHqEsKQWz9VOP396grbT1ZxWbhOUmq7wo+uF35zTvHov7kI3d5WNPl6M4RR6mO3OISUkwp+onDNKTtbyeB==','0198899219',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-03-16',3,3,'Male',NULL,'DEE',NULL),
-
-('2500015','Elena','Yap','elena10@student.tarc.edu.my','1vdkHfmgjA3zIdw3LvPxTnVwOZNLwS+deST8MzGRrXIqAIfocRuh2svwcu+XmeJBYWI5iQXy7xh+BdyibjDwZG==','0171122331',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-02-07',1,1,'Female',NULL,'DFI',NULL),
-
-('2500016','Haziq','Rahman','haziq11@student.tarc.edu.my','I9PbpH41oGyrjg9+3AqyG0UG04IHEc7n0mmyEarjSJiV2tlq6FT9pNWh0lUxu9EdbiH8DxW+tdJkZsD9lafyDN==','0135566772',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-04-29',2,1,'Male',NULL,'BAC',NULL),
-
-('2500017','Jia Wen','Liew','jiawen12@student.tarc.edu.my','r66oubYYQ73BWJXMzDcH6j9fpaafGKYVb/8T87pEsEq+C4mK+ymyKIKEGAmDfHb0r7hxCfjhBplophI+g6b+4z==','0122334456',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-05-20',1,2,'Female',NULL,'BCE',NULL),
-
-('2500018','Raymond','Chan','ray13@student.tarc.edu.my','X1KBE4rBU9ppsMlOFltKTPVzZ1G6+rBkv7HItaQ6U76LyFZDcBdkDdcgoNjDbPyHlH9QiWxA5HzfOhXQSI11Yo==','0188765432',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-03-11',2,2,'Male',NULL,'BEE',NULL),
-
-('2500019','Hui Qi','Teo','huiqi14@student.tarc.edu.my','EdxXF7nPwsKt0z4pDvFieDsI++tZXUpEYzHK7lW547te0eTr4BAfvYHPQ2e5tSYJqt5GvJ9iIev5sH82GM9SKw==','0114455789',1,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-01-25',3,3,'Female',NULL,'BFN',NULL),
-
-('2500020','Nicholas','Wong','nich20@student.tarc.edu.my','1F6l+AddtnujSZyojACiWE1zQ5RiyZWt+rbRrBIBOnuAfNMOcfruf8aRg0h0pjlSzyxhUINxUI0eFb8cy+jp4F==','0179080707',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-02-14',1,3,'Male',NULL,'BIT',NULL),
-
-('2500021','Ashley','Lau','ash21@student.tarc.edu.my','EBirtapd2nJHbA6MMUu1cLxqlQ4BvuHkr9iiLYrx36lJfK20nEBsV5UMJogXb+lQvmys+dw0Y00iQOaPwvkm2t==','0165553390',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-04-21',2,1,'Female',NULL,'BCS',NULL),
-
-('2500022','Arif','Hamzah','arif22@student.tarc.edu.my','vnszfrU1HA8RuIW86Vuj4L631x6xK96TC7M9rL8btv/uBa0RLYfnZ8cALMwC+if8KnAUfP+liCAydJs9OajWv3==','0102233445',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-05-12',3,1,'Male',NULL,'DAC',NULL),
-
-('2500023','Vivian','Kok','vivian23@student.tarc.edu.my','hBVI1gwqInzmhWZMp89+/XjcyAuARkOtD7eA2tlF3bb+j9eXQGbhtj+w2bsPQKaOhPzkfvMpz+21ZoCXeaE5XE==','0147654321',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-03-04',3,2,'Female',NULL,'DFT',NULL),
-
-('2500024','Kelvin','Ong','kelvin24@student.tarc.edu.my','usdDWHE8v1CtAcvkY/e7Kqizv3kP9AKXxsHZ4aCOnBq+7VK3vjiWvGlDJ9Ppj48a0bfnykDJZFbWYl6YlECJKh==','0123345566',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-02-28',2,3,'Male',NULL,'DCS',NULL),
-
-('2500025','Amanda','Goh','amanda25@student.tarc.edu.my','H3Z8iPI28lfbCbIpTxh9oTK/uRhrCI6OLTw1FmgXlxK5e8gmODhBzh52YSVhm+E4Is8VoNief/dPHMOxrlVrGV==','0193222288',1,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-01-17',1,1,'Female',NULL,'DFI',NULL),
-
-('2500026','TEST','TEST','test@student.tarc.edu.my','qAI6Ihzkl7iQISd0ylPYJ4GSkmtFNQDnSsL1FanHlsBaweklU+lUS+a4TQqyBJ7ZjoMszM7zrnSj/VU76CDTSs==','0127733112',0,'Active','Student',
- NULL,NULL,NULL,NULL,
- '2025-12-05',3,1,'Male',NULL,'BFN',NULL);
 
 
  --Semester

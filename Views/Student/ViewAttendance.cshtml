@@ -1,7 +1,52 @@
-﻿@model StudentAttendanceVM
+@model StudentAttendanceVM
 @{
     ViewData["Title"] = "View Attendance";
 }
+<style>
+.date-pill {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    background: #f8f9fc;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #4e73df;
+    line-height: 1.1;
+}
+.date-pill .month {
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+/* Align pill and text vertically */
+.list-group-item .d-flex.align-items-start {
+    align-items: center;      /* center pill with text block */
+    gap: 14px;                /* consistent spacing */
+}
+
+/* Slight downward nudge for the pill */
+.date-pill {
+    margin-top: 2px;
+}
+
+/* Spacing for attendance row header and status */
+.list-group-item .d-flex.justify-content-between.align-items-start.flex-wrap.gap-2 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+</style>
+
+<!-- Page Heading: Take Attendance -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Take Attendance</h1>
+        <p class="text-muted small mt-2">Scan the QR or enter the code to mark your attendance.</p>
+    </div>
+</div>
 
 <!-- Take Attendance Section -->
 <div class="card shadow mb-4">
@@ -103,7 +148,7 @@
 <div class="card shadow mb-4">
     <div class="card-body bg-light border-bottom">
         <div class="row g-3">
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-2">
                 <select id="subjectFilter" class="form-control">
                     <option value="">All Subjects</option>
                     @foreach (var s in Model.AvailableSubjects)
@@ -113,7 +158,16 @@
                 </select>
             </div>
 
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-2">
+                <select id="classTypeFilter" class="form-control">
+                    <option value="">All Types</option>
+                    <option value="Lecture">Lecture</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Practical">Practical</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2">
                 <select id="monthFilter" class="form-control">
                     <option value="">All Months</option>
                     @foreach (var m in Model.AvailableMonths)
@@ -143,73 +197,6 @@
                 <button type="button" class="btn btn-secondary w-100" id="resetFilters" title="Reset filters">
                     <i class="fas fa-undo"></i>
                 </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Present</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPresent Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-check-circle fa-2x text-success"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-danger shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Absent</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallAbsent Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-times-circle fa-2x text-danger"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Leave</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">0 Days</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-calendar-times fa-2x text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Overall</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverallPercentage%</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-pie fa-2x text-info"></i>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -249,31 +236,33 @@
                 }
                 else
                 {
-                    <div class="attendance-timeline">
+                    <div class="list-group list-group-flush">
                         @foreach (var attendance in Model.RecentAttendances)
                         {
-                            var statusClass = attendance.Status == "Present" ? "success" : "danger";
-                            var statusText = attendance.Status == "Present" ? "Present" : "Absent";
-                            
-                            <div class="attendance-record">
-                                <div class="attendance-date">
-                                    <div class="date-box">
+                            var isPresent = attendance.Status == "Present";
+                            var statusClass = isPresent ? "success" : "danger";
+                            var statusText = isPresent ? "Present" : "Absent";
+
+                            <div class="list-group-item py-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="date-pill text-center">
                                         <div class="day">@attendance.Date.Day</div>
                                         <div class="month">@attendance.Date.ToString("MMM").ToUpper()</div>
                                     </div>
-                                </div>
-                                <div class="attendance-details">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="font-weight-bold mb-1">
-                                                @attendance.ClassSection.Course.Id - @attendance.ClassSection.Course.Name
-                                            </h6>
-                                            <p class="text-muted small mb-1">
-                                                @(attendance.ClassSection.Room?.Id ?? "N/A") • 
-                                                @attendance.ClassSection.StartTime.ToString("HH:mm") - @attendance.ClassSection.EndTime.ToString("HH:mm")
-                                            </p>
+
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">
+                                                    @attendance.ClassSection.Course.Id - @attendance.ClassSection.Course.Name
+                                                </h6>
+                                                <div class="text-muted small mb-1">
+                                                    @(attendance.ClassSection.Room?.Id ?? "N/A") •
+                                                    @attendance.ClassSection.StartTime.ToString("HH:mm") - @attendance.ClassSection.EndTime.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                            <span class="badge badge-@statusClass px-3 py-2">@statusText</span>
                                         </div>
-                                        <span class="badge badge-@statusClass">@statusText</span>
                                     </div>
                                 </div>
                             </div>
@@ -318,13 +307,14 @@
             $.get('@Url.Action("ViewAttendance", "Student")', {
                 subject: $('#subjectFilter').val(),
                 month: $('#monthFilter').val(),
-                search: $('#searchBox').val()
+                search: $('#searchBox').val(),
+                classType: $('#classTypeFilter').val()
             }, function (html) {
                 $('#attendanceContainer').html(html);
             });
         }
 
-        $('#subjectFilter, #monthFilter').on('change', loadAttendance);
+        $('#subjectFilter, #classTypeFilter, #monthFilter').on('change', loadAttendance); // include classTypeFilter
         $('#searchBox').on('keyup', loadAttendance);
 
         //take att
@@ -545,13 +535,13 @@
             }
         }
 
-        //reset filters button
         $('#resetFilters').on('click', function() {
-            $('#subjectFilter').val('');
-            $('#monthFilter').val('');
-            $('#searchBox').val('');
-            loadAttendance();
-        });
+        $('#subjectFilter').val('');
+        $('#classTypeFilter').val('');
+        $('#monthFilter').val('');
+        $('#searchBox').val('');
+        loadAttendance();
+    });
 
         //view details button click
         $(document).on('click', '.view-details-btn', function(e) {
