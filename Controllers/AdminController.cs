@@ -286,7 +286,6 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
-                // Check if student exists
                 var existingStudent = await db.Students.FindAsync(id);
                 if (existingStudent == null)
                 {
@@ -294,7 +293,7 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
-                // Check for duplicate email (excluding current student)
+                // Check duplicate email
                 var duplicateEmail = await db.Students
                     .AnyAsync(s => s.Email == email && s.Id != id);
 
@@ -304,7 +303,6 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(StudentManagement));
                 }
 
-                // Update student properties
                 existingStudent.FirstName = firstName.Trim();
                 existingStudent.LastName = lastName.Trim();
                 existingStudent.Gender = gender.Trim();
@@ -313,7 +311,6 @@ namespace SHAPEE.Controllers
                 existingStudent.YearLevel = yearLevel;
                 existingStudent.Status = status?.Trim() ?? "Active";
 
-                // Handle Program - find program by name and set ProgramId
                 if (!string.IsNullOrWhiteSpace(programName))
                 {
                     var program = await db.Programs
@@ -853,7 +850,7 @@ namespace SHAPEE.Controllers
             }
         }
 
-        // GET: Admin Profile
+        //Admin Profile
         public async Task<IActionResult> Profile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -867,7 +864,7 @@ namespace SHAPEE.Controllers
             return View("~/Views/Shared/Profile.cshtml", admin);
         }
 
-        // POST: Update Admin Profile
+        // Update Admin Profile
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(string firstName, string lastName,
@@ -890,7 +887,6 @@ namespace SHAPEE.Controllers
                     return RedirectToAction("Profile");
                 }
 
-                // Update admin fields
                 admin.FirstName = firstName?.Trim();
                 admin.LastName = lastName?.Trim();
                 admin.Email = email?.Trim().ToLower();
@@ -909,18 +905,11 @@ namespace SHAPEE.Controllers
 
 
 
-        public IActionResult FacultyManagement(string? sort, string? name, string? editId)
+        public IActionResult FacultyManagement(string? sort, string? name)
         {
             ViewData["Title"] = "Faculty Management";
-            Faculty? editFaculty = null;
 
-            if (!string.IsNullOrEmpty(editId))
-            {
-                editFaculty = db.Faculties.FirstOrDefault(f => f.Id == editId);
-            }
             name = name?.Trim() ?? "";
-
-
             var filteredFaculties = db.Faculties
                 .Where(f => f.Name.Contains(name))
                 .AsQueryable();
@@ -937,8 +926,7 @@ namespace SHAPEE.Controllers
 
             var vm = new FacultyManageVM
             {
-                Faculties = faculties,
-                EditFaculty = editFaculty
+                Faculties = faculties
             };
 
             if (Request.IsAjax())
@@ -1047,7 +1035,22 @@ namespace SHAPEE.Controllers
             }
         }
 
+        public IActionResult GetEditFacultyForm(string facultyId)
+        {
+            var faculty = db.Faculties.FirstOrDefault(f => f.Id == facultyId);
 
+            if (faculty == null)
+            {
+                return Content("<div class='alert alert-danger m-3'>Faculty not found</div>");
+            }
+
+            var vm = new FacultyManageVM
+            {
+                EditFaculty = faculty
+            };
+
+            return PartialView("_FacultyEditForm", vm);
+        }
 
         //Delete Faculty
         [HttpPost]

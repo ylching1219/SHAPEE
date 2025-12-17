@@ -297,9 +297,11 @@
             var $tbody = $('#liveScanBody');
             if (!items || items.length === 0) {
                 $tbody.html('<tr class="text-muted"><td colspan="4" class="text-center">No attendance yet.</td></tr>');
+                $('#joinedCount').text('0 Joined');   // reset
                 return;
             }
 
+            // build table rows
             var rows = items.map(function (x) {
                 var sourceBadge = x.source === 'QR Scan'
                     ? '<span class="badge badge-primary">QR Scan</span>'
@@ -320,6 +322,16 @@
             });
 
             $tbody.html(rows.join(''));
+
+            //update joinedCount to unique student count
+            var uniqueIds = {};
+            items.forEach(function (x) {
+                if (x.studentId) {
+                    uniqueIds[x.studentId] = true;
+                }
+            });
+            var count = Object.keys(uniqueIds).length;
+            $('#joinedCount').text(count + ' Joined');
         }
     
         //poll live scans

@@ -154,3 +154,131 @@ select.form-control-sm {
     margin-right: 0.25rem;
     color: #4e73df;
 }
+
+/* Quick search panel */
+.qs-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+    padding: 8px 0;
+    z-index: 2000;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+/* Section title (e.g., Go to, Help) */
+.qs-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    padding: 6px 16px;
+}
+
+/* Individual item */
+.qs-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #111827;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.qs-item:hover {
+    background: #f3f4f6;
+}
+
+/* Icon area on left (optional) */
+.qs-item-icon {
+    width: 18px;
+    margin-right: 8px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Text area */
+.qs-item-text {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main line: "Attendance > Take Attendance" */
+.qs-item-label {
+    font-weight: 500;
+}
+
+/* You can use this for subtitles (e.g., “Open page”) if needed */
+.qs-item-sub {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Highlighted part of text */
+.qs-highlight {
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 3px;
+    padding: 0 1px;
+}
+
+/* Override global link styles for quick search results */
+.qs-panel a.qs-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #111827 !important;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.qs-panel a.qs-item:hover {
+    background: #f3f4f6;
+}
+
+/* Icon and text inside the item */
+.qs-panel a.qs-item .qs-item-icon {
+    width: 18px;
+    margin-right: 8px;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qs-panel a.qs-item .qs-item-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.qs-empty {
+    padding: 32px 0 40px;
+    text-align: center;
+}
+
+.qs-empty-icon {
+    font-size: 28px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+}
+
+.qs-empty-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.qs-empty-sub {
+    font-size: 13px;
+    color: #6b7280;
+}
