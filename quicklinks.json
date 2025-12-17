@@ -1,11 +1,11 @@
 [
 
     {
-        "role": "All",
+        "role": "Admin",
         "group": "Account",
         "title": "Profile",
-        "url": "/Student/Profile",
-        "keywords": [ "profile", "account", "user" ]
+        "url": "/Admin/Profile",
+        "keywords": [ "profile", "account", "admin" ]
     },
     {
       "role": "Admin",
@@ -86,6 +86,13 @@
     },
   
     {
+        "role": "Staff",
+        "group": "Account",
+        "title": "Profile",
+        "url": "/Staff/Profile",
+        "keywords": [ "profile", "account", "staff", "teacher" ]
+    },
+    {
       "role": "Staff",
       "group": "Dashboard",
       "title": "Staff Dashboard",
@@ -121,6 +128,13 @@
       "keywords": [ "materials", "course materials", "classroom", "resources" ]
     },
   
+    {
+        "role": "Student",
+        "group": "Account",
+        "title": "Profile",
+        "url": "/Student/Profile",
+        "keywords": [ "profile", "account", "student" ]
+    },
     {
       "role": "Student",
       "group": "Dashboard",
