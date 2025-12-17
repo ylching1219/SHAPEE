@@ -22,7 +22,10 @@
         {
             @foreach (var f in Model.Faculties)
             {
-                <tr class="border-bottom">
+                <tr class="border-bottom"
+                    data-faculty-id="@f.Id"
+                    data-faculty-name="@f.Name"
+                    data-cost-per-credit-hour="@f.CostPerCreditHour">
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@f.Id</div>
                     </td>
@@ -34,7 +37,7 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="@Url.Action("FacultyManagement", "Admin", new { editId = f.Id })">
+                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditModal">
                                     <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                 </a>
                                 <div class="dropdown-divider"></div>

@@ -194,6 +194,144 @@ namespace SHAPEE
 </html>";
         }
 
+        public string GenerateOTP()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
+        }
+
+        public async Task<bool> SendOTPEmail(string toEmail, string userName, string otp)
+        {
+            try
+            {
+                var smtpUser = _configuration["Smtp:User"];
+                var smtpPass = _configuration["Smtp:Pass"];
+                var smtpName = _configuration["Smtp:Name"];
+                var smtpHost = _configuration["Smtp:Host"];
+                var smtpPort = int.Parse(_configuration["Smtp:Port"]);
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(smtpUser, smtpName),
+                    Subject = "Password Reset - Verification Code",
+                    Body = GetOTPEmailBody(userName, otp),
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(new MailAddress(toEmail));
+
+                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+
+                await smtpClient.SendMailAsync(mailMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"OTP email sending failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string GetOTPEmailBody(string userName, string otp)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        border: 1px solid #ddd;
+                        border-radius: 5px;
+                    }}
+                    .header {{
+                        background-color: #4e73df;
+                        color: white;
+                        padding: 20px;
+                        text-align: center;
+                        border-radius: 5px 5px 0 0;
+                    }}
+                    .content {{
+                        padding: 20px;
+                        background-color: #f8f9fc;
+                    }}
+                    .otp-box {{
+                        background-color: #fff;
+                        padding: 20px;
+                        text-align: center;
+                        margin: 20px 0;
+                        border: 2px dashed #4e73df;
+                        border-radius: 5px;
+                    }}
+                    .otp-code {{
+                        font-size: 32px;
+                        font-weight: bold;
+                        color: #4e73df;
+                        letter-spacing: 8px;
+                    }}
+                    .warning {{
+                        background-color: #fff3cd;
+                        border: 1px solid #ffc107;
+                        padding: 15px;
+                        margin: 20px 0;
+                        border-radius: 5px;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        padding: 20px;
+                        color: #666;
+                        font-size: 12px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h2>Password Reset Request</h2>
+                    </div>
+                    <div class='content'>
+                        <p>Dear <strong>{userName}</strong>,</p>
+            
+                        <p>We received a request to reset your password. Use the verification code below to proceed:</p>
+            
+                        <div class='otp-box'>
+                            <p style='margin: 0; color: #666; font-size: 14px;'>Your Verification Code</p>
+                            <div class='otp-code'>{otp}</div>
+                            <p style='margin: 10px 0 0 0; color: #999; font-size: 12px;'>Valid for 10 minutes</p>
+                        </div>
+            
+                        <div class='warning'>
+                            <strong>⚠️ Security Notice:</strong>
+                            <ul>
+                                <li>This code will expire in 10 minutes</li>
+                                <li>Do not share this code with anyone</li>
+                                <li>If you didn't request this, please ignore this email</li>
+                            </ul>
+                        </div>
+            
+                        <p>Best regards,<br>
+                        <strong>TARUMT Administration</strong></p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated email. Please do not reply to this message.</p>
+                        <p>&copy; 2025 TARUMT. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+        }
+
         public static byte[] ExportToCsv<T>(IEnumerable<T> data)
         {
             var sb = new StringBuilder();

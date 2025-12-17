@@ -161,7 +161,17 @@
                 });
             }
 
-            //add error class to inputs if got errror
+             const successMessage = document.querySelector('.success-message');
+            if (successMessage) {
+                setTimeout(function() {
+                    successMessage.style.transition = 'opacity 0.5s ease';
+                    successMessage.style.opacity = '0';
+                    setTimeout(function() {
+                        successMessage.style.display = 'none';
+                    }, 500);
+                }, 7000);
+            }
+
             @if (ViewData.ModelState[""]?.Errors.Count > 0 && Context.Request.Method == "POST")
             {
                     <text>

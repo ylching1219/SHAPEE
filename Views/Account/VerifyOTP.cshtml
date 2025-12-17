@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "Verify Code";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - TARUMT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="~/css/login.css" rel="stylesheet">
+    <style>
+        .alert {
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: #4e73df;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 5px 0;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+            .btn-link:hover {
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-form-container">
+                <div class="key-icon-section">
+                    <div class="key-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                </div>
+
+                <h1 class="login-title">Enter Verification Code</h1>
+                <p class="login-subtitle">
+                    We've sent a 6-digit code to your email
+                </p>
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger">
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success">
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                <form class="login-form" method="post" asp-action="VerifyOTP">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label for="otp">Verification Code <span class="required">*</span></label>
+                        <input type="text" id="otp" name="otp" class="form-control" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        Verify Code
+                    </button>
+                </form>
+
+                <div class="signup-link" style="text-align: center;">
+                    <a href="@Url.Action("ForgotPassword", "Account")" class="btn-link">
+                        <i class="fas fa-redo"></i> Resend Code
+                    </a>
+                    <br>
+                    <a href="@Url.Action("ForgotPassword", "Account")" class="btn-link">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-right">
+            <div class="features-slider">
+                <div class="feature-slide active">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h2 class="feature-title">Secure Verification</h2>
+                    <p class="feature-description">
+                        Enter the 6-digit code we sent to your email to verify your identity.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/slider.js"></script>
+    <script>
+        // Auto-format OTP input (numbers only)
+        document.getElementById('otp').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>
