@@ -215,7 +215,6 @@ $(function () {
             var highlighted = highlightLabel(label, term);
     
             html += '<a class="qs-item" href="' + x.url + '">';
-            html += '  <div class="qs-item-icon"><i class="fas fa-arrow-right"></i></div>';
             html += '  <div class="qs-item-text">';
             html += '    <div class="qs-item-label">' + highlighted + '</div>';
             html += '  </div>';
