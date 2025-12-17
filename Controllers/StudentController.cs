@@ -30,10 +30,13 @@ namespace SHAPEE.Controllers
                 "StripeSuccess"
             };
 
-            if (!allow.Contains(action))
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(studentId))
             {
-                var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!string.IsNullOrEmpty(studentId))
+                //apply payment lock if overdue 
+                ApplyPaymentLockIfOverdue(studentId);
+
+                if (!allow.Contains(action))
                 {
                     var status = db.Students
                         .Where(s => s.Id == studentId)
@@ -821,15 +824,47 @@ namespace SHAPEE.Controllers
             return View("CurrentBilling", vm);
         }
 
-        public IActionResult PaymentHistory()
+        public IActionResult PaymentHistory(string? dateFilter = null, string? amountFilter = null)
         {
             ViewData["Title"] = "Payment History";
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var txs = db.PaymentTransactions
+            var txsQuery = db.PaymentTransactions
                 .Include(t => t.Invoice)
                 .Where(t => t.Invoice.StudentId == studentId)
+                .AsQueryable();
+
+            // Date filter (examples)
+            dateFilter = dateFilter?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(dateFilter))
+            {
+                if (dateFilter == "last30")
+                {
+                    var from = DateTime.Today.AddDays(-30);
+                    txsQuery = txsQuery.Where(t => t.TransactionDate >= from);
+                }
+                else if (int.TryParse(dateFilter, out var year))
+                {
+                    txsQuery = txsQuery.Where(t => t.TransactionDate.Year == year);
+                }
+                // you can add more options as needed
+            }
+
+            // Amount / price filter (examples)
+            amountFilter = amountFilter?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(amountFilter))
+            {
+                txsQuery = amountFilter switch
+                {
+                    "lt500"    => txsQuery.Where(t => t.AmountPaid < 500),
+                    "500to1000"=> txsQuery.Where(t => t.AmountPaid >= 500 && t.AmountPaid <= 1000),
+                    "gt1000"   => txsQuery.Where(t => t.AmountPaid > 1000),
+                    _          => txsQuery
+                };
+            }
+
+            var txs = txsQuery
                 .OrderByDescending(t => t.TransactionDate)
                 .ToList();
 
@@ -837,14 +872,19 @@ namespace SHAPEE.Controllers
             {
                 Transactions = txs.Select(t => new PaymentTransactionRowVM
                 {
-                    ReceiptId = t.Id,
-                    InvoiceId = t.InvoiceId,
-                    SemesterId = t.Invoice?.SemesterId ?? "",
+                    ReceiptId       = t.Id,
+                    InvoiceId       = t.InvoiceId,
+                    SemesterId      = t.Invoice?.SemesterId ?? "",
                     TransactionDate = t.TransactionDate,
-                    PaymentMethod = t.PaymentMethod,
-                    AmountPaid = t.AmountPaid
+                    PaymentMethod   = t.PaymentMethod,
+                    AmountPaid      = t.AmountPaid
                 }).ToList()
             };
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_PaymentHistory", vm);
+            }
 
             return View("PaymentHistory", vm);
         }
