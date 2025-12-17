@@ -97,6 +97,7 @@ else
                             <th>Status</th>
                             <th>Time</th>
                             <th>Flagged</th>
+                            <th>Flag Reason</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,6 +122,16 @@ else
                                         @if (att.IsFlaged)
                                         {
                                             <span class="badge badge-warning">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(att.FlagReason))
+                                        {
+                                            @att.FlagReason
                                         }
                                         else
                                         {
