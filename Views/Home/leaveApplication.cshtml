@@ -1,0 +1,534 @@
+﻿@model IEnumerable<LeaveApplication>
+
+@{
+    ViewData["Title"] = "My Leave Applications";
+    var pendingCount = ViewBag.PendingCount ?? 0;
+    var approvedCount = ViewBag.ApprovedCount ?? 0;
+    var rejectedCount = ViewBag.RejectedCount ?? 0;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var hasApplications = Model != null && Model.Any();
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<!-- Page Header -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-clipboard-list mr-2"></i>My Leave Applications
+    </h1>
+    <a asp-controller="Home" asp-action="leaveApplication" class="btn btn-primary btn-sm shadow-sm">
+        <i class="fas fa-plus mr-1"></i>New Application
+    </a>
+</div>
+
+@if (!hasApplications)
+{
+    <!-- Empty State (shown when no applications) -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-gray-400 mb-3"></i>
+                <h5 class="text-gray-600 mb-2">No Leave Applications Found</h5>
+                <p class="text-gray-500 mb-3">You haven't submitted any leave applications yet.</p>
+                <a asp-controller="Home" asp-action="leaveApplication" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Submit Your First Application
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@pendingCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@approvedCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@rejectedCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Applications</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@totalCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form id="filterForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="small font-weight-medium">Status</label>
+                        <select class="form-control form-control-sm" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="typeFilter" class="small font-weight-medium">Leave Type</label>
+                        <select class="form-control form-control-sm" id="typeFilter">
+                            <option value="">All Types</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Medical">Medical</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchInput" class="small font-weight-medium">Search</label>
+                        <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search by reason...">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-secondary w-100" id="resetFilter">
+                            <i class="fas fa-redo mr-1"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    <div class="card shadow-sm">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list mr-2"></i>Application History
+            </h6>
+            <span class="badge badge-primary badge-pill" id="displayCount">@totalCount Application@(totalCount != 1 ? "s" : "")</span>
+        </div>
+        <div class="card-body p-0">
+            <!-- Applications Table -->
+            <div id="applicationsTable" class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0">Application Date</th>
+                            <th class="border-0">Leave Period</th>
+                            <th class="border-0">Duration</th>
+                            <th class="border-0">Leave Type</th>
+                            <th class="border-0">Status</th>
+                            <th class="border-0 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applicationsBody">
+                        @foreach (var app in Model)
+                        {
+                            // Calculate duration for DateOnly type
+                            var startDateTime = app.StartDate.ToDateTime(TimeOnly.MinValue);
+                            var endDateTime = app.EndDate.ToDateTime(TimeOnly.MinValue);
+                            int duration = (endDateTime - startDateTime).Days + 1;
+
+                            var statusClass = app.Status == "Pending" ? "warning" : (app.Status == "Approved" ? "success" : "danger");
+                            var statusIcon = app.Status == "Pending" ? "clock" : (app.Status == "Approved" ? "check-circle" : "times-circle");
+                            var typeClass = app.LeaveType == "Normal" ? "info" : (app.LeaveType == "Medical" ? "success" : "danger");
+
+                            <tr data-status="@app.Status" data-type="@app.LeaveType">
+                                <td>
+                                    <small class="text-muted d-block">@app.ApplicationDate.ToString("dd MMM yyyy")</small>
+                                    <small class="text-muted">@app.ApplicationDate.ToString("hh:mm tt")</small>
+                                </td>
+                                <td>
+                                    <strong class="d-block">@app.StartDate.ToString("dd MMM yyyy") - @app.EndDate.ToString("dd MMM yyyy")</strong>
+                                </td>
+                                <td>
+                                    <span class="badge badge-light">@duration Day@(duration != 1 ? "s" : "")</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-@typeClass">@app.LeaveType</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-@statusClass">
+                                        <i class="fas fa-@statusIcon mr-1"></i>@app.Status
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(@app.Id)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    @if (app.Status == "Pending")
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" onclick="confirmCancel(@app.Id)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- No Results State (shown when filter returns no results) -->
+            <div id="noResultsState" class="text-center py-5" style="display: none;">
+                <i class="fas fa-search fa-3x text-gray-400 mb-3"></i>
+                <h5 class="text-gray-600 mb-2">No Results Found</h5>
+                <p class="text-gray-500 mb-0">Try adjusting your filters or search terms</p>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- View Details Modal -->
+<div class="modal fade" id="viewDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt mr-2"></i>Leave Application Details
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Application Status Header -->
+                <div class="alert alert-warning border-left-warning mb-4" id="modalStatusAlert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clock fa-2x mr-3"></i>
+                        <div>
+                            <strong>Status: <span id="modalStatusText">Pending</span></strong>
+                            <p class="mb-0 small" id="modalStatusDesc">Your application is awaiting approval</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small font-weight-bold text-gray-700">Application Date</label>
+                        <p class="mb-0" id="modalAppDate"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small font-weight-bold text-gray-700">Leave Type</label>
+                        <p class="mb-0"><span class="badge badge-info" id="modalLeaveType"></span></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small font-weight-bold text-gray-700">Start Date</label>
+                        <p class="mb-0" id="modalStartDate"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small font-weight-bold text-gray-700">End Date</label>
+                        <p class="mb-0" id="modalEndDate"></p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="small font-weight-bold text-gray-700">Duration</label>
+                        <p class="mb-0"><span class="badge badge-light" id="modalDuration"></span></p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="small font-weight-bold text-gray-700">Reason</label>
+                        <p class="mb-0 text-justify" id="modalReason"></p>
+                    </div>
+                    <div class="col-md-12 mb-3" id="modalDocumentSection" style="display: none;">
+                        <label class="small font-weight-bold text-gray-700">Supporting Document</label>
+                        <div>
+                            <a href="#" class="btn btn-sm btn-outline-primary" id="modalDocLink" target="_blank">
+                                <i class="fas fa-download mr-1"></i>Download Document
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-12" id="modalRejectSection" style="display: none;">
+                        <div class="alert alert-danger mb-0">
+                            <label class="small font-weight-bold">Rejection Reason</label>
+                            <p class="mb-0" id="modalRejectReason"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Cancel Application
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this leave application?</p>
+                <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-controller="Home" asp-action="CancelApplication" method="post" id="cancelForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="cancelApplicationId" />
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No, Keep It</button>
+                    <button type="submit" class="btn btn-danger">Yes, Cancel Application</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+
+    .border-left-danger {
+        border-left: 0.25rem solid #e74a3b !important;
+    }
+
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fc;
+        }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .card {
+        border: none;
+    }
+
+    .text-xs {
+        font-size: 0.7rem;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusFilter = document.getElementById('statusFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const searchInput = document.getElementById('searchInput');
+            const resetFilterBtn = document.getElementById('resetFilter');
+            const applicationsBody = document.getElementById('applicationsBody');
+            const noResultsState = document.getElementById('noResultsState');
+            const applicationsTable = document.getElementById('applicationsTable');
+
+            // Filter functionality
+            function filterApplications() {
+                const statusValue = statusFilter.value.toLowerCase();
+                const typeValue = typeFilter.value.toLowerCase();
+                const searchValue = searchInput.value.toLowerCase();
+                const rows = applicationsBody.querySelectorAll('tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const status = row.getAttribute('data-status').toLowerCase();
+                    const type = row.getAttribute('data-type').toLowerCase();
+                    const text = row.textContent.toLowerCase();
+
+                    const statusMatch = !statusValue || status === statusValue;
+                    const typeMatch = !typeValue || type === typeValue;
+                    const searchMatch = !searchValue || text.includes(searchValue);
+
+                    if (statusMatch && typeMatch && searchMatch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Update display count
+                document.getElementById('displayCount').textContent = visibleCount + (visibleCount === 1 ? ' Application' : ' Applications');
+
+                // Show/hide no results state
+                if (visibleCount === 0 && rows.length > 0) {
+                    applicationsTable.style.display = 'none';
+                    noResultsState.style.display = 'block';
+                } else {
+                    applicationsTable.style.display = 'block';
+                    noResultsState.style.display = 'none';
+                }
+            }
+
+            // Event listeners for filters (only if they exist)
+            if (statusFilter) {
+                statusFilter.addEventListener('change', filterApplications);
+                typeFilter.addEventListener('change', filterApplications);
+                searchInput.addEventListener('input', filterApplications);
+
+                // Reset filters
+                resetFilterBtn.addEventListener('click', function() {
+                    statusFilter.value = '';
+                    typeFilter.value = '';
+                    searchInput.value = '';
+                    filterApplications();
+                });
+            }
+
+            // Auto-dismiss alerts
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert-dismissible');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
+        });
+
+        // View details function - fetch from server
+        function viewDetails(id) {
+            fetch(`@Url.Action("GetApplicationDetails", "Home")?id=${id}`)
+                .then(response => response.json())
+                .then(details => {
+                    // Update modal content
+                    const statusAlert = document.getElementById('modalStatusAlert');
+                    const statusIcon = statusAlert.querySelector('i');
+                    const statusText = document.getElementById('modalStatusText');
+                    const statusDesc = document.getElementById('modalStatusDesc');
+
+                    // Update status styling
+                    statusAlert.className = 'alert mb-4';
+                    if (details.status === 'Pending') {
+                        statusAlert.classList.add('alert-warning', 'border-left-warning');
+                        statusIcon.className = 'fas fa-clock fa-2x mr-3';
+                        statusText.textContent = 'Pending';
+                        statusDesc.textContent = 'Your application is awaiting approval';
+                    } else if (details.status === 'Approved') {
+                        statusAlert.classList.add('alert-success', 'border-left-success');
+                        statusIcon.className = 'fas fa-check-circle fa-2x mr-3';
+                        statusText.textContent = 'Approved';
+                        statusDesc.textContent = 'Your leave application has been approved';
+                    } else if (details.status === 'Rejected') {
+                        statusAlert.classList.add('alert-danger', 'border-left-danger');
+                        statusIcon.className = 'fas fa-times-circle fa-2x mr-3';
+                        statusText.textContent = 'Rejected';
+                        statusDesc.textContent = 'Your leave application has been rejected';
+                    }
+
+                    // Update details
+                    document.getElementById('modalAppDate').textContent = details.appDate;
+                    document.getElementById('modalLeaveType').textContent = details.leaveType;
+                    document.getElementById('modalLeaveType').className = 'badge badge-' +
+                        (details.leaveType === 'Normal' ? 'info' : details.leaveType === 'Medical' ? 'success' : 'danger');
+                    document.getElementById('modalStartDate').textContent = details.startDate;
+                    document.getElementById('modalEndDate').textContent = details.endDate;
+                    document.getElementById('modalDuration').textContent = details.duration;
+                    document.getElementById('modalReason').textContent = details.reason;
+
+                    // Handle document
+                    const docSection = document.getElementById('modalDocumentSection');
+                    if (details.hasDocument) {
+                        docSection.style.display = 'block';
+                        document.getElementById('modalDocLink').href = details.documentUrl || '#';
+                    } else {
+                        docSection.style.display = 'none';
+                    }
+
+                    // Handle rejection reason
+                    const rejectSection = document.getElementById('modalRejectSection');
+                    if (details.status === 'Rejected' && details.rejectReason) {
+                        rejectSection.style.display = 'block';
+                        document.getElementById('modalRejectReason').textContent = details.rejectReason;
+                    } else {
+                        rejectSection.style.display = 'none';
+                    }
+
+                    // Show modal
+                    $('#viewDetailsModal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Error fetching application details:', error);
+                    alert('Error loading application details. Please try again.');
+                });
+        }
+
+        // Confirm cancel function
+        function confirmCancel(id) {
+            document.getElementById('cancelApplicationId').value = id;
+            $('#cancelModal').modal('show');
+        }
+    </script>
+}
