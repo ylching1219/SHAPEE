@@ -38,8 +38,7 @@ public class HomeController(DB db) : Controller
     // POST: Submit Leave Application
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Student")]
-    [Authorize(Roles = "Staff")]
+    [Authorize(Roles = "Student, Staff")]
     public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, IFormFile? supportDocument)
     {
         // Remove model state for file upload since it's optional (but we'll validate it separately)
@@ -286,8 +285,7 @@ public class HomeController(DB db) : Controller
     // POST: Cancel Leave Application (AJAX)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Student")]
-    [Authorize(Roles = "Staff")]
+    [Authorize(Roles = "Student, Staff")]
     public async Task<IActionResult> CancelLeaveApplication(int id)
     {
         try
