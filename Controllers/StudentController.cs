@@ -90,8 +90,8 @@ namespace SHAPEE.Controllers
                         .ToList();
 
                     var present = subjectAtts.Count(a => a.Status == "Present");
-                    var absent  = subjectAtts.Count(a => a.Status == "Absent");
-                    var leave   = subjectAtts.Count(a => a.Status == "Leave");
+                    var absent = subjectAtts.Count(a => a.Status == "Absent");
+                    var leave = subjectAtts.Count(a => a.Status == "Leave");
 
                     var consideredTotal = present + absent;
                     var percentage = consideredTotal > 0
@@ -119,7 +119,7 @@ namespace SHAPEE.Controllers
             return View(vm);
         }
 
-        
+
         //===============KOH KAI MINN================
         // student main attendance page
         public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? month = null, string? search = null, string? classType = null)
@@ -234,18 +234,18 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //get available subjects
-           var availableSubjects = db.ClassSections
-                .Include(cs => cs.Course)
-                .Where(cs => sectionIds.Contains(cs.SectionId))
-                .Select(cs => new { cs.Course.Id, cs.Course.Name })
-                .Distinct()
-                .OrderBy(c => c.Id)
-                .Select(c => new SubjectFilterOption
-                {
-                    CourseId = c.Id,
-                    CourseName = c.Name
-                })
-                .ToList();
+            var availableSubjects = db.ClassSections
+                 .Include(cs => cs.Course)
+                 .Where(cs => sectionIds.Contains(cs.SectionId))
+                 .Select(cs => new { cs.Course.Id, cs.Course.Name })
+                 .Distinct()
+                 .OrderBy(c => c.Id)
+                 .Select(c => new SubjectFilterOption
+                 {
+                     CourseId = c.Id,
+                     CourseName = c.Name
+                 })
+                 .ToList();
 
 
             //get available months
@@ -272,9 +272,9 @@ namespace SHAPEE.Controllers
 
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
-            var overallAbsent  = attendances.Count(a => a.Status == "Absent");
-            var overallLeave   = attendances.Count(a => a.Status == "Leave");
-            var overallTotal   = attendances.Count;
+            var overallAbsent = attendances.Count(a => a.Status == "Absent");
+            var overallLeave = attendances.Count(a => a.Status == "Leave");
+            var overallTotal = attendances.Count;
 
             var consideredTotal = overallPresent + overallAbsent;
             var overallPercentage = consideredTotal > 0
@@ -299,7 +299,7 @@ namespace SHAPEE.Controllers
                 ClassAttendances = classAttendances,
                 OverallPresent = overallPresent,
                 OverallAbsent = overallAbsent,
-                OverallLeave = overallLeave, 
+                OverallLeave = overallLeave,
                 OverallPercentage = overallPercentage,
                 RecentAttendances = recentAttendances,
                 SectionId = sectionId,
@@ -322,35 +322,35 @@ namespace SHAPEE.Controllers
         {
             if (string.IsNullOrEmpty(sectionId))
                 return PartialView("_AttendanceDetails", null);
-            
+
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
+
             // get student and verify tutorial group match
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
             if (student == null || !student.TutorialGroupId.HasValue)
                 return PartialView("_AttendanceDetails", null);
-            
+
             var classSection = db.ClassSections
                 .Include(cs => cs.Course)
                 .Include(cs => cs.Semester)
                 .Include(cs => cs.Staff)
                 .Include(cs => cs.Room)
-                .FirstOrDefault(cs => cs.SectionId == sectionId 
+                .FirstOrDefault(cs => cs.SectionId == sectionId
                     && cs.TutorialGroupId == student.TutorialGroupId.Value);
-            
+
             if (classSection == null)
                 return PartialView("_AttendanceDetails", null);
-            
+
             var attendances = db.Attendances
                 .Where(a => a.StudentId == studentId && a.ClassSectionId == sectionId)
                 .OrderByDescending(a => a.Date)
                 .ToList();
-            
+
             var presentCount = attendances.Count(a => a.Status == "Present");
             var absentCount = attendances.Count(a => a.Status == "Absent");
             var totalSessions = attendances.Count;
-            var attendancePercentage = totalSessions > 0 
-                ? Math.Round((double)presentCount / totalSessions * 100, 2) 
+            var attendancePercentage = totalSessions > 0
+                ? Math.Round((double)presentCount / totalSessions * 100, 2)
                 : 0;
 
             var viewModel = new StudentAttendanceDetailsVM
@@ -364,7 +364,7 @@ namespace SHAPEE.Controllers
                 TotalSessions = totalSessions,
                 AttendancePercentage = attendancePercentage
             };
-            
+
             return PartialView("_AttendanceDetails", viewModel);
         }
 
@@ -400,7 +400,7 @@ namespace SHAPEE.Controllers
                         return Json(new { success = false, message = "Invalid attendance code or no active session found for this code." });
                     return BadRequest("Invalid attendance code or no active session found for this code.");
                 }
-                sectionId = section.SectionId; 
+                sectionId = section.SectionId;
             }
             else
             {
@@ -417,7 +417,7 @@ namespace SHAPEE.Controllers
                     return Json(new { success = false, message = "You are not assigned to a tutorial group." });
                 return BadRequest("You are not assigned to a tutorial group.");
             }
-            
+
             if (student.TutorialGroupId.Value != section.TutorialGroupId)
             {
                 if (Request.IsAjax())
@@ -515,11 +515,11 @@ namespace SHAPEE.Controllers
 
             if (Request.IsAjax())
             {
-                return Json(new { 
-                    success = true, 
-                    message = isFlagged 
-                        ? "Attendance recorded (flagged for review)." 
-                        : "Attendance recorded successfully." 
+                return Json(new {
+                    success = true,
+                    message = isFlagged
+                        ? "Attendance recorded (flagged for review)."
+                        : "Attendance recorded successfully."
                 });
             }
 
@@ -537,7 +537,7 @@ namespace SHAPEE.Controllers
 
             var viewModel = new EventManagementVM
             {
-                Events = new List<CalendarEvent>(), 
+                Events = new List<CalendarEvent>(),
                 Semesters = semesters,
                 SelectedSemesterId = semesterId,
                 EventsWithSemester = new List<EventWithSemesterInfo>()
@@ -552,12 +552,12 @@ namespace SHAPEE.Controllers
         {
             DateTime startDate;
             DateTime endDate;
-            
+
             if (!DateTime.TryParse(start, out startDate))
             {
                 startDate = DateTime.Now.AddMonths(-1);
             }
-            
+
             if (!DateTime.TryParse(end, out endDate))
             {
                 endDate = DateTime.Now.AddMonths(1);
@@ -577,7 +577,7 @@ namespace SHAPEE.Controllers
                 {
                     var semesterStart = semester.StartDate.ToDateTime(TimeOnly.MinValue);
                     var semesterEnd = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
-                    
+
                     eventsQuery = eventsQuery.Where(e =>
                         e.StartTime.Date >= semesterStart.Date &&
                         e.StartTime.Date <= semesterEnd.Date);
@@ -586,12 +586,12 @@ namespace SHAPEE.Controllers
 
             var calendarEvents = eventsQuery.ToList();
 
-            eventsList.AddRange(calendarEvents.Select(e => 
+            eventsList.AddRange(calendarEvents.Select(e =>
             {
                 var isAllDay = (e.StartTime.Hour == 0 && e.StartTime.Minute == 0) &&
-                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 || 
+                              (e.EndTime.Hour == 0 && e.EndTime.Minute == 0 ||
                                e.EndTime.Hour == 23 && e.EndTime.Minute == 59);
-                
+
                 return new
                 {
                     id = e.Id,
@@ -610,7 +610,7 @@ namespace SHAPEE.Controllers
 
             //get semesters and add them as events
             var allSemesters = db.Semesters.ToList();
-            
+
             var semesters = allSemesters.Where(s =>
             {
                 var sStart = s.StartDate.ToDateTime(TimeOnly.MinValue);
@@ -628,7 +628,7 @@ namespace SHAPEE.Controllers
             {
                 var weeks = (s.EndDate.ToDateTime(TimeOnly.MaxValue) - s.StartDate.ToDateTime(TimeOnly.MinValue)).TotalDays / 7;
                 var semesterType = weeks >= 13 ? "Long" : "Short";
-                
+
                 return new
                 {
                     id = $"semester_{s.Id}",
@@ -726,8 +726,8 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "Semester not found." });
             }
 
-            return Json(new 
-            { 
+            return Json(new
+            {
                 success = true,
                 id = semester.Id,
                 startDate = semester.StartDate.ToString("yyyy-MM-dd"),
@@ -861,10 +861,10 @@ namespace SHAPEE.Controllers
             {
                 txsQuery = amountFilter switch
                 {
-                    "lt500"    => txsQuery.Where(t => t.AmountPaid < 500),
-                    "500to1000"=> txsQuery.Where(t => t.AmountPaid >= 500 && t.AmountPaid <= 1000),
-                    "gt1000"   => txsQuery.Where(t => t.AmountPaid > 1000),
-                    _          => txsQuery
+                    "lt500" => txsQuery.Where(t => t.AmountPaid < 500),
+                    "500to1000" => txsQuery.Where(t => t.AmountPaid >= 500 && t.AmountPaid <= 1000),
+                    "gt1000" => txsQuery.Where(t => t.AmountPaid > 1000),
+                    _ => txsQuery
                 };
             }
 
@@ -876,12 +876,12 @@ namespace SHAPEE.Controllers
             {
                 Transactions = txs.Select(t => new PaymentTransactionRowVM
                 {
-                    ReceiptId       = t.Id,
-                    InvoiceId       = t.InvoiceId,
-                    SemesterId      = t.Invoice?.SemesterId ?? "",
+                    ReceiptId = t.Id,
+                    InvoiceId = t.InvoiceId,
+                    SemesterId = t.Invoice?.SemesterId ?? "",
                     TransactionDate = t.TransactionDate,
-                    PaymentMethod   = t.PaymentMethod,
-                    AmountPaid      = t.AmountPaid
+                    PaymentMethod = t.PaymentMethod,
+                    AmountPaid = t.AmountPaid
                 }).ToList()
             };
 
@@ -1158,7 +1158,7 @@ namespace SHAPEE.Controllers
             return RedirectToAction("PaymentHistory");
         }
 
-        
+
         //helper methods
 
         private void ApplyPaymentLockIfOverdue(string studentId)
@@ -1428,8 +1428,8 @@ namespace SHAPEE.Controllers
             return View("~/Views/Student/FAQ.cshtml");
         }
         // =======================
-         // STUDENT SUPPORT / CREATE TICKET
-         // =======================
+        // STUDENT SUPPORT / CREATE TICKET
+        // =======================
         [HttpGet]
         public IActionResult CreateTicket()
         {
@@ -1638,6 +1638,29 @@ namespace SHAPEE.Controllers
 
             TempData["msg"] = "Uploaded!";
             return RedirectToAction("TaskSubmit", new { id });
+        }
+
+        public async Task<IActionResult> ViewProgramCourse()
+        {
+            await LoadProfilePicture();
+            ViewData["Title"] = "Program Courses";
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = await db.Students
+                .Include(s => s.Program)
+                    .ThenInclude(p => p.ProgramCourses)
+                        .ThenInclude(pc => pc.Course)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == userId);
+
+            if (student == null || student.Program == null)
+            {
+                TempData["ErrorMessage"] = "Student program not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            return View(student);
         }
 
     }
