@@ -1965,6 +1965,172 @@ namespace SHAPEE.Controllers
             return File(bytes, "text/csv", $"Rooms_{DateTime.Now:yyyyMMdd}.csv");
         }
 
+        // LeaveManagement
+        public IActionResult LeaveManagement(string? search, string? status, string? leaveType, string? dateFrom, string? dateTo)
+        {
+            ViewData["Title"] = "Leave Applications Management";
+
+            search = search?.Trim() ?? "";
+            status = status?.Trim() ?? "";
+            leaveType = leaveType?.Trim() ?? "";
+
+            var query = db.LeaveApplications.AsQueryable();
+
+            // Search by User ID
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(la => la.UserId.Contains(search));
+            }
+
+            // Filter by status
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(la => la.Status == status);
+            }
+
+            // Filter by leave type
+            if (!string.IsNullOrEmpty(leaveType))
+            {
+                query = query.Where(la => la.LeaveType == leaveType);
+            }
+
+            // Filter by date range
+            if (!string.IsNullOrEmpty(dateFrom) && DateOnly.TryParse(dateFrom, out var fromDate))
+            {
+                query = query.Where(la => la.StartDate >= fromDate);
+            }
+
+            if (!string.IsNullOrEmpty(dateTo) && DateOnly.TryParse(dateTo, out var toDate))
+            {
+                query = query.Where(la => la.EndDate <= toDate);
+            }
+
+            // Order by most recent application date, then by pending status first
+            var applications = query
+                .OrderByDescending(la => la.Status == "Pending")
+                .ThenByDescending(la => la.ApplicationDate)
+                .ToList();
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_AdminLeaveList", applications);
+            }
+
+            return View(applications);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveLeaveApplication(int id)
+        {
+            try
+            {
+                var leaveApplication = await db.LeaveApplications.FindAsync(id);
+
+                if (leaveApplication == null)
+                {
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = false, message = "Leave application not found." });
+                    }
+                    TempData["ErrorMessage"] = "Leave application not found.";
+                    return RedirectToAction(nameof(LeaveManagement));
+                }
+
+                // Only allow approval of pending applications
+                if (leaveApplication.Status != "Pending")
+                {
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = false, message = $"Cannot approve a leave application that is already {leaveApplication.Status.ToLower()}." });
+                    }
+                    TempData["ErrorMessage"] = $"Cannot approve a leave application that is already {leaveApplication.Status.ToLower()}.";
+                    return RedirectToAction(nameof(LeaveManagement));
+                }
+
+                // Update status to Approved
+                leaveApplication.Status = "Approved";
+                leaveApplication.RejectReason = null; // Clear any previous reject reason
+
+                await db.SaveChangesAsync();
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, message = $"Leave application for {leaveApplication.UserId} approved successfully." });
+                }
+
+                TempData["SuccessMessage"] = $"Leave application for {leaveApplication.UserId} approved successfully.";
+                return RedirectToAction(nameof(LeaveManagement));
+            }
+            catch (Exception ex)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = $"Error approving application: {ex.Message}" });
+                }
+                TempData["ErrorMessage"] = $"Failed to approve leave application: {ex.Message}";
+                return RedirectToAction(nameof(LeaveManagement));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectLeaveApplication(int id, string? rejectReason)
+        {
+            try
+            {
+                var leaveApplication = await db.LeaveApplications.FindAsync(id);
+
+                if (leaveApplication == null)
+                {
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = false, message = "Leave application not found." });
+                    }
+                    TempData["ErrorMessage"] = "Leave application not found.";
+                    return RedirectToAction(nameof(LeaveManagement));
+                }
+
+                // Only allow rejection of pending applications
+                if (leaveApplication.Status != "Pending")
+                {
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = false, message = $"Cannot reject a leave application that is already {leaveApplication.Status.ToLower()}." });
+                    }
+                    TempData["ErrorMessage"] = $"Cannot reject a leave application that is already {leaveApplication.Status.ToLower()}.";
+                    return RedirectToAction(nameof(LeaveManagement));
+                }
+
+                // Update status to Rejected
+                leaveApplication.Status = "Rejected";
+
+                // Set reject reason (can be empty/null)
+                leaveApplication.RejectReason = string.IsNullOrWhiteSpace(rejectReason)
+                    ? "No reason provided"
+                    : rejectReason.Trim();
+
+                await db.SaveChangesAsync();
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, message = $"Leave application for {leaveApplication.UserId} rejected successfully." });
+                }
+
+                TempData["SuccessMessage"] = $"Leave application for {leaveApplication.UserId} rejected successfully.";
+                return RedirectToAction(nameof(LeaveManagement));
+            }
+            catch (Exception ex)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = $"Error rejecting application: {ex.Message}" });
+                }
+                TempData["ErrorMessage"] = $"Failed to reject leave application: {ex.Message}";
+                return RedirectToAction(nameof(LeaveManagement));
+            }
+        }
+
         // KM - Academic Calendar
 
         //method to calculate semester type from dates

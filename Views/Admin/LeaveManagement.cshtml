@@ -1,0 +1,494 @@
+﻿@model List<LeaveApplication>
+@{
+    ViewData["Title"] = "Leave Applications Management";
+}
+
+<!-- Success/Error Messages Container -->
+<div id="messageContainer"></div>
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-clipboard-check mr-2"></i>Leave Applications Management
+    </h1>
+</div>
+
+<!-- Hidden Anti-Forgery Token for AJAX -->
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 font-weight-semibold text-gray-800">
+                        <i class="fas fa-list mr-2"></i>All Leave Applications (<span id="totalApplications">@Model.Count</span>)
+                    </h5>
+                </div>
+
+                <!-- Filters Section -->
+                <div class="card-body bg-light border-bottom">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by User ID or Name...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <select class="form-control" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <select class="form-control" id="leaveTypeFilter">
+                                <option value="">All Leave Types</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Medical">Medical</option>
+                                <option value="Emergency">Emergency</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <input type="date" class="form-control" id="dateFromFilter" placeholder="From Date">
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <input type="date" class="form-control" id="dateToFilter" placeholder="To Date">
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="button" class="btn btn-secondary w-100" id="resetFilters" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <div id="leaveData">
+                            <partial name="_AdminLeaveList" model="Model" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Statistics -->
+                <div class="card-footer bg-white">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center py-3">
+                                    <h4 class="text-warning mb-1" id="pendingCount">@Model.Count(a => a.Status == "Pending")</h4>
+                                    <p class="mb-0 text-muted small">Pending Review</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center py-3">
+                                    <h4 class="text-success mb-1" id="approvedCount">@Model.Count(a => a.Status == "Approved")</h4>
+                                    <p class="mb-0 text-muted small">Approved</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center py-3">
+                                    <h4 class="text-danger mb-1" id="rejectedCount">@Model.Count(a => a.Status == "Rejected")</h4>
+                                    <p class="mb-0 text-muted small">Rejected</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center py-3">
+                                    <h4 class="text-secondary mb-1" id="cancelledCount">@Model.Count(a => a.Status == "Cancelled")</h4>
+                                    <p class="mb-0 text-muted small">Cancelled</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="detailsModalLabel">
+                    <i class="fas fa-file-alt mr-2"></i>Leave Application Details
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>User ID:</strong>
+                        <p id="modalUserId" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Application Date:</strong>
+                        <p id="modalApplicationDate" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Leave Type:</strong>
+                        <p id="modalLeaveType" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Duration:</strong>
+                        <p id="modalDuration" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Start Date:</strong>
+                        <p id="modalStartDate" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>End Date:</strong>
+                        <p id="modalEndDate" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <strong>Status:</strong>
+                        <p id="modalStatus" class="mb-0"></p>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <strong>Reason for Leave:</strong>
+                    <p id="modalReason" class="mt-2 p-3 bg-light border rounded"></p>
+                </div>
+                <div class="mb-3" id="modalRejectReasonSection" style="display: none;">
+                    <strong class="text-danger">Rejection Reason:</strong>
+                    <p id="modalRejectReason" class="mt-2 p-3 bg-light border border-danger rounded text-danger"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Supporting Document:</strong>
+                    <p id="modalDocument" class="mt-2"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Confirmation Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-semibold" id="approveModalLabel">
+                    <i class="fas fa-check-circle mr-2"></i>Confirm Approval
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-check-circle fa-3x text-success"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to approve this leave application?</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success btn-sm" id="confirmApproveBtn">
+                    <i class="fas fa-check mr-1"></i> Yes, Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold" id="rejectModalLabel">
+                    <i class="fas fa-times-circle mr-2"></i>Reject Application
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-times-circle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-3">Are you sure you want to reject this leave application?</p>
+                <div class="form-group">
+                    <label for="rejectReasonInput" class="font-weight-medium">Rejection Reason (Optional):</label>
+                    <textarea class="form-control" id="rejectReasonInput" rows="4" placeholder="Enter reason for rejection (optional)..."></textarea>
+                    <small class="form-text text-muted">You can leave this empty if no specific reason is needed.</small>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmRejectBtn">
+                    <i class="fas fa-ban mr-1"></i> Yes, Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let currentApplicationId = null;
+
+            // Function to show messages
+            function showMessage(type, message) {
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+                $('#messageContainer .alert').remove();
+
+                const alertHtml = `
+                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                        <i class="fas ${icon} mr-2"></i>${message}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>`;
+
+                $('#messageContainer').html(alertHtml);
+
+                setTimeout(function() {
+                    $('#messageContainer .alert').fadeOut('slow', function() {
+                        $(this).remove();
+                    });
+                }, 5000);
+            }
+
+            // Function to apply filters
+            function applyFilters() {
+                const search = $('#searchInput').val();
+                const status = $('#statusFilter').val();
+                const leaveType = $('#leaveTypeFilter').val();
+                const dateFrom = $('#dateFromFilter').val();
+                const dateTo = $('#dateToFilter').val();
+
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+                if (leaveType) params.append('leaveType', leaveType);
+                if (dateFrom) params.append('dateFrom', dateFrom);
+                if (dateTo) params.append('dateTo', dateTo);
+
+                $.ajax({
+                    url: '@Url.Action("AdminLeaveManagement", "Admin")',
+                    type: 'GET',
+                    data: params.toString(),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        $('#leaveData').html(data);
+                        updateStatistics();
+                    },
+                    error: function() {
+                        showMessage('error', 'Error loading leave applications');
+                    }
+                });
+            }
+
+            // Update statistics
+            function updateStatistics() {
+                const total = $('#leaveTableBody tr[data-application-id]').length;
+                const pending = $('#leaveTableBody tr[data-status="Pending"]').length;
+                const approved = $('#leaveTableBody tr[data-status="Approved"]').length;
+                const rejected = $('#leaveTableBody tr[data-status="Rejected"]').length;
+                const cancelled = $('#leaveTableBody tr[data-status="Cancelled"]').length;
+
+                $('#totalApplications').text(total);
+                $('#pendingCount').text(pending);
+                $('#approvedCount').text(approved);
+                $('#rejectedCount').text(rejected);
+                $('#cancelledCount').text(cancelled);
+            }
+
+            // Trigger filter on change
+            $('#searchInput').on('keyup', function() {
+                clearTimeout(window.searchTimeout);
+                window.searchTimeout = setTimeout(applyFilters, 500);
+            });
+
+            $('#statusFilter, #leaveTypeFilter, #dateFromFilter, #dateToFilter').on('change', applyFilters);
+
+            // Reset filters
+            $('#resetFilters').on('click', function() {
+                $('#searchInput').val('');
+                $('#statusFilter').val('');
+                $('#leaveTypeFilter').val('');
+                $('#dateFromFilter').val('');
+                $('#dateToFilter').val('');
+                applyFilters();
+            });
+
+            // Show details modal
+            window.showDetails = function(element) {
+                const row = $(element).closest('tr');
+                const userId = row.data('user-id');
+                const applicationDate = row.data('application-date');
+                const leaveType = row.data('leave-type');
+                const startDate = row.data('start-date');
+                const endDate = row.data('end-date');
+                const duration = row.data('duration');
+                const status = row.data('status');
+                const reason = row.data('reason');
+                const documentUrl = row.data('document');
+                const rejectReason = row.data('reject-reason');
+
+                $('#modalUserId').text(userId);
+                $('#modalApplicationDate').text(applicationDate);
+                $('#modalLeaveType').html('<span class="badge badge-info">' + leaveType + '</span>');
+                $('#modalStartDate').text(startDate);
+                $('#modalEndDate').text(endDate);
+                $('#modalDuration').html('<span class="font-weight-bold">' + duration + ' day' + (duration != 1 ? 's' : '') + '</span>');
+
+                const statusClass = status === 'Approved' ? 'badge-success' :
+                                  status === 'Rejected' ? 'badge-danger' :
+                                  status === 'Pending' ? 'badge-warning' :
+                                  status === 'Cancelled' ? 'badge-secondary' : 'badge-secondary';
+                const statusIcon = status === 'Approved' ? 'fa-check-circle' :
+                                 status === 'Rejected' ? 'fa-times-circle' :
+                                 status === 'Pending' ? 'fa-clock' :
+                                 status === 'Cancelled' ? 'fa-ban' : 'fa-question-circle';
+                $('#modalStatus').html('<span class="badge ' + statusClass + '"><i class="fas ' + statusIcon + ' mr-1"></i>' + status + '</span>');
+
+                $('#modalReason').text(reason);
+
+                if (rejectReason && rejectReason.trim() !== '') {
+                    $('#modalRejectReason').text(rejectReason);
+                    $('#modalRejectReasonSection').show();
+                } else {
+                    $('#modalRejectReasonSection').hide();
+                }
+
+                if (documentUrl && documentUrl.trim() !== '') {
+                    $('#modalDocument').html('<a href="' + documentUrl + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-file-download mr-1"></i> Download Document</a>');
+                } else {
+                    $('#modalDocument').html('<span class="text-muted">No document uploaded</span>');
+                }
+            };
+
+            // Prepare approve modal
+            window.confirmApprove = function(element) {
+                const row = $(element).closest('tr');
+                currentApplicationId = row.data('application-id');
+            };
+
+            // Prepare reject modal
+            window.confirmReject = function(element) {
+                const row = $(element).closest('tr');
+                currentApplicationId = row.data('application-id');
+                $('#rejectReasonInput').val('');
+            };
+
+            // Handle approve confirmation
+            $('#confirmApproveBtn').on('click', function() {
+                if (!currentApplicationId) {
+                    showMessage('error', 'Error: No application selected');
+                    return;
+                }
+
+                const btn = $(this);
+                const originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Approving...');
+
+                $.ajax({
+                    url: '@Url.Action("ApproveLeaveApplication", "Admin")/' + currentApplicationId,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        $('#approveModal').modal('hide');
+
+                        if (response.success) {
+                            showMessage('success', response.message);
+                            applyFilters();
+                        } else {
+                            showMessage('error', response.message);
+                        }
+
+                        btn.prop('disabled', false).html(originalHtml);
+                        currentApplicationId = null;
+                    },
+                    error: function() {
+                        $('#approveModal').modal('hide');
+                        showMessage('error', 'An error occurred. Please try again.');
+                        btn.prop('disabled', false).html(originalHtml);
+                        currentApplicationId = null;
+                    }
+                });
+            });
+
+            // Handle reject confirmation
+            $('#confirmRejectBtn').on('click', function() {
+                if (!currentApplicationId) {
+                    showMessage('error', 'Error: No application selected');
+                    return;
+                }
+
+                const btn = $(this);
+                const originalHtml = btn.html();
+                const rejectReason = $('#rejectReasonInput').val().trim();
+
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Rejecting...');
+
+                $.ajax({
+                    url: '@Url.Action("RejectLeaveApplication", "Admin")/' + currentApplicationId,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        rejectReason: rejectReason
+                    },
+                    success: function(response) {
+                        $('#rejectModal').modal('hide');
+
+                        if (response.success) {
+                            showMessage('success', response.message);
+                            applyFilters();
+                        } else {
+                            showMessage('error', response.message);
+                        }
+
+                        btn.prop('disabled', false).html(originalHtml);
+                        currentApplicationId = null;
+                    },
+                    error: function() {
+                        $('#rejectModal').modal('hide');
+                        showMessage('error', 'An error occurred. Please try again.');
+                        btn.prop('disabled', false).html(originalHtml);
+                        currentApplicationId = null;
+                    }
+                });
+            });
+        });
+    </script>
+}
