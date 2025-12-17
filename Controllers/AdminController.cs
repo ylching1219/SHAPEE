@@ -1558,7 +1558,7 @@ namespace SHAPEE.Controllers
                     .OrderBy(p => p.GroupName)
                     .AsQueryable();
 
-            if(!string.IsNullOrEmpty(ProgramId))
+            if (!string.IsNullOrEmpty(ProgramId))
             {
                 group = group.Where(g => g.ProgramId == ProgramId);
             }
@@ -1693,13 +1693,16 @@ namespace SHAPEE.Controllers
             db.SaveChanges();
             var count = db.Students.Count(s => s.TutorialGroupId == model.SelectedGroupId);
 
-            return Json(new { success = true, 
-                message = $"{addedCount} student(s) added to group '{group.GroupName}' successfully.", 
-                newCount = count });
+            return Json(new
+            {
+                success = true,
+                message = $"{addedCount} student(s) added to group '{group.GroupName}' successfully.",
+                newCount = count
+            });
         }
 
         //Program Course Assignment
-        public IActionResult ProgramCourse()
+        public IActionResult ProgramCourse(string programId, string facultyId)
         {
             ViewData["Title"] = "Program Course Assignment";
 
@@ -1707,22 +1710,113 @@ namespace SHAPEE.Controllers
                 .OrderBy(f => f.Id)
                 .ToList();
 
-            var pc = db.ProgramCourses
-                .Include(pc => pc.Program)
-                .Include(pc => pc.Course)
-                .OrderBy(pc => pc.ProgramId)
-                .ThenBy(pc => pc.CourseId)
+            var pc = new List<ProgramCourse>();
+
+            var course = db.Courses
+                .Select(c => new
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Display = c.Id + " - " + c.Name
+                })
+                .OrderBy(c => c.Name)
                 .ToList();
 
+            if (!string.IsNullOrEmpty(programId))
+            {
+                pc = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == programId)
+                    .Include(pc => pc.Program)
+                    .Include(pc => pc.Course)
+                    .OrderBy(pc => pc.YearLevel)
+                    .ThenBy(pc => pc.Semester)
+                    .ToList();
+            }
             var vm = new ProgramCourseVM
             {
                 ProgramCourses = pc,
+                SelectedFaculty = db.Faculties
+                                .FirstOrDefault(f => f.Id == facultyId),
+                SelectedProgram = db.Programs
+                                .FirstOrDefault(f => f.Id == programId),
                 Faculties = f
             };
+            ViewBag.CourseList = new SelectList(course, "Id", "Display");
+            if (Request.IsAjax())
+            {
+                return PartialView("_ProgramCourse", vm);
+            }
             return View(vm);
         }
 
+        [HttpGet]
+        public IActionResult GetProgramFromFaculty(string facultyId)
+        {
+            Console.WriteLine("Faculty:" + facultyId);
+            var program = db.Programs
+                .Where(p => p.FacultyId == facultyId)
+                .ToList();
 
+            return Json(program);
+        }
+
+        [HttpPost]
+        public IActionResult AddCourseToProgram(string CourseId, string programId, int yearLevel, int semester)
+        {
+
+            var exists = db.ProgramCourses.Any(pc =>
+                            pc.CourseId == CourseId &&
+                            pc.ProgramId == programId);
+
+            var course = db.Courses.FirstOrDefault(c => c.Id == CourseId);
+            if (exists)
+            {
+                return Json(new{
+                        success = false,
+                        message = "Course " + course!.Id + " - " + course!.Name + " already assigned to this program."
+                    });
+            }
+            var pc = new ProgramCourse
+            {
+                CourseId = CourseId,
+                ProgramId = programId,
+                YearLevel = yearLevel,
+                Semester = semester
+            };
+            db.ProgramCourses.Add(pc);
+            db.SaveChanges();
+            return Json(new
+            {
+                success = true,
+                message = "Course " + course!.Id + " - " + course!.Name + " added to program successfully."
+            });
+        }
+
+        [HttpPost]
+        public IActionResult RemoveCourseFromProgram(string courseId , string programId)
+        {
+            Console.WriteLine("CourseId: " + courseId + ", ProgramId: " + programId);
+            var pc = db.ProgramCourses
+                     .FirstOrDefault(p => p.CourseId == courseId && p.ProgramId == programId);
+            if (pc == null)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Program Course not found."
+                });
+            }
+            var course = db.Courses
+                        .FirstOrDefault(c => c.Id == courseId);
+
+            db.ProgramCourses.Remove(pc);
+            db.SaveChanges();
+            return Json(new
+            {
+                success = true,
+                message = "Course " + course!.Id + " - " + course!.Name + " removed from program successfully."
+            });
+        }
 
         //JS
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
