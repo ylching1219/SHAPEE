@@ -1,0 +1,26 @@
+﻿@model IEnumerable<SHAPEE.Models.CourseTask>
+
+<h2>Assignments</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Due</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    @foreach (var t in Model)
+    {
+        <tr>
+            <td>@t.Title</td>
+            <td>@t.DueDate.ToString("dd/MM/yyyy HH:mm")</td>
+
+            <td>
+                <a class="btn btn-primary"
+                   href="/AssignmentStudent/TaskSubmit/@t.Id">Submit</a>
+            </td>
+        </tr>
+    }
+</table>

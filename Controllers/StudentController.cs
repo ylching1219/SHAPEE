@@ -1567,7 +1567,74 @@ namespace SHAPEE.Controllers
             TempData["Message"] = "Reply sent successfully!";
             return RedirectToAction("TicketDetails", new { id = ticketId });
         }
+        //task section
+        public IActionResult TaskList()
+        {
+            var userId = User.Identity.Name;
 
+            var tasks = db.CourseTasks
+                .Include(x => x.Submissions)
+                .Where(x => x.ClassSectionId == "SEC001") // adjust
+                .OrderBy(x => x.DueDate)
+                .ToList();
+
+            return View(tasks);
+        }
+
+        public IActionResult TaskSubmit(string id)
+        {
+            var task = db.CourseTasks.FirstOrDefault(x => x.Id == id);
+
+            var userId = User.Identity.Name;
+
+            var submission = db.Submissions
+                .FirstOrDefault(x => x.StudentId == userId && x.CourseTaskId == id);
+
+            ViewBag.Submitted = submission;
+
+            ViewBag.IsLate = (DateTime.Now > task.DueDate);
+
+            return View(task);
+        }
+
+        [HttpPost]
+        public IActionResult Upload(string id, IFormFile file)
+        {
+            var task = db.CourseTasks.Find(id);
+
+            var userId = User.Identity.Name;
+
+            if (task.DueDate < DateTime.Now)
+            {
+                TempData["error"] = "Due date passed. Cannot submit.";
+                return RedirectToAction("TaskSubmit", new { id });
+            }
+
+            string newId = "S" + (db.Submissions.Count() + 1).ToString("D4");
+
+            string fileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_" + file.FileName;
+            string path = Path.Combine("wwwroot/Submissions", fileName);
+
+            using (var stream = new FileStream(path, FileMode.Create))
+            {
+                file.CopyTo(stream);
+            }
+
+            Submission sub = new Submission
+            {
+                Id = newId,
+                CourseTaskId = id,
+                StudentId = userId,
+                FileUrl = "/Submissions/" + fileName,
+                SubmittedAt = DateTime.Now
+            };
+
+            db.Submissions.Add(sub);
+            db.SaveChanges();
+
+            TempData["msg"] = "Uploaded!";
+            return RedirectToAction("TaskSubmit", new { id });
+        }
 
     }
 }

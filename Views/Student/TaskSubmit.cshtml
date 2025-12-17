@@ -1,0 +1,54 @@
+﻿@model SHAPEE.Models.CourseTask
+
+<h2>@Model.Title</h2>
+
+@if (ViewBag.IsLate)
+{
+    <div class="alert alert-danger">
+        ⚠ Due date passed. New submissions disabled.
+    </div>
+}
+
+@if (ViewBag.Submitted != null)
+{
+    <div class="alert alert-info">
+        <strong>Submitted at:</strong>
+        @ViewBag.Submitted.SubmittedAt <br />
+
+        <a href="@Url.Content(ViewBag.Submitted.FileUrl)" target="_blank" class="btn btn-sm btn-primary">
+            Download Submission
+        </a>
+
+        @if (ViewBag.Submitted.Grade != null)
+        {
+            <hr />
+            <strong>Grade:</strong>
+ 
+            @ViewBag.Submitted.Grade
+            <br />
+            <strong>Feedback:</strong>
+ 
+            @ViewBag.Submitted.Feedback
+        }
+    </div>
+}
+
+@if (ViewBag.Submitted == null)
+{
+    @* Added check: Only show form if it's NOT late *@
+    @if (!ViewBag.IsLate)
+    {
+        <form enctype="multipart/form-data"
+              method="post"
+              action="/AssignmentStudent/Upload/@Model.Id">
+            @* Changed AssignmentId to Id based on your schema *@
+
+            <div class="mb-3">
+                <label class="form-label">Upload your file:</label>
+                <input class="form-control" type="file" name="file" required />
+            </div>
+
+            <button type="submit" class="btn btn-success">Submit</button>
+        </form>
+    }
+}

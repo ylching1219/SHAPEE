@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SHAPEE.Models;
 using System.Security.Claims;
 using System.Text;
 
@@ -1446,6 +1447,108 @@ namespace SHAPEE.Controllers
             TempData["Message"] = "Reply sent successfully.";
 
             return RedirectToAction("StaffTicketDetails", new { id = ticketId });
+        }
+        //task section
+        public IActionResult TaskList()
+        {
+            var tasks = db.CourseTasks
+                .Include(x => x.Submissions)
+                .OrderByDescending(x => x.DueDate)
+                .ToList();
+
+            return View(tasks);
+        }
+
+        public IActionResult TaskDetails(string id)
+        {
+            var task = db.CourseTasks
+                .Include(x => x.Submissions)
+                .ThenInclude(x => x.CourseTask)
+                .FirstOrDefault(x => x.Id == id);
+
+            return View(task);
+        }
+
+        [HttpPost]
+        public IActionResult CreateTask(CourseTask obj)
+        {
+            obj.Id = "T" + (db.CourseTasks.Count() + 1).ToString("D4");
+
+            if (obj.DueDate < DateTime.Now)
+            {
+                TempData["msg"] = "Due date cannot be in the past.";
+                return RedirectToAction("TaskList");
+            }
+
+            db.CourseTasks.Add(obj);
+            db.SaveChanges();
+
+            TempData["msg"] = "Assignment created.";
+            return RedirectToAction("TaskList");
+        }
+
+        [HttpPost]
+        public IActionResult Grade(string id, decimal grade, string feedback)
+        {
+            var s = db.Submissions.FirstOrDefault(x => x.Id == id);
+            if (s == null) return NotFound();
+
+            s.Grade = grade;
+            s.Feedback = feedback;
+            db.SaveChanges();
+
+            TempData["msg"] = "Graded!";
+            return RedirectToAction("TaskDetails", new { id = s.CourseTaskId });
+        }
+        // ======================
+        // LIST ALL TASKS
+        // ======================
+        public IActionResult Task()
+        {
+            var tasks = db.CourseTasks
+                .OrderByDescending(t => t.DueDate)
+                .ToList();
+
+            return View(tasks);
+        }
+
+        // ======================
+        // CREATE PAGE FORM
+        // ======================
+        [HttpGet]
+        public IActionResult TaskCreate()
+        {
+            ViewBag.Sections = db.ClassSections.ToList();
+            return View();
+        }
+
+        // ======================
+        // CREATE POST SAVE
+        // ======================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(CourseTask task)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Sections = db.ClassSections.ToList();
+                return View(task);
+            }
+
+            // prevent duplicate ID
+            if (db.CourseTasks.Any(t => t.Id == task.Id))
+            {
+                ModelState.AddModelError("Id", "Task ID already exists");
+                ViewBag.Sections = db.ClassSections.ToList();
+                return View(task);
+            }
+
+            task.Id = Guid.NewGuid().ToString();
+            db.CourseTasks.Add(task);
+            db.SaveChanges();
+
+            TempData["msg"] = "Assignment created!";
+            return RedirectToAction("Index");
         }
 
     }
