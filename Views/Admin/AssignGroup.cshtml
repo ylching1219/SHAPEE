@@ -222,7 +222,6 @@
                     <option value="1">Year 1</option>
                     <option value="2">Year 2</option>
                     <option value="3">Year 3</option>
-                    <option value="4">Year 4</option>
                 </select>
             </div>
             <div class="col-md-4">
@@ -259,31 +258,9 @@
 
         $(document).ready(function () {
 
-            $('#filterForm').on('submit', function () {
-
-                const programId = $('#ProgramId').val();
-                const year = $('#yearSelect').val();
-                const semester = $('#semesterSelect').val();
-
-                setTimeout(function () {
-                    $('#ProgramId, #yearSelect, #semesterSelect, #filterSubmit')
-                        .prop('disabled', true);
-                }, 0);
-
-                return true;
-            });
-
-
-
             $(document).on('reset', '#filterForm', function () {
-
                 setTimeout(function () {
-
-                    $('#ProgramId, #yearSelect, #semesterSelect, #filterSubmit')
-                        .prop('disabled', false);
-
                     $('#ProgramId').val('').trigger('change');
-
                 }, 50);
             });
 

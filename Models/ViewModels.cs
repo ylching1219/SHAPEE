@@ -110,6 +110,9 @@ namespace SHAPEE.Models
         public List<Faculty>? Faculties { get; set; } = [];
         public List<Program>? Programs { get; set; } = [];
         public List<ProgramCourse>? ProgramCourses { get; set; } = [];
+        public Faculty? SelectedFaculty {  get; set; }
+        public Program? SelectedProgram { get;  set; }
+        public string? CourseId { get; set; } 
     }
     public class AssignGroupVM
     {
