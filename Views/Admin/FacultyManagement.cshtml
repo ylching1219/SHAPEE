@@ -206,27 +206,52 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            const url = new URL(window.location.href);
-            const editId = url.searchParams.get("editId");
+            $('#addData').on('click', function () {
+                $('#addEditModalLabel').text('Add New Faculty');
+                $('#saveBtn').html('<i class="fas fa-save mr-1"></i> Add Faculty');
+                $('#addEditForm')[0].reset();
+                $('#addEditForm').attr('action', '/Admin/AddFaculty');
+                $('#FacultyId').prop('readonly', false);
 
-            if (editId) {
-                @if (Model.EditFaculty != null)
-                {
-                        <text>
-                            $('#addEditModal').modal('show');
-                            $("#addEditModalLabel").text("Edit Faculty");
-                            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Faculty');
-                            $("#FacultyId").prop("readonly", true);
-
-                            $("#addEditForm").attr("action", "/Admin/EditFaculty");
-                        </text>
-                }
-            }
+                $('#addEditForm').removeClass('was-validated');
+                $('.form-control').removeClass('is-invalid is-valid');
+            });
 
             $(".closeBtn").on("click", function () {
-                window.location.href = '/Admin/FacultyManagement';
+                $('#addEditModal').modal('hide');
             });
+
+            setTimeout(function () {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const closeBtn = alert.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                });
+            }, 5000);
         });
+
+        window.prepareEditModal = function(element) {
+            const row = element.closest('tr');
+
+            const facultyId = row.getAttribute('data-faculty-id');
+            const facultyName = row.getAttribute('data-faculty-name');
+            const costPerCreditHour = row.getAttribute('data-cost-per-credit-hour');
+
+            $('#addEditModalLabel').text('Edit Faculty');
+            $('#saveBtn').html('<i class="fas fa-save mr-1"></i> Update Faculty');
+            $('#addEditForm').attr('action', '/Admin/EditFaculty');
+
+            $('#FacultyId').val(facultyId).prop('readonly', true);
+            $('#FacultyName').val(facultyName);
+            $('#CostPerCreditHour').val(costPerCreditHour);
+
+            $('#addEditForm').removeClass('was-validated');
+            $('.form-control').removeClass('is-invalid is-valid');
+
+            $('#addEditModal').modal('show');
+        };
 
         window.prepareDeleteModal = function(element) {
             const row = element.closest('tr');
@@ -236,16 +261,6 @@
             document.getElementById('facultyToDeleteName').innerText = facultyName;
             document.getElementById('deleteFacultyId').value = facultyId;
         };
-
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(alert => {
-                    const closeBtn = alert.querySelector('.close');
-                    if (closeBtn) {
-                        closeBtn.click();
-                    }
-                });
-            }, 5000);
     </script>
 
 }

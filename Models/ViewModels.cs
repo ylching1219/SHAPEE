@@ -203,6 +203,12 @@ namespace SHAPEE.Models
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
     }
+
+    //student dashboard
+    public class StudentDashboardVM
+    {
+        public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
+    }
     
     // student view attendacne
     public class StudentAttendanceVM
@@ -213,6 +219,7 @@ namespace SHAPEE.Models
         // overall statistics
         public int OverallPresent { get; set; }
         public int OverallAbsent { get; set; }
+        public int OverallLeave { get; set; }
         public double OverallPercentage { get; set; }
         public List<Attendance> RecentAttendances { get; set; } = [];
         
@@ -262,6 +269,18 @@ namespace SHAPEE.Models
         public int TotalSessions { get; set; }
         public double AttendancePercentage { get; set; }
         public List<Attendance> Attendances { get; set; } = [];
+    }
+
+    //attendance by subject
+    public class SubjectAttendanceSummaryVM
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+
+        public int Present { get; set; }
+        public int Absent { get; set; }
+        public int Leave { get; set; }  // currently 0, since you only store Present/Absent
+        public double Percentage { get; set; }
     }
 
     // academic calendar
@@ -378,6 +397,27 @@ namespace SHAPEE.Models
     {
         public List<Room> Rooms { get; set; } = [];
         public Room? EditRoom { get; set; }
+    }
+
+    public class LeaveApplicationVM
+    {
+        [Required(ErrorMessage = "Start date is required")]
+        [Display(Name = "Start Date")]
+        public DateOnly StartDate { get; set; }
+
+        [Required(ErrorMessage = "End date is required")]
+        [Display(Name = "End Date")]
+        public DateOnly EndDate { get; set; }
+
+        [Required(ErrorMessage = "Leave type is required")]
+        [Display(Name = "Leave Type")]
+        public string? LeaveType { get; set; }
+
+        [Required(ErrorMessage = "Reason is required")]
+        [StringLength(500, ErrorMessage = "Reason cannot exceed 500 characters")]
+        [MinLength(10, ErrorMessage = "Reason must be at least 10 characters")]
+        [Display(Name = "Reason for Leave")]
+        public string? Reason { get; set; }
     }
 
 

@@ -1,0 +1,367 @@
+﻿@model List<LeaveApplication>
+@{
+    ViewData["Title"] = "Leave Application History";
+}
+
+<!-- Success/Error Messages Container -->
+<div id="messageContainer"></div>
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-history mr-2"></i>Leave Application History
+        </h1>
+        <a href="@Url.Action("LeaveApplication", "Home")" class="btn btn-primary">
+            <i class="fas fa-plus mr-1"></i> New Application
+        </a>
+    </div>
+</div>
+
+<!-- Hidden Anti-Forgery Token for AJAX -->
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 font-weight-semibold text-gray-800">
+                        <i class="fas fa-list mr-2"></i>Your Leave Applications
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <div id="leaveData">
+                                <partial name="_Leave" model="Model" />
+                            </div>
+                        </div>
+
+                        <!-- Summary Statistics -->
+                        <div class="row mt-4">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-primary" id="totalCount">@Model.Count</h3>
+                                        <p class="mb-0 text-muted">Total Applications</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-warning" id="pendingCount">@Model.Count(a => a.Status == "Pending")</h3>
+                                        <p class="mb-0 text-muted">Pending</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success" id="approvedCount">@Model.Count(a => a.Status == "Approved")</h3>
+                                        <p class="mb-0 text-muted">Approved</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-danger" id="rejectedCount">@Model.Count(a => a.Status == "Rejected")</h3>
+                                        <p class="mb-0 text-muted">Rejected</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Leave Applications Found</h5>
+                            <p class="text-muted">You haven't submitted any leave applications yet.</p>
+                            <a href="@Url.Action("LeaveApplication", "Home")" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus mr-1"></i> Submit Your First Application
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="detailsModalLabel">
+                    <i class="fas fa-file-alt mr-2"></i>Leave Application Details
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Application Date:</strong>
+                        <p id="modalApplicationDate" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <p id="modalStatus" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Leave Type:</strong>
+                        <p id="modalLeaveType" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Duration:</strong>
+                        <p id="modalDuration" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Start Date:</strong>
+                        <p id="modalStartDate" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>End Date:</strong>
+                        <p id="modalEndDate" class="mb-0"></p>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <strong>Reason for Leave:</strong>
+                    <p id="modalReason" class="mt-2 p-3 bg-light border rounded"></p>
+                </div>
+                <div class="mb-3" id="modalRejectReasonSection" style="display: none;">
+                    <strong class="text-danger">Rejection Reason:</strong>
+                    <p id="modalRejectReason" class="mt-2 p-3 bg-light border border-danger rounded text-danger"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Supporting Document:</strong>
+                    <p id="modalDocument" class="mt-2"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold" id="cancelModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Confirm Cancellation
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to cancel this leave application?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> No, Keep It
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmCancelBtn">
+                    <i class="fas fa-ban mr-1"></i> Yes, Cancel Application
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Show TempData messages if present
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>
+                    showMessage('success', '@TempData["SuccessMessage"]');
+                    </text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>
+                    showMessage('error', '@TempData["ErrorMessage"]');
+                    </text>
+            }
+        });
+
+        let currentApplicationId = null;
+
+        // Function to show messages
+        function showMessage(type, message) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+            // Remove existing alerts
+            $('#messageContainer .alert').remove();
+
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${icon} mr-2"></i>${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>`;
+
+            $('#messageContainer').html(alertHtml);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() {
+                $('#messageContainer .alert').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+        // Function to refresh leave data
+        function refreshLeaveData() {
+            $.ajax({
+                url: '@Url.Action("LeaveHistory", "Home")',
+                type: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    $('#leaveData').html(data);
+
+                    // Update statistics
+                    const total = $('#leaveTableBody tr[data-application-id]').length;
+                    const pending = $('#leaveTableBody tr[data-status="Pending"]').length;
+                    const approved = $('#leaveTableBody tr[data-status="Approved"]').length;
+                    const rejected = $('#leaveTableBody tr[data-status="Rejected"]').length;
+
+                    $('#totalCount').text(total);
+                    $('#pendingCount').text(pending);
+                    $('#approvedCount').text(approved);
+                    $('#rejectedCount').text(rejected);
+                },
+                error: function() {
+                    showMessage('error', 'Error loading leave applications');
+                }
+            });
+        }
+
+        function showDetails(element) {
+            const row = $(element).closest('tr');
+            const applicationDate = row.data('application-date');
+            const leaveType = row.data('leave-type');
+            const startDate = row.data('start-date');
+            const endDate = row.data('end-date');
+            const duration = row.data('duration');
+            const status = row.data('status');
+            const reason = row.data('reason');
+            const documentUrl = row.data('document');
+            const rejectReason = row.data('reject-reason');
+
+            $('#modalApplicationDate').text(applicationDate);
+            $('#modalLeaveType').html('<span class="badge badge-info">' + leaveType + '</span>');
+            $('#modalStartDate').text(startDate);
+            $('#modalEndDate').text(endDate);
+            $('#modalDuration').html('<span class="font-weight-bold">' + duration + ' day' + (duration != 1 ? 's' : '') + '</span>');
+
+            var statusClass = status === 'Approved' ? 'badge-success' :
+                            status === 'Rejected' ? 'badge-danger' :
+                            status === 'Pending' ? 'badge-warning' :
+                            status === 'Cancelled' ? 'badge-secondary' : 'badge-secondary';
+            var statusIcon = status === 'Approved' ? 'fa-check-circle' :
+                           status === 'Rejected' ? 'fa-times-circle' :
+                           status === 'Pending' ? 'fa-clock' :
+                           status === 'Cancelled' ? 'fa-ban' : 'fa-question-circle';
+            $('#modalStatus').html('<span class="badge ' + statusClass + '"><i class="fas ' + statusIcon + ' mr-1"></i>' + status + '</span>');
+
+            $('#modalReason').text(reason);
+
+            if (rejectReason && rejectReason.trim() !== '') {
+                $('#modalRejectReason').text(rejectReason);
+                $('#modalRejectReasonSection').show();
+            } else {
+                $('#modalRejectReasonSection').hide();
+            }
+
+            if (documentUrl && documentUrl.trim() !== '') {
+                $('#modalDocument').html('<a href="' + documentUrl + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-file-download mr-1"></i> Download Document</a>');
+            } else {
+                $('#modalDocument').html('<span class="text-muted">No document uploaded</span>');
+            }
+        }
+
+        function confirmCancel(element) {
+            const row = $(element).closest('tr');
+            currentApplicationId = row.data('application-id');
+        }
+
+        // Handle cancel confirmation with AJAX
+        $('#confirmCancelBtn').on('click', function() {
+            if (!currentApplicationId) {
+                showMessage('error', 'Error: No application selected');
+                return;
+            }
+
+            const btn = $(this);
+            const originalHtml = btn.html();
+
+            // Show loading state
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Cancelling...');
+
+            $.ajax({
+                url: '@Url.Action("CancelLeaveApplication", "Home")/' + currentApplicationId,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    // Close modal
+                    $('#cancelModal').modal('hide');
+
+                    if (response.success) {
+                        // Show success message
+                        showMessage('success', response.message);
+
+                        // Refresh the leave data
+                        refreshLeaveData();
+                    } else {
+                        // Show error message
+                        showMessage('error', response.message);
+                    }
+
+                    // Reset button state
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
+                },
+                error: function() {
+                    $('#cancelModal').modal('hide');
+                    showMessage('error', 'An error occurred. Please try again.');
+
+                    // Reset button state
+                    btn.prop('disabled', false).html(originalHtml);
+                    currentApplicationId = null;
+                }
+            });
+        });
+    </script>
+}

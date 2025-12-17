@@ -97,6 +97,7 @@ else
                             <th>Status</th>
                             <th>Time</th>
                             <th>Flagged</th>
+                            <th>Flag Reason</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,6 +112,10 @@ else
                                         {
                                             <span class="badge badge-success">Present</span>
                                         }
+                                        else if (att.Status == "Leave")
+                                        {
+                                            <span class="badge badge-warning">Leave</span>
+                                        }
                                         else
                                         {
                                             <span class="badge badge-danger">Absent</span>
@@ -121,6 +126,16 @@ else
                                         @if (att.IsFlaged)
                                         {
                                             <span class="badge badge-warning">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(att.FlagReason))
+                                        {
+                                            @att.FlagReason
                                         }
                                         else
                                         {

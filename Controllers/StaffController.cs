@@ -63,6 +63,7 @@ namespace SHAPEE.Controllers
                 sectionsQuery = sectionsQuery.Where(s =>
                     s.SectionId.ToLower().Contains(searchLower) ||
                     (s.Course != null && s.Course.Id.ToLower().Contains(searchLower)) ||
+                    (s.Course != null && s.Course.Name.ToLower().Contains(searchLower)) ||
                     (s.Room != null && s.Room.Id.ToLower().Contains(searchLower)));
             }
 
@@ -176,6 +177,7 @@ namespace SHAPEE.Controllers
             if (string.IsNullOrEmpty(sectionId))
                 return RedirectToAction("ClassSelection");
 
+
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var section = db.ClassSections
@@ -187,6 +189,23 @@ namespace SHAPEE.Controllers
             if (section == null)
                 return RedirectToAction("ClassSelection");
 
+            var now = DateTime.Now;
+            var todayName = now.DayOfWeek.ToString();   // e.g. "Monday"
+            var todayAbbrev = todayName[..3];           // "Mon"
+            var nowTime = TimeOnly.FromDateTime(now);
+
+            var dayLower = (section.Day ?? "").ToLower();
+            var isToday = dayLower == todayName.ToLower()
+                    || dayLower.StartsWith(todayAbbrev.ToLower());
+
+            var isWithinTime = nowTime >= section.StartTime && nowTime <= section.EndTime;
+
+            if (!isToday || !isWithinTime)
+            {
+                TempData["ErrorMessage"] = $"You can only start this session on {section.Day} between {section.StartTime:HH:mm} and {section.EndTime:HH:mm}.";
+                return RedirectToAction("ClassSelection", new { mode = "take" });
+            }
+            
             return View(section);
         }
 
@@ -207,6 +226,18 @@ namespace SHAPEE.Controllers
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
             if (section == null) return NotFound();
+
+            var now = DateTime.Now;
+            var todayName = now.DayOfWeek.ToString();
+            var nowTime = TimeOnly.FromDateTime(now);
+
+            var isToday = string.Equals(section.Day, todayName, StringComparison.OrdinalIgnoreCase);
+            var isWithinTime = nowTime >= section.StartTime && nowTime <= section.EndTime;
+
+            if (!isToday || !isWithinTime)
+            {
+                return Json(new { success = false, message = "Attendance session can only be started during the scheduled class time." });
+            }
 
             section.CurrentQrToken = Guid.NewGuid().ToString("N");
             section.CurrentQrExpiry = DateTime.Now.AddSeconds(120);
@@ -268,6 +299,9 @@ namespace SHAPEE.Controllers
             section.CurrentQrExpiry = null;
             db.SaveChanges();
 
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            AutoMarkAbsents(sectionId, today, staffId);
+
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new { success = true, redirectUrl = Url.Action("SessionSummary", new { sectionId }) });
@@ -314,8 +348,9 @@ namespace SHAPEE.Controllers
                 .Where(a => a.IsFlaged)
                 .ToList();
 
-            var absentStudents = enrolledStudents
-                .Where(s => !todayAttendances.Any(a => a.StudentId == s.Id))
+            var absentStudents = todayAttendances
+                .Where(a => a.Status == "Absent")
+                .Select(a => a.Student)
                 .ToList();
 
             var totalEnrolled = enrolledStudents.Count;
@@ -343,123 +378,52 @@ namespace SHAPEE.Controllers
             ViewData["Title"] = "Session Summary";
             return View(viewModel);
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult MarkAllAbsent(string sectionId)
+    
+        //auto mark absent if student not present after class ends
+        private void AutoMarkAbsents(string sectionId, DateOnly date, string staffId)
         {
-            try
+            var section = db.ClassSections
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+            if (section == null) return;
+
+            var enrolledStudents = db.Students
+                .Where(s => s.TutorialGroupId.HasValue
+                    && s.TutorialGroupId.Value == section.TutorialGroupId)
+                .ToList();
+            if (!enrolledStudents.Any()) return;
+
+            var existingIds = db.Attendances
+                .Where(a => a.ClassSectionId == sectionId && a.Date == date)
+                .Select(a => a.StudentId)
+                .ToList();
+
+            var absentStudents = enrolledStudents
+                .Where(s => !existingIds.Contains(s.Id))
+                .ToList();
+            if (!absentStudents.Any()) return;
+
+            var now = DateTime.Now;
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var ua = Request.Headers["User-Agent"].ToString();
+
+            foreach (var s in absentStudents)
             {
-                if (string.IsNullOrEmpty(sectionId))
+                db.Attendances.Add(new Attendance
                 {
-                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                        return Json(new { success = false, message = "Section ID is required." });
-                    return BadRequest("Section ID is required.");
-                }
-
-                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var today = DateOnly.FromDateTime(DateTime.Now);
-
-                //verify section belongs to this staff member
-                var section = db.ClassSections
-                    .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
-
-                if (section == null)
-                {
-                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                        return Json(new { success = false, message = "Section not found or you don't have permission." });
-                    return Unauthorized();
-                }
-
-                //get all enrolled students (tutorial group)
-                var enrolledStudents = db.Students
-                    .Where(s => s.TutorialGroupId.HasValue
-                        && s.TutorialGroupId.Value == section.TutorialGroupId)
-                    .ToList();
-
-                //get existing attendance records for today
-                var existingAttendances = db.Attendances
-                    .Where(a => a.ClassSectionId == sectionId && a.Date == today)
-                    .Select(a => a.StudentId)
-                    .ToList();
-
-                //get students who dont have attendance records 
-                var absentStudents = enrolledStudents
-                    .Where(s => !existingAttendances.Contains(s.Id))
-                    .ToList();
-
-                if (!absentStudents.Any())
-                {
-                    if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                        return Json(new { success = false, message = "No absent students to mark." });
-                    TempData["ErrorMessage"] = "No absent students to mark.";
-                    return RedirectToAction("SessionSummary", new { sectionId });
-                }
-
-                var now = DateTime.Now;
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-                var ua = Request.Headers["User-Agent"].ToString();
-
-                //create attendance records for all absent students
-                foreach (var student in absentStudents)
-                {
-                    var attendance = new Attendance
-                    {
-                        Id = Guid.NewGuid().ToString("N"),
-                        ClassSectionId = sectionId,
-                        StudentId = student.Id,
-                        Date = today,
-                        RegisteredAt = now,
-                        Status = "Absent",
-                        IpAddress = ip,
-                        UserAgent = $"MANUAL||{ua}",
-                        IsFlaged = false,
-                        FlagReason = "Not Registered"
-                    };
-
-                    db.Attendances.Add(attendance);
-                }
-
-                db.SaveChanges();
-
-                var message = $"Successfully marked {absentStudents.Count} student(s) as Absent (Not Registered).";
-
-                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = true, message = message });
-                }
-
-                TempData["SuccessMessage"] = message;
-                return RedirectToAction("SessionSummary", new { sectionId });
+                    Id = Guid.NewGuid().ToString("N"),
+                    ClassSectionId = sectionId,
+                    StudentId = s.Id,
+                    Date = date,
+                    RegisteredAt = now,
+                    Status = "Absent",
+                    IpAddress = ip,
+                    UserAgent = $"AUTO_ABSENT||{ua}",
+                    IsFlaged = false,
+                    FlagReason = "Not Registered"
+                });
             }
-            catch (DbUpdateException dbEx)
-            {
-                var errorMessage = "Error saving to database.";
-                if (dbEx.InnerException != null)
-                {
-                    errorMessage += " " + dbEx.InnerException.Message;
-                }
 
-                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return Json(new { success = false, message = errorMessage });
-
-                TempData["ErrorMessage"] = errorMessage;
-                return RedirectToAction("SessionSummary", new { sectionId });
-            }
-            catch (Exception ex)
-            {
-                var errorMessage = "Error marking students as absent: " + ex.Message;
-                if (ex.InnerException != null)
-                {
-                    errorMessage += " Inner: " + ex.InnerException.Message;
-                }
-
-                if (Request.IsAjax() || Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return Json(new { success = false, message = errorMessage });
-
-                TempData["ErrorMessage"] = errorMessage;
-                return RedirectToAction("SessionSummary", new { sectionId });
-            }
+            db.SaveChanges();
         }
 
         [HttpGet]
@@ -476,10 +440,11 @@ namespace SHAPEE.Controllers
                 .Include(a => a.Student)
                 .Where(a => a.ClassSectionId == sectionId && a.Date == today)
                 .OrderByDescending(a => a.RegisteredAt)
-                .Take(50) // latest 50 records
+                .Take(50)
                 .Select(a => new
                 {
                     time = a.RegisteredAt.ToString("HH:mm:ss"),
+                    studentId = a.StudentId,   // NEW
                     studentName = a.Student.FirstName + " " + a.Student.LastName,
                     source = (a.UserAgent ?? "").StartsWith("QR||") ? "QR Scan"
                         : (a.UserAgent ?? "").StartsWith("MANUAL||") ? "Manual Code"
@@ -571,6 +536,16 @@ namespace SHAPEE.Controllers
 
             if (section == null)
                 return RedirectToAction("ClassSelection", new { mode = "view" });
+
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var nowTime = TimeOnly.FromDateTime(DateTime.Now);
+            var todayName = DateTime.Now.DayOfWeek.ToString();
+
+            if (string.Equals(section.Day, todayName, StringComparison.OrdinalIgnoreCase)
+                && nowTime >= section.EndTime)
+            {
+                AutoMarkAbsents(sectionId, today, staffId);
+            }
 
             //get all students in the same tutorial group as this section
             var enrolledStudents = db.Students
@@ -679,6 +654,7 @@ namespace SHAPEE.Controllers
 
             return View(viewModel);
         }
+        
 
         [HttpGet]
         public IActionResult GetAttendanceChartData(string sectionId)

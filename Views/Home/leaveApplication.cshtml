@@ -1,0 +1,289 @@
+﻿@model LeaveApplicationVM
+@{
+    ViewData["Title"] = "Leave Application";
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0 text-gray-800">Submit Leave Application</h1>
+        <a href="@Url.Action("LeaveHistory", "Home")" class="btn btn-info">
+            <i class="fas fa-history mr-1"></i> View History
+        </a>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 font-weight-semibold">
+                        <i class="fas fa-calendar-alt mr-2"></i>Leave Application Form
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="SubmitLeaveApplication" method="post" enctype="multipart/form-data" id="leaveApplicationForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Leave Type -->
+                        <div class="form-group mb-4">
+                            <label asp-for="LeaveType" class="font-weight-semibold">
+                                Leave Type <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="LeaveType" class="form-control" asp-items="ViewBag.LeaveTypes" required>
+                                <option value="">-- Select Leave Type --</option>
+                            </select>
+                            <span asp-validation-for="LeaveType" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
+                                    <label asp-for="StartDate" class="font-weight-semibold">
+                                        Start Date <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="StartDate"
+                                           type="date"
+                                           class="form-control"
+                                           id="startDate"
+                                           required />
+                                    <span asp-validation-for="StartDate" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-4">
+                                    <label asp-for="EndDate" class="font-weight-semibold">
+                                        End Date <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="EndDate"
+                                           type="date"
+                                           class="form-control"
+                                           id="endDate"
+                                           required />
+                                    <span asp-validation-for="EndDate" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Duration Display -->
+                        <div class="alert alert-info mb-4" id="durationAlert" style="display: none;">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Duration:</strong> <span id="durationText">0 day(s)</span>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="form-group mb-4">
+                            <label asp-for="Reason" class="font-weight-semibold">
+                                Reason for Leave <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Reason"
+                                      class="form-control"
+                                      rows="4"
+                                      maxlength="500"
+                                      placeholder="Please provide a detailed reason for your leave application..."
+                                      required></textarea>
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                            <small class="form-text text-muted">
+                                <span id="charCount">0</span>/500 characters
+                            </small>
+                        </div>
+
+                        <!-- Support Document -->
+                        <div class="form-group mb-4">
+                            <label for="supportDocument" class="font-weight-semibold">
+                                Support Document <span class="text-danger">*</span>
+                            </label>
+                            <div class="custom-file">
+                                <input type="file"
+                                       class="custom-file-input"
+                                       id="supportDocument"
+                                       name="supportDocument"
+                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                       required>
+                                <label class="custom-file-label" for="supportDocument">Choose file...</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-paperclip mr-1"></i>
+                                Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max 5MB)
+                                <br><span class="text-danger font-weight-bold">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>Supporting document is required for all leave applications
+                                </span>
+                            </small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary mr-2">
+                                <i class="fas fa-times mr-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane mr-1"></i> Submit Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notice - Right Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0 font-weight-semibold">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Important Notes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="pl-3 mb-0">
+                        <li class="mb-2"><strong>Supporting document is REQUIRED</strong> for all leave applications</li>
+                        <li class="mb-2">Leave applications must be submitted at least 3 days in advance for normal leave</li>
+                        <li class="mb-2">Medical leave requires medical certificate</li>
+                        <li class="mb-2">Emergency leave will be reviewed on a case-by-case basis</li>
+                        <li class="mb-0">You will be notified once your application is reviewed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Set minimum date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#startDate').attr('min', today);
+            $('#endDate').attr('min', today);
+
+            // Calculate duration when dates change
+            function calculateDuration() {
+                var startDate = $('#startDate').val();
+                var endDate = $('#endDate').val();
+
+                if (startDate && endDate) {
+                    var start = new Date(startDate);
+                    var end = new Date(endDate);
+
+                    if (end >= start) {
+                        var timeDiff = end - start;
+                        var daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+
+                        $('#durationText').text(daysDiff + ' day' + (daysDiff !== 1 ? 's' : ''));
+                        $('#durationAlert').fadeIn();
+
+                        // Warn if duration exceeds 30 days
+                        if (daysDiff > 30) {
+                            $('#durationAlert').removeClass('alert-info').addClass('alert-danger');
+                            $('#durationText').html(daysDiff + ' day' + (daysDiff !== 1 ? 's' : '') +
+                                ' <span class="font-weight-bold">(Exceeds 30-day limit!)</span>');
+                        } else {
+                            $('#durationAlert').removeClass('alert-danger').addClass('alert-info');
+                            $('#durationText').text(daysDiff + ' day' + (daysDiff !== 1 ? 's' : ''));
+                        }
+                    } else {
+                        $('#durationAlert').fadeOut();
+                    }
+                } else {
+                    $('#durationAlert').fadeOut();
+                }
+            }
+
+            $('#startDate, #endDate').on('change', function() {
+                calculateDuration();
+
+                // Update end date minimum when start date changes
+                if ($(this).attr('id') === 'startDate') {
+                    $('#endDate').attr('min', $(this).val());
+                }
+            });
+
+            // Character counter for reason
+            $('#Reason').on('input', function() {
+                var length = $(this).val().length;
+                $('#charCount').text(length);
+
+                if (length > 450) {
+                    $('#charCount').addClass('text-danger font-weight-bold');
+                } else {
+                    $('#charCount').removeClass('text-danger font-weight-bold');
+                }
+            });
+
+            // Update file input label when file is selected
+            $('#supportDocument').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').html(fileName || 'Choose file...');
+
+                // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                if (this.files.length > 0) {
+                    var fileSize = this.files[0].size;
+                    var maxSize = 5 * 1024 * 1024;
+
+                    if (fileSize > maxSize) {
+                        alert('File size exceeds 5MB limit. Please choose a smaller file.');
+                        $(this).val('');
+                        $(this).next('.custom-file-label').html('Choose file...');
+                    }
+                }
+            });
+
+            // Form validation before submit
+            $('#leaveApplicationForm').on('submit', function(e) {
+                var startDate = new Date($('#startDate').val());
+                var endDate = new Date($('#endDate').val());
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (startDate < today) {
+                    e.preventDefault();
+                    alert('Start date cannot be in the past.');
+                    return false;
+                }
+
+                if (endDate < startDate) {
+                    e.preventDefault();
+                    alert('End date cannot be before start date.');
+                    return false;
+                }
+
+                // Check if document is uploaded (now required for all)
+                var hasDocument = $('#supportDocument')[0].files.length > 0;
+
+                if (!hasDocument) {
+                    e.preventDefault();
+                    alert('Supporting document is required for all leave applications. Please upload a document.');
+                    return false;
+                }
+
+                // Show loading state
+                $(this).find('button[type="submit"]').prop('disabled', true)
+                    .html('<i class="fas fa-spinner fa-spin mr-1"></i> Submitting...');
+            });
+
+            // Auto-dismiss alerts after 5 seconds (removed - alerts stay visible)
+        });
+    </script>
+}

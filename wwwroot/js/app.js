@@ -172,6 +172,86 @@ $("#facultyFilter").on("change", function () {
     $("#filterForm").submit();
 });
 
+//global search AJAX request
+$(function () {
+    var $input = $('#globalSearchInput');
+    var $panel = $('#globalSearchPanel');
+    var timer = null;
+
+    function escapeHtml(text) {
+        return $('<div>').text(text).html();
+    }
+
+    function highlightLabel(label, term) {
+        term = term.trim();
+        if (!term) return escapeHtml(label);
+
+        var regex = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+        return escapeHtml(label).replace(regex, '<span class="qs-highlight">$1</span>');
+    }
+
+    function render(results) {
+        var term = $input.val() || '';
+        var html = '';
+    
+        if (!results || !results.length) {
+            //display no seach result
+            html += '<div class="qs-empty">';
+            html += '  <div class="qs-empty-icon"><i class="fas fa-search"></i></div>';
+            html += '  <div class="qs-empty-title">No search results found</div>';
+            html += '  <div class="qs-empty-sub">Try another keyword.</div>';
+            html += '</div>';
+    
+            $panel.html(html).removeClass('d-none');
+            return;
+        }
+    
+        //display search result
+        html += '<div class="qs-section">';
+        html += '  <div class="qs-section-title">Go to</div>';
+    
+        results.forEach(function (x) {
+            var label = x.group ? (x.group + ' \u203A ' + x.title) : x.title; // ›
+            var highlighted = highlightLabel(label, term);
+    
+            html += '<a class="qs-item" href="' + x.url + '">';
+            html += '  <div class="qs-item-text">';
+            html += '    <div class="qs-item-label">' + highlighted + '</div>';
+            html += '  </div>';
+            html += '</a>';
+        });
+    
+        html += '</div>';
+    
+        $panel.html(html).removeClass('d-none');
+    }
+
+    function doSearch() {
+        var term = ($input.val() || '').trim();
+        if (!term || term.length < 2) {
+            $panel.addClass('d-none').empty();
+            return;
+        }
+
+        $.get('/Search/Quick', { term: term }, function (res) {
+            render(res.results);
+        });
+    }
+
+    $input.on('keyup', function () {
+        clearTimeout(timer);
+        timer = setTimeout(doSearch, 250); // debounce
+    });
+
+    $('#globalSearchBtn').on('click', doSearch);
+
+    //hide panel when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.navbar-search, #globalSearchPanel').length) {
+            $panel.addClass('d-none');
+        }
+    });
+});
 
 
 

@@ -1,0 +1,173 @@
+[
+
+    {
+        "role": "Admin",
+        "group": "Account",
+        "title": "Profile",
+        "url": "/Admin/Profile",
+        "keywords": [ "profile", "account", "admin" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Dashboard",
+      "title": "Admin Dashboard",
+      "url": "/Admin/Dashboard",
+      "keywords": [ "dashboard", "home", "admin" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Users",
+      "title": "Manage Students",
+      "url": "/Admin/StudentManagement",
+      "keywords": [ "students", "user management", "student management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Users",
+      "title": "Manage Staff",
+      "url": "/Admin/StaffManagement",
+      "keywords": [ "staff", "user management", "staff management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Users",
+      "title": "Manage Admins",
+      "url": "/Admin/AdminManagement",
+      "keywords": [ "admins", "user management", "admin management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Manage Faculty",
+      "url": "/Admin/FacultyManagement",
+      "keywords": [ "faculty", "academic", "faculty management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Manage Program",
+      "url": "/Admin/ProgramManagement",
+      "keywords": [ "program", "academic", "program management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Manage Course",
+      "url": "/Admin/CourseManagement",
+      "keywords": [ "course", "courses", "course management" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Program Course",
+      "url": "/Admin/ProgramCourse",
+      "keywords": [ "program course", "mapping", "academic" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Academic Calendar",
+      "url": "/Admin/EventManagement",
+      "keywords": [ "calendar", "academic calendar", "events" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Group Management",
+      "title": "Manage Group",
+      "url": "/Admin/GroupManagement",
+      "keywords": [ "group", "group management", "tutorial group" ]
+    },
+    {
+      "role": "Admin",
+      "group": "Group Management",
+      "title": "Assign Group",
+      "url": "/Admin/AssignGroup",
+      "keywords": [ "assign group", "students", "tutorial group" ]
+    },
+  
+    {
+        "role": "Staff",
+        "group": "Account",
+        "title": "Profile",
+        "url": "/Staff/Profile",
+        "keywords": [ "profile", "account", "staff", "teacher" ]
+    },
+    {
+      "role": "Staff",
+      "group": "Dashboard",
+      "title": "Staff Dashboard",
+      "url": "/Staff/Dashboard",
+      "keywords": [ "dashboard", "home", "staff" ]
+    },
+    {
+      "role": "Staff",
+      "group": "Attendance",
+      "title": "Take Attendance",
+      "url": "/Staff/ClassSelection?mode=take",
+      "keywords": [ "attendance", "take attendance", "qr", "scan", "class selection" ]
+    },
+    {
+      "role": "Staff",
+      "group": "Attendance",
+      "title": "View Attendance",
+      "url": "/Staff/ClassSelection?mode=view",
+      "keywords": [ "attendance", "view attendance", "class attendance" ]
+    },
+    {
+      "role": "Staff",
+      "group": "Calendar",
+      "title": "Academic Calendar",
+      "url": "/Staff/ViewCalendar",
+      "keywords": [ "calendar", "academic calendar" ]
+    },
+    {
+      "role": "Staff",
+      "group": "Resources",
+      "title": "Course Materials",
+      "url": "/Staff/StaffClassroomUI",
+      "keywords": [ "materials", "course materials", "classroom", "resources" ]
+    },
+  
+    {
+        "role": "Student",
+        "group": "Account",
+        "title": "Profile",
+        "url": "/Student/Profile",
+        "keywords": [ "profile", "account", "student" ]
+    },
+    {
+      "role": "Student",
+      "group": "Dashboard",
+      "title": "Student Dashboard",
+      "url": "/Student/Dashboard",
+      "keywords": [ "dashboard", "home", "student" ]
+    },
+    {
+      "role": "Student",
+      "group": "Attendance",
+      "title": "View Attendance",
+      "url": "/Student/ViewAttendance",
+      "keywords": [ "attendance", "view attendance" ]
+    },
+    {
+      "role": "Student",
+      "group": "Billing",
+      "title": "Current Billing",
+      "url": "/Student/CurrentBilling",
+      "keywords": [ "billing", "fees", "current billing", "payment" ]
+    },
+    {
+      "role": "Student",
+      "group": "Billing",
+      "title": "Payment History",
+      "url": "/Student/PaymentHistory",
+      "keywords": [ "payment history", "transactions", "payments", "billing" ]
+    },
+    {
+      "role": "Student",
+      "group": "Calendar",
+      "title": "Academic Calendar",
+      "url": "/Student/ViewCalendar",
+      "keywords": [ "calendar", "academic calendar" ]
+    }
+  ]
