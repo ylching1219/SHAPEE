@@ -216,6 +216,7 @@ namespace SHAPEE.Models
         // overall statistics
         public int OverallPresent { get; set; }
         public int OverallAbsent { get; set; }
+        public int OverallLeave { get; set; }
         public double OverallPercentage { get; set; }
         public List<Attendance> RecentAttendances { get; set; } = [];
         

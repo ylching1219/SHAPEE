@@ -239,9 +239,16 @@
                     <div class="list-group list-group-flush">
                         @foreach (var attendance in Model.RecentAttendances)
                         {
-                            var isPresent = attendance.Status == "Present";
-                            var statusClass = isPresent ? "success" : "danger";
-                            var statusText = isPresent ? "Present" : "Absent";
+                            bool isPresent = attendance.Status == "Present";
+                            bool isLeave = attendance.Status == "Leave";
+
+                            var statusClass = isPresent ? "success"
+                                            : isLeave  ? "warning"
+                                            : "danger";
+
+                            var statusText = isPresent ? "Present"
+                                            : isLeave  ? "Leave"
+                                            : "Absent";
 
                             <div class="list-group-item py-3">
                                 <div class="d-flex align-items-start gap-3">
