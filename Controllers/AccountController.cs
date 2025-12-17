@@ -12,7 +12,7 @@ namespace SHAPEE.Controllers;
 
 public class AccountController(DB db, Helper hp) : Controller
 {
-    // GET: Account/Login - Displays the login form
+    //Login
     [HttpGet]
     public IActionResult Login(string? returnURL)
     {
@@ -21,7 +21,7 @@ public class AccountController(DB db, Helper hp) : Controller
         return View();
     }
 
-    // POST: Account/Login - Handles form submission and authentication
+    //Login
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Login(LoginVM vm, string? returnURL)
@@ -49,7 +49,7 @@ public class AccountController(DB db, Helper hp) : Controller
             {
                 u.LoginAttempts++;
 
-                if (u.LoginAttempts >= 3) // Lock after 3 failed attempts
+                if (u.LoginAttempts >= 3)
                 {
                     u.Status = "Locked";
                     ModelState.AddModelError("", "Too many failed attempts. Your account has been locked.");
@@ -60,7 +60,7 @@ public class AccountController(DB db, Helper hp) : Controller
                         "Please check your ID or password and try again. (" + (3 - u.LoginAttempts) + " attempt(s) remaining)");
                 }
 
-                db.SaveChanges(); // Persist the updated attempts/status
+                db.SaveChanges(); 
             }
             else
             {
@@ -70,9 +70,6 @@ public class AccountController(DB db, Helper hp) : Controller
             return View(vm);
         }
 
-        // 2. Successful Login Logic
-
-        // Reset attempts and ensure active status
         u!.LoginAttempts = 0;
         if (u.Status != "LockedPayment")
             u.Status = "Active";
@@ -102,7 +99,7 @@ public class AccountController(DB db, Helper hp) : Controller
         };
     }
 
-    // GET: Account/ForgotPassword - Displays the request form
+    //ForgotPassword
     [HttpGet]
     public IActionResult ForgotPassword()
     {
@@ -110,7 +107,211 @@ public class AccountController(DB db, Helper hp) : Controller
         return View();
     }
 
-    // GET: Account/ChangePassword
+    //Verify User ID and Email
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyUserEmail(string userId, string email)
+    {
+        try
+        {
+            userId = userId?.Trim();
+            email = email?.Trim().ToLower();
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "User ID and Email are required.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Find user by ID
+            var user = await db.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User ID not found.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Verify email matches
+            if (user.Email.ToLower() != email)
+            {
+                TempData["ErrorMessage"] = "Email does not match the User ID.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            if (user.Status == "Suspended")
+            {
+                TempData["ErrorMessage"] = "Your account is suspended. Please contact administrator.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Generate 6-digit OTP
+            var helper = new Helper(HttpContext.RequestServices.GetRequiredService<IHttpContextAccessor>(),
+                                   HttpContext.RequestServices.GetRequiredService<IConfiguration>());
+            var otp = helper.GenerateOTP();
+
+            var resetToken = new ResetPassToken
+            {
+                Id = otp,
+                UserId = userId,
+                CreatedAt = DateTime.Now,
+                ExpiryAt = DateTime.Now.AddMinutes(10),
+                Used = false
+            };
+
+            db.ResetPassTokens.Add(resetToken);
+            await db.SaveChangesAsync();
+
+            var emailSent = await helper.SendOTPEmail(user.Email, user.FullName, otp);
+
+            if (!emailSent)
+            {
+                TempData["ErrorMessage"] = "Failed to send verification code. Please try again.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            TempData["SuccessMessage"] = "Verification code sent to your email!";
+            TempData["UserId"] = userId;
+            return RedirectToAction("VerifyOTP");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction("ForgotPassword");
+        }
+    }
+
+    //VerifyOTP
+    public IActionResult VerifyOTP()
+    {
+        if (TempData["UserId"] == null)
+        {
+            return RedirectToAction("ForgotPassword");
+        }
+
+        TempData.Keep("UserId");
+        return View();
+    }
+
+    //Verify OTP
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyOTP(string otp)
+    {
+        try
+        {
+            var userId = TempData["UserId"]?.ToString();
+            otp = otp?.Trim();
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(otp))
+            {
+                TempData["ErrorMessage"] = "Invalid request.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Find token by Id (which is the OTP) and UserId
+            var resetToken = await db.ResetPassTokens
+                .FirstOrDefaultAsync(t => t.Id == otp && t.UserId == userId && !t.Used);
+
+            if (resetToken == null)
+            {
+                TempData["ErrorMessage"] = "Invalid verification code.";
+                TempData["UserId"] = userId;
+                return RedirectToAction("VerifyOTP");
+            }
+
+            if (DateTime.Now > resetToken.ExpiryAt)
+            {
+                TempData["ErrorMessage"] = "Verification code has expired. Please request a new one.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            resetToken.Used = true;
+            await db.SaveChangesAsync();
+
+            return RedirectToAction("ResetPassword", new { token = resetToken.Id });
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+            TempData.Keep("UserId");
+            return RedirectToAction("VerifyOTP");
+        }
+    }
+
+    //ResetPassword
+    public async Task<IActionResult> ResetPassword(string token)
+    {
+        var resetToken = await db.ResetPassTokens
+            .FirstOrDefaultAsync(t => t.Id == token && t.Used);
+
+        if (resetToken == null || DateTime.Now > resetToken.ExpiryAt.AddMinutes(5))
+        {
+            TempData["ErrorMessage"] = "Invalid or expired reset link.";
+            return RedirectToAction("ForgotPassword");
+        }
+
+        ViewBag.TokenId = token;
+        ViewBag.UserId = resetToken.UserId;
+        return View();
+    }
+
+    //Reset Password
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(string tokenId, string newPassword, string confirmPassword)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(newPassword) || newPassword.Length < 6)
+            {
+                TempData["ErrorMessage"] = "Password must be at least 6 characters long.";
+                return RedirectToAction("ResetPassword", new { token = tokenId });
+            }
+
+            if (newPassword != confirmPassword)
+            {
+                TempData["ErrorMessage"] = "Passwords do not match.";
+                return RedirectToAction("ResetPassword", new { token = tokenId });
+            }
+
+            var resetToken = await db.ResetPassTokens.FindAsync(tokenId);
+
+            if (resetToken == null || !resetToken.Used)
+            {
+                TempData["ErrorMessage"] = "Invalid reset token.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Find user
+            var user = await db.Users.FindAsync(resetToken.UserId);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Hash new password
+            var passwordHasher = new PasswordHasher<User>();
+            user.Hash = passwordHasher.HashPassword(user, newPassword);
+
+            // Reset login attempts
+            user.LoginAttempts = 0;
+
+            await db.SaveChangesAsync();
+
+            TempData["ResetSuccess"] = "Password reset successfully! You can now login with your new password.";
+            return RedirectToAction("Login");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction("ResetPassword", new { token = tokenId });
+        }
+    }
+
+    //ChangePassword
     [Authorize]
     public IActionResult ChangePassword()
     {
@@ -118,7 +319,7 @@ public class AccountController(DB db, Helper hp) : Controller
         return View();
     }
 
-    // POST: Account/ChangePassword
+    //ChangePassword
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize]
@@ -182,7 +383,6 @@ public class AccountController(DB db, Helper hp) : Controller
 
             TempData["SuccessMessage"] = "Password changed successfully!";
 
-            // Redirect to profile based on role
             if (User.IsInRole("Admin"))
             {
                 return RedirectToAction("Profile", "Admin");
@@ -205,90 +405,13 @@ public class AccountController(DB db, Helper hp) : Controller
         }
     }
 
-    // POST: Account/ForgotPassword - Handles token generation and email sending (A3)
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public IActionResult ForgotPassword(ForgotPasswordVM vm)
-    //{
-    //    var u = db.Users.Find(vm.Id);
-
-    //    if (u != null)
-    //    {
-    //        string token = Guid.NewGuid().ToString("N"); // Use a GUID for a unique token
-
-    //            u.ResetToken = token;
-    //            u.TokenExpiry = DateTime.UtcNow.AddHours(1);
-    //            db.SaveChanges();
-
-    //            string resetLink = Url.Action("ResetPassword", "Account",
-    //                new { token = token, userId = u.Id }, Request.Scheme);
-
-    //            TempData["DevResetLink"] = resetLink;
-    //        }
-
-    //    ViewData["Title"] = "Password Reset Request Sent";
-    //    return View("ForgotPasswordConfirmation");
-    //}
-
-    // GET: Account/ResetPassword - Validates token and displays the reset form (A3)
-    [HttpGet]
-    public IActionResult ResetPassword(string token, string userId)
-    {
-        var u = db.Users.Find(userId);
-
-        //    if (u == null || u.ResetToken != token || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
-        //    {
-        //        ViewData["Title"] = "Invalid Link";
-        //        ViewData["Message"] = "The password reset link is invalid or has expired. Please request a new one.";
-        //        return View("Error");
-        //    }
-
-        ViewData["Title"] = "Reset Password";
-        return View(new ResetPasswordVM { Token = token, UserId = userId });
-    }
-
-    //// POST: Account/ResetPassword - Handles form submission for new password (A3)
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public IActionResult ResetPassword(ResetPasswordVM vm)
-    //{
-    //    if (!ModelState.IsValid)
-    //    {
-    //        ViewData["Title"] = "Reset Password";
-    //        return View(vm);
-    //    }
-
-    //    var u = db.Users.FirstOrDefault(
-    //        x => x.Id == vm.UserId && x.ResetToken == vm.Token);
-
-    //    if (u == null || u.TokenExpiry == null || u.TokenExpiry.Value < DateTime.UtcNow)
-    //    {
-    //        ModelState.AddModelError("", "The reset operation failed. Please request a new link.");
-    //        ViewData["Title"] = "Reset Password Failed";
-    //        return View(vm);
-    //    }
-
-    //    u.Hash = hp.HashPassword(vm.NewPassword);
-
-    //    u.ResetToken = null;
-    //    u.TokenExpiry = null;
-    //    u.LoginAttempts = 0;
-    //    u.Status = "Active"; // Unlock the account
-
-    //    db.SaveChanges();
-
-    //    TempData["ResetSuccess"] = "Your password has been reset successfully. You can now log in.";
-    //    return RedirectToAction("Login");
-    //}
-
-    // GET: Account/AccessDenied
     public IActionResult AccessDenied()
     {
         ViewData["Title"] = "Access Denied";
         return View();
     }
 
-    // GET: Account/Logout
+    //Logout
     public IActionResult Logout(string? returnURL)
     {
         hp.SignOut();
