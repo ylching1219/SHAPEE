@@ -1,1 +1,83 @@
-﻿
+﻿@model ProgramCourseVM
+
+@if (Model.SelectedProgram == null || Model.SelectedFaculty == null)
+{
+    <div class="card shadow-sm">
+        <div class="card-body empty-state">
+            <i class="bi bi-book"></i>
+            <p class="mt-2 mb-0">Please select a Faculty and Program to view the courses.</p>
+        </div>
+    </div>
+}
+else if (!Model.ProgramCourses!.Any())
+{
+    <div class="card shadow-sm">
+        <div class="card-body empty-state">
+            <i class="bi bi-book"></i>
+            <p class="mt-2 mb-0">No course data available for this program</p>
+        </div>
+    </div>
+
+   
+}
+else
+{
+
+
+    <div class="program-header p-4 mb-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="h3 mb-1">@Model.SelectedProgram.Name</h2>
+                <p class="mb-0 opacity-75">@Model.SelectedFaculty.Name</p> 
+            </div>
+            <button class="btn btn-light" onclick="openAddCourseModal()">
+                <i class="bi bi-plus-lg me-1"></i> Add Course
+            </button>
+        </div>
+    </div>
+
+
+    <div class="alert warning-text p-3 mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Note:</strong> Click on any course card to remove it from the program.
+    </div>
+
+    var years = Model.ProgramCourses!
+   .GroupBy(pc => pc.YearLevel)
+   .OrderBy(g => g.Key);
+
+
+
+    foreach (var yearGroup in years)
+    {
+        <div class="card mb-4 shadow-sm">
+            <div class="year-header p-3">
+                <h5>Year @yearGroup.Key</h5>
+            </div>
+
+            <div class="card-body row g-3">
+                @foreach (var semGroup in yearGroup
+                        .GroupBy(pc => pc.Semester)
+                        .OrderBy(g => g.Key))
+                {
+                    <div class="col-md-4">
+                        <h6>Semester @semGroup.Key</h6>
+
+                        @foreach (var pc in semGroup)
+                        {
+                            <div class="course-card p-3 mb-2" onclick="openDeleteModal('@pc.CourseId','@pc.Course.Name')">
+                                <div class="d-flex justify-content-between">
+                                    <span class="course-code fw-semibold">@pc.CourseId</span>
+                                    <span class="badge credits-badge">
+                                        @pc.Course.CreditHours CR
+                                    </span>
+                                </div>
+                                <small class="text-muted">@pc.Course.Name</small>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}

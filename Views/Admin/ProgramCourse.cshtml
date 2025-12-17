@@ -1,282 +1,428 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Program Course Overview</title>
+﻿@model ProgramCourseVM
+<style>
+    .page-header {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    .program-header {
+        background: linear-gradient(to right, #0d6efd, #0b5ed7);
+        border-radius: 0.5rem;
+        color: white;
+    }
 
-    <style>
-        .page-header {
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    .year-header {
+        background: linear-gradient(to right, #212529, #495057);
+        color: white;
+    }
+
+    .course-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .course-card:hover {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+            transform: translateY(-2px);
         }
 
-        .program-header {
-            background: linear-gradient(to right, #0d6efd, #0b5ed7);
-            border-radius: 0.5rem;
-            color: white;
-        }
-
-        .year-header {
-            background: linear-gradient(to right, #212529, #495057);
-            color: white;
-        }
-
-        .course-card {
-            border: 1px solid #dee2e6;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-            .course-card:hover {
-                border-color: #0d6efd;
-                background-color: #e7f1ff;
-                transform: translateY(-2px);
+            .course-card:hover .course-code {
+                color: #dc3545;
             }
 
-                .course-card:hover .course-code {
-                    color: #0d6efd;
-                }
+    .credits-badge {
+        background-color: #e9ecef;
+        font-size: 0.75rem;
+    }
 
-        .credits-badge {
-            background-color: #e9ecef;
-            font-size: 0.75rem;
+    .course-card:hover .credits-badge {
+        background-color: #f1aeb5;
+    }
+
+    .modal-header-custom {
+        background: linear-gradient(to right, #0d6efd, #0b5ed7);
+        color: white;
+    }
+
+    .modal-header-danger {
+        background: linear-gradient(to right, #dc3545, #bb2d3b);
+        color: white;
+    }
+
+    .stat-card {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        color: #6c757d;
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
         }
 
-        .course-card:hover .credits-badge {
-            background-color: #cfe2ff;
-        }
+    .add-course-btn {
+        position: sticky;
+        top: 1rem;
+        z-index: 100;
+    }
 
-        .modal-header-custom {
-            background: linear-gradient(to right, #0d6efd, #0b5ed7);
-            color: white;
-        }
+    .warning-text {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+</style>
 
-        .stat-card {
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-        }
 
-        .empty-state {
-            padding: 4rem 2rem;
-            text-align: center;
-            color: #6c757d;
-        }
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
 
-            .empty-state i {
-                font-size: 4rem;
-                color: #dee2e6;
-            }
-    </style>
-</head>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
 
-<body class="bg-light">
+<div id="alertContainer"></div>
+<!-- Header -->
+<div class="page-header p-4 mb-4">
+    <h1 class="display-5 fw-bold mb-2">Program Course Assignment</h1>
+    <p class="text-muted mb-0">Select faculty and program to view , add and remove course structure</p>
+</div>
 
-    <div class="container py-4">
-
-        <!-- Header -->
-        <div class="page-header p-4 mb-4">
-            <h1 class="display-5 fw-bold mb-2">Program Course Overview</h1>
-            <p class="text-muted mb-0">Select faculty and program to view complete course structure</p>
-        </div>
-
-        <!-- Selection -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body p-4">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Faculty</label>
-                        <select id="faculty" class="form-select">
-                            <option value="">Select Faculty</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Program</label>
-                        <select id="program" class="form-select" disabled>
-                            <option value="">Select Program</option>
-                        </select>
-                    </div>
+<!-- Selection -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form id="submitForm"
+              data-ajax="true"
+              data-ajax-method="GET"
+              data-ajax-url="/Admin/ProgramCourse"
+              data-ajax-update="#overview">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Faculty</label>
+                    <select id="faculty" class="form-control" name="facultyId">
+                        <option value="">Select Faculty</option>
+                        @foreach (var f in Model.Faculties!)
+                        {
+                            <option value="@f.Id">@f.Name</option>
+                        }
+                    </select>
                 </div>
-
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" onclick="viewOverview()">
-                        <i class="bi bi-eye"></i> View Overview
-                    </button>
-                    <button class="btn btn-secondary" onclick="resetForm()">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                    </button>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Program</label>
+                    <select id="program" class="form-control" name="programId" disabled>
+                        <option value="">Select Program</option>
+                    </select>
                 </div>
             </div>
-        </div>
 
-        <!-- Overview -->
-        <div id="overview"></div>
+            <div class="mt-3">
+                <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </button>
+            </div>
 
-        <div class="text-center mt-5 text-muted">
-            &copy; TARUMT 2025
-        </div>
+        </form>
     </div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="courseModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header modal-header-custom border-0">
-                    <div>
-                        <h5 class="modal-title fw-bold" id="modalCode"></h5>
-                        <p class="mb-0 small opacity-75" id="modalName"></p>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
 
+</div>
+
+<!-- Overview -->
+<div id="overview">
+    <partial name="_ProgramCourse" />
+</div>
+
+
+
+<!-- Add Course Modal -->
+<div class="modal fade" id="addCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-custom border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Course
+                </h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addCourseForm">
                 <div class="modal-body p-4">
-                    <div class="row g-3 mb-4">
-                        <div class="col-4">
-                            <div class="stat-card p-3 text-center">
-                                <p class="small text-muted mb-1">Year & Semester</p>
-                                <p class="fw-semibold mb-0" id="modalYear"></p>
-                                <p class="small text-muted mb-0" id="modalSemester"></p>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-card p-3 text-center">
-                                <p class="small text-muted mb-1">Credits</p>
-                                <p class="display-6 fw-bold text-primary mb-0" id="modalCredits"></p>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-card p-3 text-center">
-                                <p class="small text-muted mb-1">Enrolled</p>
-                                <p class="display-6 fw-bold text-success mb-0" id="modalEnrolled"></p>
-                            </div>
-                        </div>
+
+                    <input type="hidden" name="programId" id="programId" value="" />
+                    <div class="mb-3">
+                        <label for="Course" class="form-label fw-semibold">Course</label>
+                        <select class="select2"
+                                asp-for="CourseId"
+                                asp-items="@ViewBag.CourseList"
+                                required>
+                            <option value="">Select Course</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="courseYear" class="form-label fw-semibold">Year</label>
+                        <select class="form-control" id="courseYear" name="yearLevel" required>
+                            <option value="">Select Year</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="courseSemester" class="form-label fw-semibold">Semester</label>
+                        <select class="form-control" id="courseSemester" name="semester" required>
+                            <option value="">Select Semester</option>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                            <option value="3">Semester 3</option>
+                        </select>
                     </div>
 
-                    <hr>
-
-                    <div class="empty-state">
-                        <i class="bi bi-people"></i>
-                        <p class="mt-2 mb-0">Student management coming soon</p>
-                    </div>
                 </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Course
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <input type="hidden" id="deleteCourseId">
+            <input type="hidden" id="deleteProgramId">
+
+            <div class="modal-header modal-header-danger border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="mb-3">Are you sure you want to remove this course in this program?</p>
+                <div class="alert alert-danger mb-0">
+                    <strong id="deleteCode"></strong> - <span id="deleteName"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="bi bi-trash me-1"></i> Remove Course
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+@section Scripts {
     <script>
-        const faculties = [
-            "Faculty of Engineering",
-            "Faculty of Science",
-            "Faculty of Business",
-            "Faculty of Arts"
-        ];
+        $('#addCourseForm .select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownParent: $('#addCourseForm')
+         });
 
-        const programsByFaculty = {
-            "Faculty of Engineering": ["Computer Science"],
-            "Faculty of Business": ["Business Administration"]
-        };
+        $("#faculty").on("change", function () {
 
-        const programCourses = {
-            "Computer Science": {
-                "Year 1": {
-                    "Semester 1": [
-                        { code: "CS101", name: "Introduction to Programming", credits: 3, enrolled: 45 },
-                        { code: "MATH101", name: "Calculus I", credits: 3, enrolled: 48 }
-                    ]
+            const facultyId = $(this).val();
+             $("#overview").html(`
+                   <div class="card shadow-sm">
+                        <div class="card-body empty-state">
+                            <i class="bi bi-book"></i>
+                            <p class="mt-2 mb-0">Please select a Faculty and Program to view the courses.</p>
+                        </div>
+                    </div>
+            `);
+
+            $("#program").empty().append('<option value="">Select Program</option>');
+            $("#program").prop("disabled", true);
+
+
+            if (!facultyId) return;
+
+            $.ajax({
+                url: '/Admin/GetProgramFromFaculty',
+                type: 'GET',
+                data: {
+                    facultyId: facultyId
+                },
+                dataType: 'json',
+                success: function (data) {
+
+                    if (data.length === 0) {
+                        console.log("No programs found");
+                        return;
+                    }
+
+                    data.forEach(function (p) {
+                        $("#program").append(
+                            `<option value="${p.id}">${p.name}</option>`
+                        );
+                    });
+
+                    $("#program").prop("disabled", false);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading programs:', error);
                 }
-            }
-        };
-
-        const facultySelect = document.getElementById("faculty");
-        const programSelect = document.getElementById("program");
-        const overview = document.getElementById("overview");
-        const modal = new bootstrap.Modal(document.getElementById("courseModal"));
-
-        faculties.forEach(f => {
-            facultySelect.innerHTML += `<option value="${f}">${f}</option>`;
-        });
-
-        facultySelect.addEventListener("change", () => {
-            programSelect.innerHTML = `<option value="">Select Program</option>`;
-            programSelect.disabled = !facultySelect.value;
-            overview.innerHTML = "";
-
-            (programsByFaculty[facultySelect.value] || []).forEach(p => {
-                programSelect.innerHTML += `<option value="${p}">${p}</option>`;
             });
         });
 
-        function viewOverview() {
-            overview.innerHTML = "";
-            const program = programSelect.value;
-            const data = programCourses[program];
+        $("#program").on("change", function () {
+            $("#submitForm").submit();
+        });
 
-            if (!data) {
-                overview.innerHTML = `<div class="card p-5 text-center text-muted">No data available</div>`;
+
+        function openAddCourseModal() {
+            $('#addCourseForm')[0].reset();
+            $("#addCourseModal").modal("show");
+            $("#programId").val($("#program").val());
+        }
+
+        function openDeleteModal(courseId, courseName) {
+            $('#deleteCode').text(courseId);
+            $('#deleteName').text(courseName);
+
+            $('#deleteCourseId').val(courseId);
+            $('#deleteProgramId').val($("#program").val());
+
+            $("#deleteModal").modal("show");
+        }
+
+        function confirmDelete(){
+            const courseId = $('#deleteCourseId').val();
+            const programId = $('#deleteProgramId').val();
+            if (!courseId && programId) return;
+
+            $.ajax({
+                url: '/Admin/RemoveCourseFromProgram',
+                type: 'POST',
+                data: {
+                     courseId: courseId,
+                     programId: programId,
+                },
+                dataType: 'json',
+                success: function (res) {
+
+                    if(res.success){
+                        $("#deleteModal").modal("hide");
+                        $("#submitForm").submit();
+                        showAlert("success",res.message);
+                    } else {
+                        $("#deleteModal").modal("hide");
+                        showAlert("danger",res.message);
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading programs:', error);
+                    showAlert("danger","An error occurred while removing the course.");
+                }
+            });
+        }
+
+        $("#addCourseForm").on("submit", function (e) {
+            e.preventDefault();
+
+            if (!this.checkValidity()) {
+                this.reportValidity();
                 return;
             }
 
-            for (const year in data) {
-                let yearHtml = `
-                    <div class="card mb-4 shadow-sm">
-                        <div class="year-header p-3"><h5>${year}</h5></div>
-                        <div class="card-body row g-3">
-                `;
+            $.ajax({
+                url: '@Url.Action("AddCourseToProgram", "Admin")',
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function (res) {
 
-                for (const sem in data[year]) {
-                    yearHtml += `<div class="col-md-4"><h6>${sem}</h6>`;
-                    data[year][sem].forEach(c => {
-                        yearHtml += `
-                        <div class="course-card p-3 mb-2"
-                             data-code="${c.code}"
-                             data-name="${c.name}"
-                             data-credits="${c.credits}"
-                             data-enrolled="${c.enrolled}"
-                             data-year="${year}"
-                             data-semester="${sem}"
-                             onclick="openModal(this)">
-                            <div class="d-flex justify-content-between">
-                                <span class="course-code fw-semibold">${c.code}</span>
-                                <span class="badge credits-badge">${c.credits} CR</span>
-                            </div>
-                            <small class="text-muted">${c.name}</small>
-                        </div>`;
-                    });
-                    yearHtml += `</div>`;
+                    $("#addCourseModal").modal("hide");
+
+                    if (res.success) {
+                        showAlert("success", res.message);
+                        $("#submitForm").submit();
+                    } else {
+                        showAlert("danger", res.message);
+                    }
+
+                    $("#addCourseForm")[0].reset();
+                    $(".select2").val(null).trigger("change");
+                },
+                error: function () {
+                    showAlert("danger", "An error occurred while adding the course.");
                 }
-
-                yearHtml += `</div></div>`;
-                overview.innerHTML += yearHtml;
-            }
-        }
-
-        function openModal(el) {
-            modalCode.textContent = el.dataset.code;
-            modalName.textContent = el.dataset.name;
-            modalCredits.textContent = el.dataset.credits;
-            modalEnrolled.textContent = el.dataset.enrolled;
-            modalYear.textContent = el.dataset.year;
-            modalSemester.textContent = el.dataset.semester;
-            modal.show();
-        }
+            });
+        });
 
         function resetForm() {
-            facultySelect.value = "";
-            programSelect.value = "";
-            programSelect.disabled = true;
-            programSelect.innerHTML = `<option value="">Select Program</option>`;
-            overview.innerHTML = "";
-        }
-    </script>
+            $("#program").prop("disabled", true);
+            $("#program").empty().append('<option value="">Select Program</option>');
 
-</body>
-</html>
+            $("#overview").html(`
+                   <div class="card shadow-sm">
+                        <div class="card-body empty-state">
+                            <i class="bi bi-book"></i>
+                            <p class="mt-2 mb-0">Please select a Faculty and Program to view the courses.</p>
+                        </div>
+                    </div>
+            `);
+        }
+
+          function showAlert(type, message) {
+            let icon = '';
+            if (type === 'success') {
+                icon = '<i class="fas fa-check-circle me-2"></i>'; // success icon
+            } else if (type === 'danger') {
+                icon = '<i class="fas fa-exclamation-circle me-2"></i>'; // danger icon
+            }
+
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${icon}${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+
+            $('#alertContainer').html(alertHtml);
+        }
+
+    </script>
+}
+
+

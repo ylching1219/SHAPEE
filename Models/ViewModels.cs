@@ -110,6 +110,9 @@ namespace SHAPEE.Models
         public List<Faculty>? Faculties { get; set; } = [];
         public List<Program>? Programs { get; set; } = [];
         public List<ProgramCourse>? ProgramCourses { get; set; } = [];
+        public Faculty? SelectedFaculty {  get; set; }
+        public Program? SelectedProgram { get;  set; }
+        public string? CourseId { get; set; } 
     }
     public class AssignGroupVM
     {
@@ -216,6 +219,7 @@ namespace SHAPEE.Models
         // overall statistics
         public int OverallPresent { get; set; }
         public int OverallAbsent { get; set; }
+        public int OverallLeave { get; set; }
         public double OverallPercentage { get; set; }
         public List<Attendance> RecentAttendances { get; set; } = [];
         
@@ -393,6 +397,27 @@ namespace SHAPEE.Models
     {
         public List<Room> Rooms { get; set; } = [];
         public Room? EditRoom { get; set; }
+    }
+
+    public class LeaveApplicationVM
+    {
+        [Required(ErrorMessage = "Start date is required")]
+        [Display(Name = "Start Date")]
+        public DateOnly StartDate { get; set; }
+
+        [Required(ErrorMessage = "End date is required")]
+        [Display(Name = "End Date")]
+        public DateOnly EndDate { get; set; }
+
+        [Required(ErrorMessage = "Leave type is required")]
+        [Display(Name = "Leave Type")]
+        public string? LeaveType { get; set; }
+
+        [Required(ErrorMessage = "Reason is required")]
+        [StringLength(500, ErrorMessage = "Reason cannot exceed 500 characters")]
+        [MinLength(10, ErrorMessage = "Reason must be at least 10 characters")]
+        [Display(Name = "Reason for Leave")]
+        public string? Reason { get; set; }
     }
 
 

@@ -90,11 +90,12 @@ namespace SHAPEE.Controllers
                         .ToList();
 
                     var present = subjectAtts.Count(a => a.Status == "Present");
-                    var absent = subjectAtts.Count(a => a.Status == "Absent");
-                    var total = subjectAtts.Count;
+                    var absent  = subjectAtts.Count(a => a.Status == "Absent");
+                    var leave   = subjectAtts.Count(a => a.Status == "Leave");
 
-                    var percentage = total > 0
-                        ? Math.Round((double)present / total * 100, 2)
+                    var consideredTotal = present + absent;
+                    var percentage = consideredTotal > 0
+                        ? Math.Round((double)present / consideredTotal * 100, 2)
                         : 0;
 
                     return new SubjectAttendanceSummaryVM
@@ -103,7 +104,7 @@ namespace SHAPEE.Controllers
                         CourseName = course.Name,
                         Present = present,
                         Absent = absent,
-                        Leave = 0,          // you don’t currently have a "Leave" status
+                        Leave = leave,          // you don’t currently have a "Leave" status
                         Percentage = percentage
                     };
                 })
@@ -272,10 +273,12 @@ namespace SHAPEE.Controllers
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
             var overallAbsent  = attendances.Count(a => a.Status == "Absent");
+            var overallLeave   = attendances.Count(a => a.Status == "Leave");
             var overallTotal   = attendances.Count;
 
-            var overallPercentage = overallTotal > 0
-                ? Math.Round((double)overallPresent / overallTotal * 100, 2)
+            var consideredTotal = overallPresent + overallAbsent;
+            var overallPercentage = consideredTotal > 0
+                ? Math.Round((double)overallPresent / consideredTotal * 100, 2)
                 : 0;
 
             //get recent attendances
@@ -296,6 +299,7 @@ namespace SHAPEE.Controllers
                 ClassAttendances = classAttendances,
                 OverallPresent = overallPresent,
                 OverallAbsent = overallAbsent,
+                OverallLeave = overallLeave, 
                 OverallPercentage = overallPercentage,
                 RecentAttendances = recentAttendances,
                 SectionId = sectionId,
