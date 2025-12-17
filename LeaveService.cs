@@ -96,7 +96,6 @@ namespace SHAPEE.Services
                     }
                     else
                     {
-                        // If you want to convert both Absent and Present to Leave:
                         if (att.Status != "Leave")
                         {
                             att.Status = "Leave";
