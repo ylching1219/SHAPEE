@@ -1812,5 +1812,56 @@ namespace SHAPEE.Controllers
             return Content(report.ToString());
         }
 
+        //JS
+        public IActionResult Announcements(string? search, string? sort)
+        {
+            ViewData["Title"] = "Announcements";
+
+            var query = db.Announcements.AsQueryable();
+
+            // Apply search filter
+            search = search?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(a =>
+                    a.Title.Contains(search) ||
+                    a.Content.Contains(search) ||
+                    a.Author.Contains(search));
+            }
+
+            // Apply sorting
+            query = sort switch
+            {
+                "oldest" => query.OrderBy(a => a.CreatedAt),
+                "title_asc" => query.OrderBy(a => a.Title),
+                "title_desc" => query.OrderByDescending(a => a.Title),
+                _ => query.OrderByDescending(a => a.CreatedAt) // newest first (default)
+            };
+
+            var announcements = query.ToList();
+
+            if (Request.IsAjax())
+            {
+                return PartialView("_AnnouncementsList", announcements);
+            }
+
+            return View(announcements);
+        }
+
+        // GET: Student/AnnouncementDetails
+        [HttpGet]
+        public IActionResult GetAnnouncementDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return PartialView("_AnnouncementDetails", null);
+
+            var announcement = db.Announcements.FirstOrDefault(a => a.Id == id);
+
+            if (announcement == null)
+                return PartialView("_AnnouncementDetails", null);
+
+            return PartialView("_AnnouncementDetails", announcement);
+        }
+
     }
 }

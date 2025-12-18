@@ -1,0 +1,172 @@
+﻿@model List<SHAPEE.Models.Announcement>
+@{
+    ViewData["Title"] = "Announcements";
+}
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-bullhorn text-primary mr-2"></i>Announcements
+    </h1>
+</div>
+
+<div class="row">
+    <!-- Announcements List -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                        All Announcements
+                    </h5>
+                    <span class="badge badge-primary badge-pill px-3 py-2">
+                        @Model.Count Total
+                    </span>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="card-body bg-light border-bottom">
+                <form id="filterForm"
+                      data-ajax="true"
+                      data-ajax-method="GET"
+                      data-ajax-url="/Student/Announcements"
+                      data-ajax-update="#announcementsData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control"
+                                       name="search"
+                                       id="searchInput"
+                                       placeholder="Search announcements...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <select class="form-control" name="sort" id="sortSelect">
+                                <option value="">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="title_asc">Title (A-Z)</option>
+                                <option value="title_desc">Title (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Announcements List -->
+            <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                <div id="announcementsData">
+                    <partial name="_AnnouncementsList" model="Model" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Details Panel -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm sticky-top" style="top: 20px;">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 font-weight-semibold">
+                    <i class="fas fa-info-circle mr-2"></i>Announcement Details
+                </h5>
+            </div>
+            <div class="card-body" id="detailsPanel">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-hand-pointer fa-3x mb-3 d-block"></i>
+                    <p class="mb-0">Select an announcement to view details</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Apply filters function
+            function applyFilters() {
+                const search = $('#searchInput').val();
+                const sort = $('#sortSelect').val();
+
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (sort) params.append('sort', sort);
+
+                $.ajax({
+                    url: '/Student/Announcements',
+                    type: 'GET',
+                    data: params.toString(),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        $('#announcementsData').html(data);
+                    },
+                    error: function() {
+                        $('#announcementsData').html(
+                            '<div class="text-center text-danger p-4">' +
+                            '<i class="fas fa-exclamation-triangle fa-2x mb-2"></i>' +
+                            '<p>Error loading announcements</p>' +
+                            '</div>'
+                        );
+                    }
+                });
+            }
+
+            // Trigger filter on search input (with debounce)
+            let searchTimeout;
+            $('#searchInput').on('keyup', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(applyFilters, 500);
+            });
+
+            // Trigger filter on sort change
+            $('#sortSelect').on('change', applyFilters);
+
+            // Load announcement details
+            $(document).on('click', '.announcement-item', function(e) {
+                e.preventDefault();
+
+                // Remove active class from all items
+                $('.announcement-item').removeClass('active');
+
+                // Add active class to clicked item
+                $(this).addClass('active');
+
+                const announcementId = $(this).data('id');
+
+                // Show loading state
+                $('#detailsPanel').html(
+                    '<div class="text-center py-5">' +
+                    '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="sr-only">Loading...</span>' +
+                    '</div>' +
+                    '</div>'
+                );
+
+                // Load details
+                $.ajax({
+                    url: '/Student/GetAnnouncementDetails',
+                    type: 'GET',
+                    data: { id: announcementId },
+                    success: function(data) {
+                        $('#detailsPanel').html(data);
+                    },
+                    error: function() {
+                        $('#detailsPanel').html(
+                            '<div class="text-center text-danger py-5">' +
+                            '<i class="fas fa-exclamation-triangle fa-2x mb-2"></i>' +
+                            '<p>Error loading details</p>' +
+                            '</div>'
+                        );
+                    }
+                });
+            });
+        });
+    </script>
+}

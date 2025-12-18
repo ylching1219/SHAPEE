@@ -1,0 +1,116 @@
+﻿@model List<SHAPEE.Models.Announcement>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+        <p class="text-muted mb-0">No announcements found</p>
+    </div>
+}
+else
+{
+    <div class="list-group list-group-flush">
+        @foreach (var announcement in Model)
+        {
+            var isRecent = (DateTime.Now - announcement.CreatedAt).TotalDays <= 3;
+            var isUpdated = announcement.UpdatedAt.HasValue &&
+            (DateTime.Now - announcement.UpdatedAt.Value).TotalDays <= 3;
+
+            <a href="#"
+               class="list-group-item list-group-item-action announcement-item border-bottom"
+               data-id="@announcement.Id">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-circle bg-primary text-white mr-2"
+                                 style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                <i class="fas fa-bullhorn fa-sm"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 font-weight-semibold text-gray-900">
+                                    @announcement.Title
+                                    @if (isRecent)
+                                    {
+                                        <span class="badge badge-success badge-sm ml-2">New</span>
+                                    }
+                                    @if (isUpdated)
+                                    {
+                                        <span class="badge badge-info badge-sm ml-2">Updated</span>
+                                    }
+                                </h6>
+                            </div>
+                        </div>
+
+                        <p class="mb-2 text-muted small" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            @announcement.Content
+                        </p>
+
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            <span class="mr-3">@announcement.Author</span>
+
+                            <i class="fas fa-clock mr-1"></i>
+                            @if (announcement.UpdatedAt.HasValue)
+                            {
+                                <span title="Updated: @announcement.UpdatedAt.Value.ToString("dd MMM yyyy, hh:mm tt")">
+                                    Updated @GetTimeAgo(announcement.UpdatedAt.Value)
+                                </span>
+                            }
+                            else
+                            {
+                                <span title="@announcement.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")">
+                                    @GetTimeAgo(announcement.CreatedAt)
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="ml-2">
+                        <i class="fas fa-chevron-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@functions {
+    string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.Now - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
+
+        return dateTime.ToString("dd MMM yyyy");
+    }
+}
+
+<style>
+    .announcement-item {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .announcement-item:hover {
+            background-color: #f8f9fc;
+            transform: translateX(5px);
+        }
+
+        .announcement-item.active {
+            background-color: #eef2ff;
+            border-left: 4px solid #4e73df;
+        }
+
+    .icon-circle {
+        flex-shrink: 0;
+    }
+</style>
