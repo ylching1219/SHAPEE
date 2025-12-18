@@ -1517,211 +1517,7 @@ namespace SHAPEE.Controllers
 
             return View("~/Views/Student/StudentTicketList.cshtml", tickets);
         }
-        [Authorize]
-        //public IActionResult TicketDetails(string id)
-        //{
-        //    if (string.IsNullOrEmpty(id))
-        //        return NotFound();
 
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //    var ticket = db.SupportTickets
-        //        .Include(t => t.TicketMessages)   // replies
-        //        .FirstOrDefault(t => t.Id == id && t.UserId == userId);
-
-        //    if (ticket == null)
-        //        return NotFound();
-
-        //    // sorting by sent at
-        //    ticket.TicketMessages = ticket.TicketMessages
-        //        .OrderBy(m => m.SentAt)
-        //        .ToList();
-
-        //    return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
-        //}
-        //[HttpGet]
-        //public IActionResult GetTickets(string search = "", string status = "")
-        //{
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    var tickets = db.SupportTickets
-        //                    .Where(t => t.UserId == userId);
-
-        //    if (!string.IsNullOrEmpty(search))
-        //        tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
-
-        //    if (!string.IsNullOrEmpty(status))
-        //        tickets = tickets.Where(t => t.Status == status);
-
-        //    tickets = tickets.OrderByDescending(t => t.CreatedAt);
-
-        //    return PartialView("_TicketTable", tickets.ToList());
-        //}
-        ////reply ticket
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        ////public IActionResult Reply(string ticketId, string message)
-        ////{
-        ////    //validation
-        ////    if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
-        ////    {
-        ////        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        ////            return Json(new { success = false, message = "Please enter a message." });
-
-        ////        TempData["Message"] = "Please enter a message.";
-        ////        return RedirectToAction("TicketDetails", new { id = ticketId });
-        ////    }
-
-        ////    var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
-        ////    if (ticket == null) return NotFound();
-
-        ////    // ticket logic
-        ////    var reply = new TicketMessage
-        ////    {
-        ////        Id = Guid.NewGuid().ToString(),
-        ////        SupportTicketId = ticketId,
-        ////        SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-        ////        Content = message,
-        ////        SentAt = DateTime.Now
-        ////    };
-
-        ////    db.TicketMessages.Add(reply);
-        ////    db.SaveChanges();
-
-        ////    // check ajax
-        ////    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        ////    {
-        ////        return Json(new
-        ////        {
-        ////            success = true,
-        ////            sender = reply.SenderId,
-        ////            time = reply.SentAt.ToString("dd/MM/yyyy HH:mm"),
-        ////            content = reply.Content
-        ////        });
-        ////    }
-
-        ////    TempData["Message"] = "Reply sent successfully!";
-        ////    return RedirectToAction("TicketDetails", new { id = ticketId });
-        ////}
-        //[HttpGet]
-        //public IActionResult GetRepliesPartial(string id)
-        //{
-        //    var ticket = db.SupportTickets
-        //                   .Include(t => t.TicketMessages)
-        //                   .FirstOrDefault(t => t.Id == id);
-
-        //    if (ticket == null) return NotFound();
-
-        //    var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
-
-        //    // NOTE: Ensure this matches the Partial View filename in your Student folder
-        //    return PartialView("_TicketMessage", messages);
-        //}
-
-
-
-
-
-
-
-
-
-
-        //// List tickets for current student
-        //public IActionResult TicketList()
-        //{
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //    var tickets = db.SupportTickets
-        //                    .Where(t => t.UserId == userId)
-        //                    .OrderByDescending(t => t.CreatedAt)
-        //                    .ToList();
-
-        //    return View("~/Views/Student/StudentTicketList.cshtml", tickets);
-        //}
-
-        // Ticket details
-        //public IActionResult TicketDetails(string id)
-        //{
-        //    if (string.IsNullOrEmpty(id))
-        //        return NotFound();
-
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //    var ticket = db.SupportTickets
-        //                   .Include(t => t.TicketMessages)
-        //                   .FirstOrDefault(t => t.Id == id && t.UserId == userId);
-
-        //    if (ticket == null) return NotFound();
-
-        //    ticket.TicketMessages = ticket.TicketMessages
-        //                                 .OrderBy(m => m.SentAt)
-        //                                 .ToList();
-
-        //    return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
-        //}
-
-        // AJAX: Reply to ticket
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Reply(string ticketId, string message)
-        //{
-        //    if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
-        //    {
-        //        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //            return Json(new { success = false, message = "Please enter a message." });
-
-        //        TempData["Message"] = "Please enter a message.";
-        //        return RedirectToAction("TicketDetails", new { id = ticketId });
-        //    }
-
-        //    var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId && t.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
-        //    if (ticket == null) return NotFound();
-
-        //    // Students cannot close tickets, so no status check required here
-
-        //    string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
-
-        //    var ticketMessage = new TicketMessage
-        //    {
-        //        Id = msgId,
-        //        SupportTicketId = ticketId,
-        //        SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-        //        Content = message,
-        //        SentAt = DateTime.Now
-        //    };
-
-        //    db.TicketMessages.Add(ticketMessage);
-        //    db.SaveChanges();
-
-        //    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //    {
-        //        return Json(new
-        //        {
-        //            success = true,
-        //            sender = ticketMessage.SenderId,
-        //            time = ticketMessage.SentAt.ToString("dd/MM/yyyy HH:mm"),
-        //            content = ticketMessage.Content
-        //        });
-        //    }
-
-        //    TempData["Message"] = "Reply sent successfully.";
-        //    return RedirectToAction("TicketDetails", new { id = ticketId });
-        //}
-
-        //// AJAX: Get latest replies for a ticket
-        //[HttpGet]
-        //public IActionResult GetRepliesPartial(string id)
-        //{
-        //    var ticket = db.SupportTickets
-        //                   .Include(t => t.TicketMessages)
-        //                   .FirstOrDefault(t => t.Id == id && t.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-        //    if (ticket == null) return NotFound();
-
-        //    var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
-        //    return PartialView("
-        //    ", messages); // make sure your partial matches the Student view
-        //}
         //task section
         public IActionResult TaskList()
         {
@@ -1906,6 +1702,7 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
+            // 1. Basic Validation
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -1915,18 +1712,21 @@ namespace SHAPEE.Controllers
                 return RedirectToAction("TicketDetails", new { id = ticketId });
             }
 
+            // 2. Fetch the ticket
             var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
             if (ticket == null) return NotFound();
 
+            // 3. CHECK IF TICKET IS CLOSED (This is the part you requested)
             if (ticket.Status == "Closed")
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return Json(new { success = false, message = "This ticket is closed and cannot receive replies." });
+                    return Json(new { success = false, message = "This ticket is closed and cannot receive further replies." });
 
-                TempData["Message"] = "This ticket is closed.";
+                TempData["Message"] = "This ticket is closed and cannot be replied to.";
                 return RedirectToAction("TicketDetails", new { id = ticketId });
             }
 
+            // 4. Create the reply
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
 
@@ -1942,6 +1742,7 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
+            // 5. Handle AJAX response
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new

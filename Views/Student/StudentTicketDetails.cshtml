@@ -124,8 +124,7 @@
 
     <div class="ticket-info">
         <h2>Ticket #@Model.Id - @Model.Subject</h2>
-        <p>Status: <strong>@Model.Status</strong> | Priority: <strong>@Model.Priority</strong></p>
-
+        <p>Status: <strong style="color: @(Model.Status == "Closed" ? "#dc3545" : "#28a745")">@Model.Status</strong> | Priority: <strong>@Model.Priority</strong></p>
         <p><span class="desc-label">Desc:</span> @Model.Description</p>
     </div>
 
@@ -133,18 +132,24 @@
     <div id="repliesContainer">
         @await Html.PartialAsync("_TicketMessage", Model.TicketMessages.OrderBy(m => m.SentAt).ToList())
     </div>
-
-    <h4>Reply</h4>
-    <form asp-action="Reply" method="post" class="reply-form" id="ticketReplyForm">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="ticketId" value="@Model.Id" id="hiddenTicketId" />
-
-        <textarea name="message" id="messageText" placeholder="Write your reply..." required></textarea>
-
-        <div style="text-align: right; margin-top: 15px;">
-            <button type="submit" id="sendBtn">Send Reply</button>
+    @if (Model.Status != "Closed")
+    {
+        <h4>Reply</h4>
+        <form asp-controller="Student" asp-action="Reply" method="post" class="reply-form" id="ticketReplyForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ticketId" value="@Model.Id" id="hiddenTicketId" />
+            <textarea name="message" id="messageText" placeholder="Write your reply..." required></textarea>
+            <div style="text-align: right;">
+                <button type="submit" id="sendBtn">Send Reply</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div style="margin-top:20px; text-align:center; padding: 20px; background: #e9ecef; border-radius: 12px; color: #6c757d; border: 1px solid #dee2e6;">
+            <strong>This ticket is closed.</strong> No further replies can be sent.
         </div>
-    </form>
+    }
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

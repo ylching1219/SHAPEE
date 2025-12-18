@@ -1420,7 +1420,9 @@ namespace SHAPEE.Controllers
             return PartialView("_TicketTable", tickets.OrderByDescending(t => t.CreatedAt).ToList());
 
         }
-        //ticket reply
+        // =======================
+        // Ticket reply
+        // =======================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
@@ -1478,7 +1480,9 @@ namespace SHAPEE.Controllers
             TempData["Message"] = "Reply sent successfully.";
             return RedirectToAction("StaffTicketDetails", new { id = ticketId });
         }
-        //get instant reply
+        // =======================
+        // get instant reply
+        // =======================
         [HttpGet]
         public IActionResult GetRepliesPartial(string id)
         {
@@ -1492,25 +1496,57 @@ namespace SHAPEE.Controllers
             var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
             return PartialView("_TicketMessage", messages);
         }
-        //close ticket
+        // =======================
+        // Close ticket
+        // =======================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CloseTicket(string id)
         {
-            // 1. Find the ticket in the database
+            // find db
             var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == id);
 
             if (ticket == null) return NotFound();
 
-            // 2. Update the data (No new page needed)
+            // update data
             ticket.Status = "Closed";
             ticket.ResolvedAt = DateTime.Now;
 
             db.SaveChanges();
 
-            // 3. Immediately go back to the List page
+            // back to list
             return RedirectToAction("StaffTicketList");
         }
+        //task create
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CourseTask task, string[] SelectedMaterialIds)
+        {
+            // generate id
+            task.Id = Guid.NewGuid().ToString();
+
+            //add task
+            db.CourseTasks.Add(task);
+
+            // create for selected
+            if (SelectedMaterialIds != null)
+            {
+                foreach (var matId in SelectedMaterialIds)
+                {
+                    var tm = new TaskMaterial
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        CourseTaskId = task.Id,
+                        MaterialId = matId
+                    };
+                    //db.TaskMaterial.Add(tm);
+                }
+            }
+
+            await db.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
+
 
         //task section
         public IActionResult TaskList()
@@ -1582,10 +1618,49 @@ namespace SHAPEE.Controllers
         [HttpGet]
         public IActionResult TaskCreate()
         {
-            ViewBag.Sections = db.ClassSections.ToList();
+            ViewBag.Sections = db.ClassSections
+                .Include(s => s.Course)
+                .ToList();
+
+            // get all material for pick
+            ViewBag.Materials = db.Materials.ToList();
+
             return View();
         }
 
+
+        [HttpPost]
+        public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
+        {
+            // generate id
+            task.Id = Guid.NewGuid().ToString();
+
+            // add to db
+            db.CourseTasks.Add(task);
+
+            // link
+            if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
+            {
+                foreach (var matId in SelectedMaterialIds)
+                {
+                    var tm = new TaskMaterial
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        CourseTaskId = task.Id,
+                        MaterialId = matId
+                    };
+
+                    // Temporary fix
+                    db.Set<TaskMaterial>().Add(tm);
+                }
+            }
+
+            // save all change
+            await db.SaveChangesAsync();
+
+            // back to list
+            return RedirectToAction("TaskList");
+        }
         // ======================
         // CREATE POST SAVE
         // ======================
@@ -1638,11 +1713,23 @@ namespace SHAPEE.Controllers
 
         // AJAX API: Staff/GetMessages
         [HttpGet]
-        public IActionResult GetMessages()
+        public IActionResult GetMessages(string? search)
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var messages = db.ChatMessages
-                .Where(x => x.ReceiverId == "STF0002")
+
+          
+            var query = db.ChatMessages
+                .Where(x => x.ReceiverId == "STF0002");
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(m => m.Content.ToLower().Contains(s) ||
+                                        m.SenderId.ToLower().Contains(s));
+            }
+
+         
+            var messages = query
                 .OrderBy(x => x.SentAt)
                 .Select(m => new {
                     sender = m.SenderId,
@@ -1686,5 +1773,44 @@ namespace SHAPEE.Controllers
 
             return RedirectToAction("Chat", new { classId });
         }
+        [HttpPost]
+        public async Task<IActionResult> GradeSubmission(string SubmissionId, decimal Grade, string Feedback)
+        {
+            var submission = await db.Submissions.FindAsync(SubmissionId);
+            if (submission != null)
+            {
+                submission.Grade = Grade;
+                submission.Feedback = Feedback;
+                await db.SaveChangesAsync();
+            }
+            return RedirectToAction("ViewSubmissions", new { id = submission.CourseTaskId });
+        }
+        //[HttpPost]
+        //public async Task<IActionResult> Create(CourseTask task, string[] SelectedMaterialIds)
+        //{
+        //    // 1. Generate ID for the Task
+        //    task.Id = Guid.NewGuid().ToString();
+
+        //    // 2. Add the Task
+        //    db.CourseTasks.Add(task);
+
+        //    // 3. Create TaskMaterial entries for each selected material
+        //    if (SelectedMaterialIds != null)
+        //    {
+        //        foreach (var matId in SelectedMaterialIds)
+        //        {
+        //            var tm = new TaskMaterial
+        //            {
+        //                Id = Guid.NewGuid().ToString(),
+        //                CourseTaskId = task.Id,
+        //                MaterialId = matId
+        //            };
+        //            //db.TaskMaterials.Add(tm);
+        //        }
+        //    }
+
+        //    await db.SaveChangesAsync();
+        //    return RedirectToAction("Index");
+        //}
     }
 }
