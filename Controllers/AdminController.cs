@@ -1771,10 +1771,11 @@ namespace SHAPEE.Controllers
             var course = db.Courses.FirstOrDefault(c => c.Id == CourseId);
             if (exists)
             {
-                return Json(new{
-                        success = false,
-                        message = "Course " + course!.Id + " - " + course!.Name + " already assigned to this program."
-                    });
+                return Json(new
+                {
+                    success = false,
+                    message = "Course " + course!.Id + " - " + course!.Name + " already assigned to this program."
+                });
             }
             var pc = new ProgramCourse
             {
@@ -1793,7 +1794,7 @@ namespace SHAPEE.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveCourseFromProgram(string courseId , string programId)
+        public IActionResult RemoveCourseFromProgram(string courseId, string programId)
         {
             Console.WriteLine("CourseId: " + courseId + ", ProgramId: " + programId);
             var pc = db.ProgramCourses
@@ -1819,6 +1820,8 @@ namespace SHAPEE.Controllers
         }
 
         //JS
+        // Add this method to your AdminController.cs
+
         public IActionResult RoomManagement(string? sort, string? search, string? type, string? block, string? status, string? editId)
         {
             ViewData["Title"] = "Room Management";
@@ -1856,6 +1859,11 @@ namespace SHAPEE.Controllers
                 EditRoom = editRoom
             };
 
+            if (!string.IsNullOrEmpty(editId))
+            {
+                return PartialView("_RoomForm", vm);
+            }
+
             if (Request.IsAjax())
             {
                 return PartialView("_Room", vm);
@@ -1868,102 +1876,74 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddRoom(string roomId, string type, string block, int? floor)
         {
-            if (!floor.HasValue)
-            {
-                return Json(new { success = false, message = "Floor is required." });
-            }
-
-            roomId = roomId?.Trim().ToUpper();
-            type = type?.Trim();
-            block = block?.Trim().ToUpper();
-
-            // For Labs: Room ID uses 0-2, but database stores as 1-3
-            int actualFloor = floor.Value;
-
-            if (type == "Lab")
-            {
-                if (floor < 0 || floor > 2)
-                {
-                    return Json(new { success = false, message = "Lab floor must be between 0 and 2." });
-                }
-                // Convert Room ID floor (0-2) to database floor (1-3)
-                actualFloor = floor.Value + 1;
-            }
-            else if (type == "Classroom")
-            {
-                if (floor < 1 || floor > 3)
-                {
-                    return Json(new { success = false, message = "Classroom floor must be between 1 and 3." });
-                }
-            }
-
-            // Check if room already exists
-            bool exists = await db.Rooms.AnyAsync(r => r.Id == roomId);
-
-            if (exists)
-            {
-                return Json(new { success = false, message = $"Room ID '{roomId}' already exists." });
-            }
-
-            // Validate Room ID format
-            if (string.IsNullOrWhiteSpace(roomId))
-            {
-                return Json(new { success = false, message = "Room ID is required." });
-            }
-
-            if (!roomId.StartsWith(block))
-            {
-                return Json(new { success = false, message = $"Room ID must start with block '{block}'." });
-            }
-
-            if (type == "Lab")
-            {
-                // Lab format: [Block][0-2][0][0-2] where floor 0=Floor1, 1=Floor2, 2=Floor3 in DB
-                var pattern = $@"^{Regex.Escape(block)}[0-2]0[0-2]$";
-                if (!Regex.IsMatch(roomId, pattern))
-                {
-                    return Json(new { success = false, message = $"Lab Room ID must follow format: {block}[0-2]0[0-2] (e.g., {block}000, {block}101, {block}202)" });
-                }
-
-                // Check if floor digit matches selected floor
-                var floorDigitInId = roomId.Substring(block.Length, 1);
-                if (floorDigitInId != floor.Value.ToString())
-                {
-                    return Json(new { success = false, message = $"Room ID floor digit must match the selected floor. Expected: {block}{floor}0[0-2]" });
-                }
-            }
-            else if (type == "Classroom")
-            {
-                // Classroom format: [Block][1-3][0][1-3]
-                var pattern = $@"^{Regex.Escape(block)}[1-3]0[1-3]$";
-                if (!Regex.IsMatch(roomId, pattern))
-                {
-                    return Json(new { success = false, message = $"Classroom Room ID must follow format: {block}[1-3]0[1-3] (e.g., {block}101, {block}202, {block}303)" });
-                }
-
-                // Check if floor digit matches selected floor
-                var floorDigitInId = roomId.Substring(block.Length, 1);
-                if (floorDigitInId != floor.Value.ToString())
-                {
-                    return Json(new { success = false, message = $"Room ID floor digit must match the selected floor. Expected: {block}{floor}0[1-3]" });
-                }
-            }
-            else if (type == "Lecture Hall")
-            {
-                if (!roomId.StartsWith("DK"))
-                {
-                    return Json(new { success = false, message = "Lecture Hall Room ID must start with 'DK'." });
-                }
-            }
-
             try
             {
+                roomId = roomId?.Trim().ToUpper();
+                type = type?.Trim();
+                block = block?.Trim().ToUpper();
+
+                // For Lecture Hall, validate and set floor to null
+                if (type == "Lecture Hall")
+                {
+                    if (string.IsNullOrWhiteSpace(roomId))
+                    {
+                        return Json(new { success = false, message = "Room ID is required for Lecture Hall." });
+                    }
+
+                    if (!roomId.StartsWith("DK"))
+                    {
+                        return Json(new { success = false, message = "Lecture Hall Room ID must start with 'DK'." });
+                    }
+
+                    block = "DK";
+                    floor = null;
+                }
+                else if (type == "Lab")
+                {
+                    // Validate Lab format: Block[0-2]0[1-5]
+                    if (!floor.HasValue || floor < 0 || floor > 2)
+                    {
+                        return Json(new { success = false, message = "Lab floor must be between 0 and 2." });
+                    }
+
+                    var pattern = $@"^{Regex.Escape(block)}[0-2]0[1-5]$";
+                    if (!Regex.IsMatch(roomId, pattern))
+                    {
+                        return Json(new { success = false, message = $"Invalid Lab Room ID format. Expected: {block}[0-2]0[1-5]" });
+                    }
+
+                    // Convert floor 0-2 to database floor 1-3
+                    floor = floor.Value + 1;
+                }
+                else if (type == "Classroom")
+                {
+                    // Validate Classroom format: Block[1-3]0[1-5]
+                    if (!floor.HasValue || floor < 1 || floor > 3)
+                    {
+                        return Json(new { success = false, message = "Classroom floor must be between 1 and 3." });
+                    }
+
+                    var pattern = $@"^{Regex.Escape(block)}[1-3]0[1-5]$";
+                    if (!Regex.IsMatch(roomId, pattern))
+                    {
+                        return Json(new { success = false, message = $"Invalid Classroom Room ID format. Expected: {block}[1-3]0[1-5]" });
+                    }
+                }
+
+                // Check if room already exists
+                bool exists = await db.Rooms.AnyAsync(r => r.Id == roomId);
+
+                if (exists)
+                {
+                    return Json(new { success = false, message = $"Room ID '{roomId}' already exists." });
+                }
+
                 var room = new Room
                 {
                     Id = roomId,
                     Type = type,
                     Block = block,
-                    Floor = actualFloor, // Store the converted floor for Labs (0-2), normal for Classroom (1-3)
+                    Floor = floor,
                     Status = "Available"
                 };
 
@@ -1986,32 +1966,26 @@ namespace SHAPEE.Controllers
             {
                 if (string.IsNullOrWhiteSpace(status))
                 {
-                    TempData["ErrorMessage"] = "Status is required.";
-                    return RedirectToAction(nameof(RoomManagement));
+                    return Json(new { success = false, message = "Status is required." });
                 }
 
-                // Fetch room
                 var room = await db.Rooms.FindAsync(roomId);
 
                 if (room == null)
                 {
-                    TempData["ErrorMessage"] = "Room not found.";
-                    return RedirectToAction(nameof(RoomManagement));
+                    return Json(new { success = false, message = "Room not found." });
                 }
 
-                // Only update status
                 room.Status = status;
 
                 db.Rooms.Update(room);
                 await db.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Room status updated successfully!";
-                return RedirectToAction(nameof(RoomManagement));
+                return Json(new { success = true, message = "Room status updated successfully!" });
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error updating room: " + ex.Message;
-                return RedirectToAction(nameof(RoomManagement));
+                return Json(new { success = false, message = "Error updating room: " + ex.Message });
             }
         }
 
@@ -2044,21 +2018,43 @@ namespace SHAPEE.Controllers
             }
         }
 
-        // GET: ExportRoomsCSV
-        public IActionResult ExportRoomsCSV()
+        public IActionResult ExportRoomsCsv(string? search, string? type, string? block, string? status)
         {
-            var rooms = db.Rooms.OrderBy(r => r.Id).ToList();
+            var query = db.Rooms.AsQueryable();
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Room ID,Type,Block,Floor,Status");
-
-            foreach (var room in rooms)
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                csv.AppendLine($"{room.Id},{room.Type},{room.Block},{room.Floor},{room.Status}");
+                query = query.Where(r => r.Id.Contains(search));
             }
 
-            var bytes = Encoding.UTF8.GetBytes(csv.ToString());
-            return File(bytes, "text/csv", $"Rooms_{DateTime.Now:yyyyMMdd}.csv");
+            if (!string.IsNullOrWhiteSpace(type))
+            {
+                query = query.Where(r => r.Type == type);
+            }
+
+            if (!string.IsNullOrWhiteSpace(block))
+            {
+                query = query.Where(r => r.Block == block);
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            var data = query
+                .Select(r => new RoomCsvVM
+                {
+                    RoomId = r.Id,
+                    Type = r.Type,
+                    Block = r.Block,
+                    Floor = r.Floor ?? 0,
+                    Status = r.Status
+                })
+                .ToList();
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", "Rooms.csv");
         }
 
         // LeaveManagement

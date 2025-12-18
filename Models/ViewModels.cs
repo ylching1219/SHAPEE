@@ -399,6 +399,24 @@ namespace SHAPEE.Models
         public Room? EditRoom { get; set; }
     }
 
+    public class RoomCsvVM
+    {
+        [Display(Name = "Room ID")]
+        public string RoomId { get; set; }
+
+        [Display(Name = "Type")]
+        public string Type { get; set; }
+
+        [Display(Name = "Block")]
+        public string Block { get; set; }
+
+        [Display(Name = "Floor")]
+        public int Floor { get; set; }
+
+        [Display(Name = "Status")]
+        public string Status { get; set; }
+    }
+
     public class LeaveApplicationVM
     {
         [Required(ErrorMessage = "Start date is required")]
