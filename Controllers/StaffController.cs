@@ -44,6 +44,11 @@ namespace SHAPEE.Controllers
                 .Where(c => c.StaffId == staffId)
                 .AsQueryable();
 
+            if (!isView)
+            {
+                sectionsQuery = sectionsQuery.Where(s => s.Semester != null && s.Semester.IsActive);
+            }
+
             //only filter by today in TAKE mode, not in VIEW mode
             if (!isView)
             {
@@ -189,6 +194,13 @@ namespace SHAPEE.Controllers
 
             if (section == null)
                 return RedirectToAction("ClassSelection");
+            
+            // prevent taking attendance for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                TempData["ErrorMessage"] = "You can only take attendance for classes in an active semester.";
+                return RedirectToAction("ClassSelection", new { mode = "take" });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();   // e.g. "Monday"
@@ -225,8 +237,16 @@ namespace SHAPEE.Controllers
         public IActionResult StartAttendanceSession(string sectionId)
         {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            var section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
             if (section == null) return NotFound();
+
+            // prevent starting sessions for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                return Json(new { success = false, message = "Cannot start attendance for a class in an inactive semester." });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();
@@ -358,8 +378,9 @@ namespace SHAPEE.Controllers
             var presentCount = presentStudents.Count;
             var absentCount = absentStudents.Count;
             var flaggedCount = flaggedAttendances.Count;
-            var attendancePercentage = totalEnrolled > 0
-                ? Math.Round((double)presentCount / totalEnrolled * 100, 1)
+            var consideredTotal = presentCount + absentCount;
+            var attendancePercentage = consideredTotal > 0
+                ? Math.Round((double)presentCount / consideredTotal * 100, 1)
                 : 0;
 
             var viewModel = new SessionSummaryVM
@@ -386,6 +407,9 @@ namespace SHAPEE.Controllers
             var section = db.ClassSections
                 .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
             if (section == null) return;
+
+            if (section.Semester == null || !section.Semester.IsActive)
+            return;
 
             var enrolledStudents = db.Students
                 .Where(s => s.TutorialGroupId.HasValue
@@ -493,11 +517,13 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //calculate overall attendance percentage
-            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
-            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
-            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
-            var overallAttendancePercentage = totalPossibleAttendances > 0
-                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+            var totalPresent = allAttendances.Count(a => a.Status == "Present");
+            var totalAbsent  = allAttendances.Count(a => a.Status == "Absent");
+            // ignore Leave, Late, Excused in denominator as you prefer
+
+            var consideredTotal = totalPresent + totalAbsent;
+            var overallAttendancePercentage = consideredTotal > 0
+                ? Math.Round((double)totalPresent / consideredTotal * 100, 1)
                 : 0;
 
             //calculate flaged count
@@ -508,8 +534,7 @@ namespace SHAPEE.Controllers
                 ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
                 : DateOnly.FromDateTime(DateTime.Now);
 
-            var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
-            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+            var totalAbsences = totalAbsent;
 
             return Json(new
             {
@@ -615,12 +640,15 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //calculate overall attendance percentage
-            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
-            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
-            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
-            var overallAttendancePercentage = totalPossibleAttendances > 0
-                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+            var totalPresent = allAttendances.Count(a => a.Status == "Present");
+            var totalAbsent  = allAttendances.Count(a => a.Status == "Absent");
+            // ignore Leave, Late, Excused in denominator as you prefer
+
+            var consideredTotal = totalPresent + totalAbsent;
+            var overallAttendancePercentage = consideredTotal > 0
+                ? Math.Round((double)totalPresent / consideredTotal * 100, 1)
                 : 0;
+
 
             //calculate flaged count
             var flaggedCount = allAttendances.Count(a => a.IsFlaged);
@@ -631,7 +659,7 @@ namespace SHAPEE.Controllers
                 : DateOnly.FromDateTime(DateTime.Now);
 
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
-            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+            var totalAbsences = totalAbsent;
 
             //create view model
             var viewModel = new AttendanceManagementVM
@@ -698,8 +726,11 @@ namespace SHAPEE.Controllers
                     Date = g.Key,
                     PresentCount = g.Count(a => a.Status == "Present"),
                     TotalCount = g.Count(),
-                    AttendancePercentage = totalStudents > 0
-                        ? Math.Round((double)g.Count(a => a.Status == "Present") / totalStudents * 100, 1)
+                    AttendancePercentage = 
+                    (g.Count(a => a.Status == "Present") + g.Count(a => a.Status == "Absent")) > 0
+                        ? Math.Round(
+                            (double)g.Count(a => a.Status == "Present") /
+                            (g.Count(a => a.Status == "Present") + g.Count(a => a.Status == "Absent")) * 100, 1)
                         : 0
                 })
                 .OrderBy(x => x.Date)
@@ -724,7 +755,8 @@ namespace SHAPEE.Controllers
                 status == "Present" ? "#28a745" :
                 status == "Absent" ? "#dc3545" :
                 status == "Late" ? "#ffc107" :
-                status == "Excused" ? "#17a2b8" : "#6c757d"
+                status == "Excused" ? "#17a2b8" :
+                status == "Leave" ? "#6f42c1" : "#6c757d"
             ).ToList();
 
             return Json(new
@@ -763,12 +795,18 @@ namespace SHAPEE.Controllers
             //verify all attendances belong to class sections owned by this staff
             var attendances = db.Attendances
                 .Include(a => a.ClassSection)
+                    .ThenInclude(cs => cs.Semester)
                 .Where(a => request.AttendanceIds.Contains(a.Id) && a.ClassSection.StaffId == staffId)
                 .ToList();
 
             if (attendances.Count != request.AttendanceIds.Count)
             {
                 return Json(new { success = false, message = "Some attendance records were not found or you don't have permission to update them." });
+            }
+
+            if (attendances.Any(a => a.ClassSection.Semester == null || !a.ClassSection.Semester.IsActive))
+            {
+                return Json(new { success = false, message = "You can only update attendance for classes in an active semester." });
             }
 
             //update status for all selected attendances

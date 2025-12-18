@@ -229,7 +229,8 @@ namespace SHAPEE.Models
         
         // filter options
         public List<SubjectFilterOption> AvailableSubjects { get; set; } = [];
-        public List<MonthFilterOption> AvailableMonths { get; set; } = [];
+        public List<SemesterFilterOption> AvailableSemesters { get; set; } = [];
+        public string? SelectedSemesterId { get; set; }
     }
 
     public class SubjectFilterOption
@@ -238,10 +239,9 @@ namespace SHAPEE.Models
         public string CourseName { get; set; }
     }
 
-    public class MonthFilterOption
+    public class SemesterFilterOption
     {
-        public int Month { get; set; }
-        public int Year { get; set; }
+        public string SemesterId { get; set; }
         public string DisplayText { get; set; }
     }
 
