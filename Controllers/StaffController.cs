@@ -1330,38 +1330,6 @@ namespace SHAPEE.Controllers
 
             return View("~/Views/Staff/ClassroomUI.cshtml", courses);
         }
-        //public IActionResult StaffTicketList()
-        //{
-        //    var tickets = db.SupportTickets.OrderByDescending(t => t.CreatedAt).ToList();
-        //    return View(tickets);
-        //}
-
-        //public IActionResult GetStaffTickets(string search = "", string status = "")
-        //{
-        //    var tickets = db.SupportTickets.AsQueryable();
-
-        //    if (!string.IsNullOrWhiteSpace(search))
-        //        tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
-
-        //    if (!string.IsNullOrWhiteSpace(status))
-        //        tickets = tickets.Where(t => t.Status == status);
-
-        //    return PartialView("_StaffTicketTablePartial", tickets.OrderByDescending(t => t.CreatedAt).ToList());
-        //}
-        //public IActionResult StaffTicketDetails(string id)
-        //{
-        //    if (string.IsNullOrEmpty(id))
-        //        return BadRequest("Ticket ID is required.");
-
-        //    var ticket = db.SupportTickets
-        //        .Include(t => t.TicketMessages)
-        //        .FirstOrDefault(t => t.Id == id);
-
-        //    if (ticket == null)
-        //        return NotFound();
-
-        //    return View("~/Views/Staff/StaffTicketDetails.cshtml", ticket);
-        //}
         // =======================
         // STAFF TICKET LIST
         // =======================
@@ -1379,19 +1347,19 @@ namespace SHAPEE.Controllers
         // =======================
         public IActionResult StaffTicketDetails(string id)
         {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
+            if (string.IsNullOrEmpty(id)) return NotFound();
 
             var ticket = db.SupportTickets
                 .Include(t => t.TicketMessages)
                 .FirstOrDefault(t => t.Id == id);
 
-            if (ticket == null)
-                return NotFound();
-            //sort by on sent at
+            if (ticket == null) return NotFound();
+
+            // Sort by date and convert to list for consistency
             ticket.TicketMessages = ticket.TicketMessages
-            .OrderBy(m => m.SentAt)
-            .ToList();
+                .OrderBy(m => m.SentAt)
+                .ToList();
+
             return View("~/Views/Staff/StaffTicketDetails.cshtml", ticket);
         }
 
@@ -1419,24 +1387,31 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
-
+            //validate
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Please enter a message." });
+
                 TempData["Message"] = "Please enter a message.";
                 return RedirectToAction("StaffTicketDetails", new { id = ticketId });
             }
 
             var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
-            if (ticket == null)
+            if (ticket == null) return NotFound();
+
+            //check status closed or no
+            if (ticket.Status == "Closed")
             {
-                TempData["Message"] = "Ticket not found.";
-                return RedirectToAction("StaffTicketList");
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "This ticket is closed and cannot receive replies." });
+
+                TempData["Message"] = "This ticket is closed.";
+                return RedirectToAction("StaffTicketDetails", new { id = ticketId });
             }
 
-            // get staff id 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // id of msg
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
 
             var ticketMessage = new TicketMessage
@@ -1451,10 +1426,54 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
-            TempData["Message"] = "Reply sent successfully.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    success = true,
+                    sender = ticketMessage.SenderId,
+                    time = ticketMessage.SentAt.ToString("dd/MM/yyyy HH:mm"),
+                    content = ticketMessage.Content
+                });
+            }
 
+            TempData["Message"] = "Reply sent successfully.";
             return RedirectToAction("StaffTicketDetails", new { id = ticketId });
         }
+        //get instant reply
+        [HttpGet]
+        public IActionResult GetRepliesPartial(string id)
+        {
+            var ticket = db.SupportTickets
+                           .Include(t => t.TicketMessages)
+                           .FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // sort by date
+            var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
+            return PartialView("_TicketMessage", messages);
+        }
+        //close ticket
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CloseTicket(string id)
+        {
+            // 1. Find the ticket in the database
+            var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // 2. Update the data (No new page needed)
+            ticket.Status = "Closed";
+            ticket.ResolvedAt = DateTime.Now;
+
+            db.SaveChanges();
+
+            // 3. Immediately go back to the List page
+            return RedirectToAction("StaffTicketList");
+        }
+
         //task section
         public IActionResult TaskList()
         {
@@ -1475,7 +1494,7 @@ namespace SHAPEE.Controllers
 
             return View(task);
         }
-
+        //create new task
         [HttpPost]
         public IActionResult CreateTask(CourseTask obj)
         {

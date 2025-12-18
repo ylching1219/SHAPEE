@@ -1,7 +1,7 @@
 ﻿@model SHAPEE.Models.SupportTicket
 
 @{
-    ViewData["Title"] = "Ticket Details";
+    ViewData["Title"] = "Ticket Details - Student";
 }
 
 <style>
@@ -13,196 +13,206 @@
     }
 
     h2 {
-        text-align: center;
-        color: #222;
-        margin-top: 30px;
+        color: #007bff;
+        margin-top: 20px;
         font-weight: 700;
+        text-align: left;
+    }
+
+    h4 {
+        margin-top: 30px;
+        color: #007bff;
+        font-weight: 600;
+        text-align: left;
     }
 
     .alert-success {
-        width: 90%;
-        max-width: 700px;
-        margin: 20px auto;
         padding: 12px 20px;
         background-color: #d4edda;
         border: 1px solid #c3e6cb;
         border-radius: 8px;
         color: #155724;
-        text-align: center;
-        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    .ticket-container {
+        padding: 20px 40px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .ticket-info {
-        max-width: 700px;
-        margin: 20px auto;
         background: #fff;
         padding: 25px 30px;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        word-wrap: break-word; 
-        overflow-wrap: break-word; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        word-wrap: break-word;
+        margin-bottom: 20px;
     }
 
         .ticket-info p {
             font-size: 1rem;
             margin-bottom: 12px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            color: #555;
         }
-
-    hr {
-        border: 0;
-        border-top: 1px solid #eee;
-        margin: 25px 0;
-    }
-
-    h4 {
-        margin-top: 20px;
-        color: #007bff;
-        font-weight: 600;
-    }
-
-    .list-group {
-        padding-left: 0;
-        margin-bottom: 20px;
-        list-style: none;
-    }
 
     .list-group-item {
-        background: #f9f9f9;
-        border: 1px solid #e0e0e0;
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 10px;
+        background: #fff;
+        border: 1px solid #eef2f7;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
 
-        .list-group-item strong {
-            color: #007bff;
-        }
-
-        .list-group-item p {
-            margin: 5px 0 0 0;
-            color: #333;
-        }
-
     form.reply-form {
-        max-width: 700px;
-        margin: 20px auto 50px;
         background: #fff;
         padding: 25px 30px;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-top: 20px;
     }
 
         form.reply-form textarea {
             width: 100%;
-            padding: 12px 14px;
+            padding: 15px;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             font-size: 1rem;
             resize: vertical;
             min-height: 120px;
-            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-            form.reply-form textarea:focus {
-                border-color: #007bff;
-                box-shadow: 0 0 5px rgba(0,123,255,0.3);
-                outline: none;
-            }
-
         form.reply-form button {
-            display: block;
-            width: 100%;
-            padding: 12px 0;
+            display: inline-block;
+            min-width: 150px;
+            padding: 12px 25px;
             background: #007bff;
             color: #fff;
             font-weight: 600;
-            font-size: 1rem;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 15px;
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.2s;
         }
 
             form.reply-form button:hover {
-                background: #0056c7;
-                transform: translateY(-2px);
+                background: #0056b3;
             }
-
-    .back-wrapper {
-        max-width: 700px;
-        margin: 20px auto;
-    }
 
     .back-btn {
         display: inline-block;
-        padding: 8px 14px;
+        padding: 10px 20px;
         background-color: #007bff;
         color: white;
         text-decoration: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-weight: 600;
-        transition: background 0.3s, transform 0.2s;
+        margin-bottom: 20px;
+        transition: background 0.3s;
     }
 
         .back-btn:hover {
-            background-color: #0056c7;
-            color: white;
-            transform: translateY(-1px);
+            background-color: #0056b3;
+            color: white !important;
         }
-
 </style>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-success">@TempData["Message"]</div>
-}
-<div class="back-wrapper">
-    <a href="@Url.Action("TicketList", "Student")" class="back-btn">
-        ← Back to My Tickets
-    </a>
+<audio id="notificationSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+
+<div class="ticket-container">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    <div>
+        <a href="@Url.Action("TicketList", "Student")" class="back-btn">← Back to My Tickets</a>
+    </div>
+
+    <div class="ticket-info">
+        <h2>Ticket #@Model.Id - @Model.Subject</h2>
+        <p>Status: <strong style="color: @(Model.Status == "Closed" ? "#dc3545" : "#28a745")">@Model.Status</strong> | Priority: <strong>@Model.Priority</strong></p>
+        <p><span style="font-weight: bold; color: #007bff;">Description:</span> @Model.Description</p>
+    </div>
+
+    <h4>Replies</h4>
+    <div id="repliesContainer">
+        @await Html.PartialAsync("_TicketMessage", Model.TicketMessages.OrderBy(m => m.SentAt).ToList())
+    </div>
+
+    @if (Model.Status != "Closed")
+    {
+        <h4>Reply</h4>
+        <form asp-controller="Student" asp-action="Reply" method="post" class="reply-form" id="ticketReplyForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ticketId" value="@Model.Id" id="hiddenTicketId" />
+            <textarea name="message" id="messageText" placeholder="Write your reply..." required></textarea>
+            <div style="text-align: right;">
+                <button type="submit" id="sendBtn">Send Reply</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div style="margin-top:20px; text-align:center; padding: 20px; background: #e9ecef; border-radius: 12px; color: #6c757d; border: 1px solid #dee2e6;">
+            <strong>This ticket is closed.</strong> You cannot send further replies.
+        </div>
+    }
 </div>
 
-<div class="ticket-info">
-    <h2>Ticket #@Model.Id - @Model.Subject</h2>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const tId = $('#hiddenTicketId').val();
+        let msgCount = $('.list-group-item').length;
 
-    <p>Status: <strong>@Model.Status</strong></p>
-    <p>Priority: <strong>@Model.Priority</strong></p>
-    <p>Description: @Model.Description</p>
-</div>
+        // Live polling for new replies
+        setInterval(function() {
+            $.get('@Url.Action("GetRepliesPartial", "Student")/' + tId, function(data) {
+                let newCount = $(data).filter('.list-group-item').length || $(data).find('.list-group-item').length;
 
-<hr />
+                if (newCount > msgCount) {
+                    document.getElementById('notificationSound').play();
+                    msgCount = newCount;
+                    $('#repliesContainer').html(data);
+                    $('html, body').animate({ scrollTop: $(document).height() }, 500);
+                }
+            });
+        }, 3000);
 
-<h4>Replies</h4>
+        // AJAX form submit
+        $('#ticketReplyForm').on('submit', function(e) {
+            e.preventDefault();
+            var $btn = $('#sendBtn');
+            var msg = $('#messageText').val().trim();
+            if (msg === "") return;
 
-@if (Model.TicketMessages != null && Model.TicketMessages.Any())
-{
-    <ul class="list-group">
-        @foreach (var r in Model.TicketMessages)
-        {
-            <li class="list-group-item">
-                <strong>@r.SenderId</strong>
-                (@r.SentAt.ToString("dd/MM/yyyy HH:mm"))
-                <p>@r.Content</p>
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p style="text-align:center; color:#555;">No replies yet.</p>
-}
+            $btn.prop('disabled', true).text('Sending...');
 
-<hr />
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                success: function(res) {
+                    $('#messageText').val('');
+                    $btn.prop('disabled', false).text('Send Reply');
 
-<h4>Reply</h4>
-
-<form asp-action="Reply" method="post" class="reply-form">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="ticketId" value="@Model.Id" />
-    <textarea name="message" placeholder="Write your reply"></textarea>
-    <button type="submit">Send Reply</button>
-</form>
-
+                    // Refresh replies immediately
+                    $.get('@Url.Action("GetRepliesPartial", "Student")/' + tId, function(data) {
+                        $('#repliesContainer').html(data);
+                        msgCount = $(data).filter('.list-group-item').length || $(data).find('.list-group-item').length;
+                        $('html, body').animate({ scrollTop: $(document).height() }, 500);
+                    });
+                },
+                error: function() {
+                    alert("Failed to send.");
+                    $btn.prop('disabled', false).text('Send Reply');
+                }
+            });
+        });
+    });
+</script>
