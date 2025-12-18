@@ -1261,7 +1261,14 @@ namespace SHAPEE.Controllers
 
             foreach (var file in files)
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                // remove old name
+                string originalName = Path.GetFileNameWithoutExtension(file.FileName);
+                string cleanName = string.Concat(originalName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+
+                // rename new name
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string fileName = $"{courseId}_{timestamp}_{cleanName}{Path.GetExtension(file.FileName)}";
+
                 var filePath = Path.Combine(uploadFolder, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -1550,6 +1557,77 @@ namespace SHAPEE.Controllers
             TempData["msg"] = "Assignment created!";
             return RedirectToAction("Index");
         }
+        // PAGE VIEW
 
+
+        // SEND MESSAGE
+        // GET: Staff/Chat?classId=SEC001
+        // GET: Staff/Chat
+        public IActionResult Chat(string classId)
+        {
+            if (string.IsNullOrEmpty(classId)) return Content("No class selected.");
+
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Initial load of messages
+            var messages = db.ChatMessages
+                .Where(x => x.ReceiverId == "STF0002") // Testing with STF0002
+                .OrderBy(x => x.SentAt)
+                .ToList();
+
+            return View(messages);
+        }
+
+        // AJAX API: Staff/GetMessages
+        [HttpGet]
+        public IActionResult GetMessages()
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var messages = db.ChatMessages
+                .Where(x => x.ReceiverId == "STF0002")
+                .OrderBy(x => x.SentAt)
+                .Select(m => new {
+                    sender = m.SenderId,
+                    content = m.Content,
+                    time = m.SentAt.ToString("HH:mm"),
+                    isMe = m.SenderId == currentUserId
+                }).ToList();
+
+            return Json(messages);
+        }
+
+        // POST: Staff/Send
+        [HttpPost]
+        public IActionResult Send(string classId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Chat", new { classId });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Generate CM001 format ID
+            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+            int nextNum = 1;
+            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+            {
+                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+                    nextNum = num + 1;
+            }
+
+            var msg = new ChatMessage
+            {
+                Id = $"CM{nextNum:D3}",
+                SenderId = userId,
+                ReceiverId = "STF0002", // Test Receiver
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+
+            return RedirectToAction("Chat", new { classId });
+        }
     }
 }

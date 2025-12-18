@@ -7,8 +7,8 @@
 
 <style>
     body {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background-color: #f8f9fa;
         margin: 0;
         padding: 0;
     }
@@ -36,27 +36,37 @@
 
     #titleInput {
         width: 90%;
-        height: 40px;
+        height: 45px;
         margin: 10px auto;
         display: block;
         padding: 10px;
         border-radius: 8px;
-        border: 1px solid #ccc;
+        border: 1px solid #ced4da;
+        font-size: 1rem;
+        transition: background 0.3s;
     }
+        /* fixed title when edit */
+        #titleInput:read-only {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            border-color: #28a745;
+        }
 
     .upload-area {
         width: 90%;
         margin: 0 auto;
         background: white;
-        padding: 25px;
+        padding: 30px;
         border-radius: 12px;
         text-align: center;
         border: 2px dashed #007bff;
         cursor: pointer;
+        transition: background 0.3s;
     }
 
         .upload-area.dragover {
             background: #e8f1ff;
+            border-color: #0056b3;
         }
 
     #pendingFiles {
@@ -66,11 +76,12 @@
 
     .file-item {
         background: #e8f1ff;
-        padding: 6px 10px;
+        padding: 8px 12px;
         border-radius: 6px;
         display: flex;
         justify-content: space-between;
         margin-bottom: 5px;
+        align-items: center;
     }
 
         .file-item button {
@@ -78,19 +89,20 @@
             color: white;
             border: none;
             border-radius: 4px;
+            padding: 4px 8px;
             cursor: pointer;
-            font-size: 0.8rem;
         }
 
     #uploadBtn {
         margin: 20px auto;
-        padding: 10px 25px;
+        padding: 12px 30px;
         border-radius: 6px;
         background: #007bff;
         color: white;
         border: none;
         display: block;
         cursor: pointer;
+        font-weight: bold;
     }
 
     .material-box {
@@ -99,14 +111,17 @@
         margin: 15px auto;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
 
     .material-title {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: bold;
-        margin-bottom: 10px;
-        color: black;
+        margin-bottom: 12px;
+        color: #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .file-row {
@@ -114,91 +129,80 @@
         justify-content: space-between;
         align-items: center;
         background: #f1f6ff;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin-bottom: 6px;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 8px;
     }
 
     .file-link {
         text-decoration: none;
         color: #007bff;
-        font-weight: bold;
+        font-weight: 600;
     }
 
     .delete-btn {
         background: #dc3545;
         color: white;
         border: none;
-        padding: 5px 10px;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .add-more-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 6px 12px;
         border-radius: 5px;
         cursor: pointer;
         font-size: 0.85rem;
     }
 
-        .delete-btn:hover {
-            background: #c82333;
-        }
-
     .back-btn {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
         margin: 15px 0 10px 5%;
-        padding: 8px 14px;
-        background: #e9eef5;
-        color: #333;
+        padding: 8px 16px;
+        background: #6c757d;
+        color: white;
         text-decoration: none;
         border-radius: 6px;
         font-weight: bold;
-        font-size: 0.9rem;
     }
-
         .back-btn:hover {
-            background: #dce4f2;
+            background: #495057; 
+            color: white; 
+            transform: translateX(-5px); 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
         }
-
-    #materialSearch, #fileTypeFilter {
-        padding: 10px 12px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 1rem;
+    #cancelEdit {
+        display: none;
+        color: #dc3545;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-left: 5%;
+        text-decoration: underline;
     }
 </style>
 
-<a href="/Classroom/ClassroomUI" class="back-btn">← Back</a>
+<a href="@Url.Action("StaffClassroomUI", "Staff")" class="back-btn">← Back to Courses</a>
 
+<div class="class-header" id="pageTop">@courseId</div>
 
-
-<div class="class-header">@courseId</div>
-
-<!-- Add New Material Section -->
-<div class="upload-header">Add New Material</div>
-
-<input type="text" id="titleInput" placeholder="Enter material title" />
+<div class="upload-header">Upload Section</div>
+<span id="cancelEdit" onclick="resetForm()">Cancel Edit Mode</span>
+<input type="text" id="titleInput" placeholder="Material Title" />
 
 <div id="uploadArea" class="upload-area">
-    <p>Drag & Drop your files here</p>
-    <p>or click to browse</p>
+    <p style="margin:0; font-size: 1.1rem; color: #007bff;"><b>Click to Browse</b> or Drag & Drop Files</p>
     <input type="file" id="fileInput" multiple hidden />
 </div>
 
 <div id="pendingFiles"></div>
-<button id="uploadBtn">Upload Files</button>
+<button id="uploadBtn">Start Upload</button>
 
-<!-- Search + Filter Section -->
-<div style="width:90%; max-width:600px; margin: 20px auto; display:flex; gap:10px;">
-    <input type="text" id="materialSearch" placeholder="Search materials..." style="flex:1;" />
-    <select id="fileTypeFilter">
-        <option value="">All Types</option>
-        <option value="PDF">PDF</option>
-        <option value="PPT">PPT</option>
-        <option value="DOCX">DOCX</option>
-        <option value="IMAGE">IMAGE</option>
-        <option value="VIDEO">VIDEO</option>
-    </select>
-</div>
-
-<!-- Existing Materials -->
 <div class="upload-header">Existing Materials</div>
 
 @if (Model != null && Model.Any())
@@ -206,7 +210,10 @@
     @foreach (var group in Model.GroupBy(m => m.Title))
     {
         <div class="material-box">
-            <div class="material-title">@group.Key</div>
+            <div class="material-title">
+                <span>@group.Key</span>
+                <button class="add-more-btn" onclick="prepareAddMore('@group.Key')">+ Add More Files</button>
+            </div>
 
             @foreach (var doc in group)
             {
@@ -214,7 +221,6 @@
                     <a href="@doc.FileUrl" target="_blank" class="file-link">
                         @doc.Id (@doc.MaterialType?.ToUpper())
                     </a>
-
                     <button class="delete-btn" onclick="deleteMaterial('@doc.Id')">Delete</button>
                 </div>
             }
@@ -223,26 +229,33 @@
 }
 else
 {
-    <p style="text-align:center;color:#666;">No materials uploaded yet.</p>
+    <p style="text-align:center; color:#888; margin-top: 30px;">No materials found for this course.</p>
 }
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <script>
-    // Upload logic
     let filesToUpload = [];
+    const courseId = '@courseId';
+
     const uploadArea = document.getElementById("uploadArea");
     const fileInput = document.getElementById("fileInput");
-    const courseId = '@courseId';
 
     uploadArea.addEventListener("click", () => fileInput.click());
     uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
     uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
-    uploadArea.addEventListener("drop", e => { e.preventDefault(); uploadArea.classList.remove("dragover"); handleFiles(e.dataTransfer.files); });
+    uploadArea.addEventListener("drop", e => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        handleFiles(e.dataTransfer.files);
+    });
     fileInput.addEventListener("change", () => handleFiles(fileInput.files));
 
     function handleFiles(files) {
-        for (let f of files) filesToUpload.push(f);
+        for (let f of files) {
+            if (!filesToUpload.some(ex => ex.name === f.name)) {
+                filesToUpload.push(f);
+            }
+        }
         renderPendingFiles();
     }
 
@@ -250,7 +263,7 @@ else
         const box = $('#pendingFiles');
         box.empty();
         filesToUpload.forEach((f, i) => {
-            box.append(`<div class="file-item"><span>${f.name}</span><button onclick="removeFile(${i})">Remove</button></div>`);
+            box.append(`<div class="file-item"><span>${f.name}</span><button onclick="removeFile(${i})">X</button></div>`);
         });
     }
 
@@ -259,9 +272,33 @@ else
         renderPendingFiles();
     }
 
+    // read only title
+    function prepareAddMore(title) {
+        // fixed title
+        $('#titleInput').val(title).prop('readonly', true);
+        $('#cancelEdit').show();
+
+       window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth' // slide back to top
+    });
+
+
+    $('#titleInput').focus(); // Put the cursor in the box automatically
+    $('#titleInput').css('background-color', '#d4edda');
+    }
+    //unlock the title and back to normal
+    function resetForm() {
+        $('#titleInput').val('').prop('readonly', false).css('box-shadow', 'none');
+        $('#cancelEdit').hide();
+        filesToUpload = [];
+        renderPendingFiles();
+    }
+
     $('#uploadBtn').click(function () {
         const title = $('#titleInput').val().trim();
-        if (!title || filesToUpload.length === 0) { alert("Title and files required"); return; }
+        if (!title || filesToUpload.length === 0) { alert("Please provide a title and select files."); return; }
 
         const fd = new FormData();
         filesToUpload.forEach(f => fd.append("files", f));
@@ -269,56 +306,27 @@ else
         fd.append("title", title);
 
         $.ajax({
-            url: '@Url.Action("UploadDoc", "Classroom")',
+            url: '@Url.Action("UploadDoc", "Staff")',
             type: 'POST',
             data: fd,
             processData: false,
             contentType: false,
-            success: function () { alert("Upload successful"); location.reload(); }
+            success: function () {
+                alert("Successfully uploaded.");
+                location.reload();
+            },
+            error: function () { alert("Upload failed."); }
         });
     });
 
-    // Delete material
     function deleteMaterial(id) {
-        if (!confirm("Are you sure you want to delete this material?")) return;
-        if (!confirm("This action CANNOT be undone. Delete permanently?")) return;
-
+        if (!confirm("Are you sure?")) return;
         $.ajax({
-            url: '@Url.Action("DeleteMaterial", "Classroom")',
+            url: '@Url.Action("DeleteMaterial", "Staff")',
             type: 'POST',
             data: { id: id },
-            success: function () { alert("Material deleted"); location.reload(); },
-            error: function () { alert("Delete failed"); }
+            success: function () { location.reload(); },
+            error: function () { alert("Delete failed."); }
         });
     }
-
-    // Search + File Type Filter logic
-    const searchInput = document.getElementById("materialSearch");
-    const typeFilter = document.getElementById("fileTypeFilter");
-
-    function filterMaterials() {
-        const query = searchInput.value.toLowerCase();
-        const type = typeFilter.value.toLowerCase();
-
-        document.querySelectorAll(".material-box").forEach(box => {
-            let title = box.querySelector(".material-title").textContent.toLowerCase();
-            let match = false;
-
-            box.querySelectorAll(".file-row").forEach(row => {
-                const fileType = row.querySelector(".file-link")?.textContent.match(/\(([^)]+)\)/)?.[1].toLowerCase() || "";
-                const fileName = row.querySelector(".file-link")?.textContent.toLowerCase() || "";
-
-                const matchesSearch = fileName.includes(query) || title.includes(query);
-                const matchesType = !type || fileType === type;
-
-                row.style.display = (matchesSearch && matchesType) ? "flex" : "none";
-                if (matchesSearch && matchesType) match = true;
-            });
-
-            box.style.display = match ? "block" : "none";
-        });
-    }
-
-    searchInput.addEventListener("input", filterMaterials);
-    typeFilter.addEventListener("change", filterMaterials);
 </script>

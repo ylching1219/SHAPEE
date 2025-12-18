@@ -429,4 +429,16 @@ namespace SHAPEE.Models
         public string Message { get; set; }
     }
 
+
+    // For displaying Google Classroom-style materials and tasks
+    public class ClassworkVM
+    {
+        // Grouping everything by Course so it looks organized
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+
+        // The items inside the "Classroom"
+        public List<Material> CourseMaterials { get; set; } = [];
+        public List<CourseTask> CourseTasks { get; set; } = [];
+    }
 }

@@ -1663,5 +1663,80 @@ namespace SHAPEE.Controllers
             return View(student);
         }
 
+        // PAGE VIEW
+        public IActionResult Index(string classId)
+        {
+            if (string.IsNullOrEmpty(classId))
+                return Content("No class selected.");
+
+            var userId = User.Identity.Name;
+
+            var messages = db.ChatMessages;
+                //.Where(x => x.ClassSectionId == classId)
+                //.OrderBy(x => x.SentAt)
+                //.ToList();
+
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = userId;
+
+            return View(messages);
+        }
+
+        // SEND MESSAGE
+        [HttpPost]
+        public IActionResult Send(string classId, string content)
+        {
+            var userId = User.Identity.Name;
+
+            var msg = new ChatMessage
+            {
+                Id = Guid.NewGuid().ToString(),
+                SenderId = userId,
+                ReceiverId = null,
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+
+            return RedirectToAction("Index", new { classId });
+        }
+        ////test
+        public IActionResult DebugStudent()
+        {
+            string studentId = "2500001";
+
+            // 1. Get the student without Includes to avoid SQL crashes
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null) return Content("Student not found.");
+
+            var report = new System.Text.StringBuilder();
+            report.AppendLine("====== RAW STUDENT DATA (PROPERTY DUMP) ======");
+
+            // 2. Automatically loop through every property in the class
+            var properties = student.GetType().GetProperties();
+            foreach (var prop in properties)
+            {
+                try
+                {
+                    var value = prop.GetValue(student, null) ?? "NULL";
+                    report.AppendLine($"[{prop.Name}]: {value}");
+                }
+                catch (Exception ex)
+                {
+                    report.AppendLine($"[{prop.Name}]: ERROR READING ({ex.Message})");
+                }
+            }
+
+            report.AppendLine("\n==============================================");
+            report.AppendLine("Note: If a property is NULL, it means the column is empty ");
+            report.AppendLine("or you need a separate query to fetch that related table.");
+
+            return Content(report.ToString());
+        }
+
     }
 }
