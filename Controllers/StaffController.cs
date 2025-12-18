@@ -44,6 +44,11 @@ namespace SHAPEE.Controllers
                 .Where(c => c.StaffId == staffId)
                 .AsQueryable();
 
+            if (!isView)
+            {
+                sectionsQuery = sectionsQuery.Where(s => s.Semester != null && s.Semester.IsActive);
+            }
+
             //only filter by today in TAKE mode, not in VIEW mode
             if (!isView)
             {
@@ -189,6 +194,13 @@ namespace SHAPEE.Controllers
 
             if (section == null)
                 return RedirectToAction("ClassSelection");
+            
+            // prevent taking attendance for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                TempData["ErrorMessage"] = "You can only take attendance for classes in an active semester.";
+                return RedirectToAction("ClassSelection", new { mode = "take" });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();   // e.g. "Monday"
@@ -225,8 +237,16 @@ namespace SHAPEE.Controllers
         public IActionResult StartAttendanceSession(string sectionId)
         {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            var section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
             if (section == null) return NotFound();
+
+            // prevent starting sessions for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                return Json(new { success = false, message = "Cannot start attendance for a class in an inactive semester." });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();
@@ -763,12 +783,18 @@ namespace SHAPEE.Controllers
             //verify all attendances belong to class sections owned by this staff
             var attendances = db.Attendances
                 .Include(a => a.ClassSection)
+                    .ThenInclude(cs => cs.Semester)
                 .Where(a => request.AttendanceIds.Contains(a.Id) && a.ClassSection.StaffId == staffId)
                 .ToList();
 
             if (attendances.Count != request.AttendanceIds.Count)
             {
                 return Json(new { success = false, message = "Some attendance records were not found or you don't have permission to update them." });
+            }
+
+            if (attendances.Any(a => a.ClassSection.Semester == null || !a.ClassSection.Semester.IsActive))
+            {
+                return Json(new { success = false, message = "You can only update attendance for classes in an active semester." });
             }
 
             //update status for all selected attendances

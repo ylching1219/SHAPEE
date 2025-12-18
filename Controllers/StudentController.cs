@@ -122,7 +122,7 @@ namespace SHAPEE.Controllers
 
         //===============KOH KAI MINN================
         // student main attendance page
-        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? month = null, string? search = null, string? classType = null)
+        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? semester = null, string? search = null, string? classType = null)
         {
             ViewData["Title"] = "View Attendance";
 
@@ -139,7 +139,7 @@ namespace SHAPEE.Controllers
                 {
                     ClassAttendances = new List<StudentAttendanceItemVM>(),
                     AvailableSubjects = new List<SubjectFilterOption>(),
-                    AvailableMonths = new List<MonthFilterOption>()
+                    AvailableSemesters = new List<SemesterFilterOption>()
                 });
             }
 
@@ -154,6 +154,13 @@ namespace SHAPEE.Controllers
                 .Include(cs => cs.Course)
                 .Where(cs => sectionIds.Contains(cs.SectionId))
                 .AsQueryable();
+
+            semester = semester?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(semester))
+            {
+                enrolledSectionsQuery = enrolledSectionsQuery
+                    .Where(cs => cs.SemesterId == semester);
+            }
 
             //apply subject filter
             subject = subject?.Trim() ?? "";
@@ -188,15 +195,10 @@ namespace SHAPEE.Controllers
                 .Where(a => a.StudentId == studentId)
                 .AsQueryable();
 
-            //apply month filter
-            month = month?.Trim() ?? "";
-            if (!string.IsNullOrEmpty(month))
+            if (!string.IsNullOrEmpty(semester))
             {
-                if (DateTime.TryParse($"{month}-01", out var m))
-                {
-                    attendancesQuery = attendancesQuery
-                        .Where(a => a.Date.Year == m.Year && a.Date.Month == m.Month);
-                }
+                attendancesQuery = attendancesQuery
+                    .Where(a => a.ClassSection.SemesterId == semester);
             }
 
             var attendances = attendancesQuery
@@ -228,8 +230,6 @@ namespace SHAPEE.Controllers
                     };
                 })
                 .Where(x => x != null)
-                // Only show sections with attendance if month filter is applied
-                .Where(x => string.IsNullOrEmpty(month) || x!.TotalSessions > 0)
                 .OrderBy(x => x!.Course!.Id)
                 .ToList();
 
@@ -247,28 +247,20 @@ namespace SHAPEE.Controllers
                  })
                  .ToList();
 
-
-            //get available months
-            var monthNames = new[]
-            {
-                "January","February","March","April","May","June",
-                "July","August","September","October","November","December"
-            };
-
-            var availableMonths = db.Attendances
-                .Where(a => a.StudentId == studentId)
-                .Select(a => a.Date)
+            var availableSemesters = db.ClassSections
+                .Where(cs => sectionIds.Contains(cs.SectionId))
+                .Include(cs => cs.Semester)
+                .Select(cs => cs.Semester)
+                .Where(s => s != null)
                 .Distinct()
-                .GroupBy(d => new { d.Year, d.Month })
-                .OrderByDescending(g => g.Key.Year)
-                .ThenByDescending(g => g.Key.Month)
-                .Select(g => new MonthFilterOption
+                .OrderByDescending(s => s.Id)
+                .Select(s => new SemesterFilterOption
                 {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    DisplayText = $"{monthNames[g.Key.Month - 1]} {g.Key.Year}"
+                    SemesterId = s.Id,
+                    DisplayText = s.Id // or $"{s.Id} ({s.StartDate:MMM yyyy} - {s.EndDate:MMM yyyy})"
                 })
                 .ToList();
+
 
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
@@ -305,7 +297,8 @@ namespace SHAPEE.Controllers
                 SectionId = sectionId,
                 QrToken = token,
                 AvailableSubjects = availableSubjects,
-                AvailableMonths = availableMonths
+                AvailableSemesters = availableSemesters,
+                SelectedSemesterId = semester
             };
 
             //ajax partial return
@@ -381,7 +374,9 @@ namespace SHAPEE.Controllers
             ClassSection? section = null;
             if (!string.IsNullOrEmpty(qrToken) && !string.IsNullOrEmpty(sectionId))
             {
-                section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
+                section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s => s.SectionId == sectionId);
                 if (section == null)
                 {
                     if (Request.IsAjax())
@@ -391,7 +386,9 @@ namespace SHAPEE.Controllers
             }
             else if (!string.IsNullOrEmpty(manualCode))
             {
-                section = db.ClassSections.FirstOrDefault(s =>
+                section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s =>
                     s.AttendanceCode == manualCode &&
                     s.IsAttendanceSessionActive);
                 if (section == null)
@@ -407,6 +404,14 @@ namespace SHAPEE.Controllers
                 if (Request.IsAjax())
                     return Json(new { success = false, message = "Either QR token or attendance code is required." });
                 return BadRequest("Either QR token or attendance code is required.");
+            }
+
+            // block attendance for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                if (Request.IsAjax())
+                    return Json(new { success = false, message = "This class belongs to an inactive semester. Attendance cannot be taken." });
+                return BadRequest("This class belongs to an inactive semester. Attendance cannot be taken.");
             }
 
             //check tutorial group match
