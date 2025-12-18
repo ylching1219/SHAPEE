@@ -186,6 +186,10 @@ public class Course
 
     public int CreditHours { get; set; }
 
+    public int LectureHours { get; set; }
+    public int? PracticalHours { get; set; }
+    public int TutorialHours { get; set; }
+
     //Many to Many Relationship for Program and Course
     public List<ProgramCourse> ProgramCourses { get; set; }
 

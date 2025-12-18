@@ -254,10 +254,19 @@ namespace SHAPEE.Migrations
                     b.Property<int>("CreditHours")
                         .HasColumnType("int");
 
+                    b.Property<int>("LectureHours")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PracticalHours")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TutorialHours")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

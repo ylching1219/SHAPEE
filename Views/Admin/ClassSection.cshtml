@@ -1,0 +1,413 @@
+﻿
+<style>
+
+    .stat-card {
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        line-height: 1;
+        margin: 0.5rem 0;
+    }
+
+    .course-item {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+
+    .course-item:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+    }
+
+    .section-details {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 1rem;
+    }
+
+    .badge-lg {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 2rem;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .pending-text {
+        color: #f59e0b;
+        font-weight: 500;
+    }
+</style>
+
+<div id="alertContainer"></div>
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Automatic Class Generation System</h1>
+</div>
+
+
+<!-- Selection Form -->
+<div class="card">
+    <div class="card-body p-4">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Faculty</label>
+                    <select id="faculty" class="form-control" name="facultyId">
+                        <option value="">Select Faculty</option>
+                        @foreach (var f in Model.Faculties!)
+                        {
+                            <option value="@f.Id">@f.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Program</label>
+                    <select id="program" class="form-control" name="programId" disabled>
+                        <option value="">Select Program</option>
+                    </select>
+                </div>
+            </div>
+        <!-- Detection Alert -->
+        <div class="alert alert-info d-none" id="detectionAlert" role="alert">
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-info-circle-fill fs-4"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h5 class="alert-heading">System Detection Summary</h5>
+                    <p class="mb-2" id="detectionText">
+                        
+                    </p>
+                    <div id="groupBadges" class="mb-3 d-flex flex-wrap">
+                      
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary" id="generateBtn" disabled>
+                Generate
+            </button>
+            <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+                <i class="bi bi-arrow-clockwise"></i> Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div id="results" class="d-none">
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Active Groups</div>
+                        <div class="stat-number text-primary" id="statGroups">0</div>
+                        <div class="text-muted small" id="statSemester">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                        <i class="bi bi-book-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Courses</div>
+                        <div class="stat-number text-success" id="statCourses">0</div>
+                        <div class="text-muted small">This semester</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Classes Generated</div>
+                        <div class="stat-number text-warning" id="statClasses">0</div>
+                        <div class="text-muted small">Auto-created</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Alert -->
+    <div class="alert alert-success" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-3 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">Classes Generated Successfully!</h5>
+                <p class="mb-0" id="successText"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generated Classes -->
+    <div id="generatedClasses"></div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        const groupList = [];
+
+        $("#faculty").on("change", function () {
+
+             const facultyId = $(this).val();
+            
+
+             $("#program").empty().append('<option value="">Select Program</option>');
+             $("#program").prop("disabled", true);
+             $("#generateBtn").prop("disabled", true);
+             $("#groupBadges").empty();
+             $("#detectionText").text('');
+             $("#detectionAlert").addClass("d-none");
+             if (!facultyId) return;
+
+             $.ajax({
+                 url: '/Admin/GetProgramFromFaculty',
+                 type: 'GET',
+                 data: {
+                     facultyId: facultyId
+                 },
+                 dataType: 'json',
+                 success: function (data) {
+
+                     if (data.length === 0) {
+                         console.log("No programs found");
+                         return;
+                     }
+
+                     data.forEach(function (p) {
+                         $("#program").append(
+                             `<option value="${p.id}">${p.name}</option>`
+                         );
+                     });
+
+                     $("#program").prop("disabled", false);
+                 },
+                 error: function (xhr, status, error) {
+                     console.error('Error loading programs:', error);
+                 }
+             });
+         });
+
+        $("#program").on("change",function(e){
+            const programId = $(this).val();
+            const programName = $("#program option:selected").text();
+
+            const container = $("#groupBadges");
+            $.ajax({
+                url: '/Admin/GetGroupFromProgram',
+                type: 'GET',
+                data: {
+                    programId: programId
+                },
+                dataType: 'json',
+                success: function (data) {
+                   
+                    container.empty();
+                    if (data.length === 0) {
+                        showAlert('danger', 'No groups found for the selected program.');
+                        return;
+                    }
+                    $("#detectionAlert").removeClass("d-none");
+                    $("#generateBtn").prop("disabled", false);
+                    $("#detectionText").html(`Detected ${data.length} group(s) in this <b>${programName}</b>.`);
+                    data.forEach(p => {
+                        container.append(
+                            $('<span class="badge bg-primary text-white rounded-pill px-3 py-2 me-2 mb-2"></span>')
+                                .text(p.groupName)
+                        );
+                        groupList.push(p.id);
+                    });
+
+                },
+                error: function (xhr, status, error) {
+                    showAlert('danger', 'Error loading groups: ' + error);
+                }
+            });
+        });
+
+        $("#generateBtn").on("click",function(){
+            if (groupList.length === 0) {
+                showAlert('danger', 'No groups selected for class generation.');
+                return;
+            }
+            console.log(groupList);
+            const data = {
+                 GroupList: groupList
+            };
+
+             $.ajax({
+                url: '/Admin/CreateClass',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (data) {
+
+                    if(data.success){
+                        showAlert('success', 'Classes created successfully.');
+ 
+                    } else {
+                        showAlert('danger', 'Error: ' + data.message);
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    showAlert('danger', 'Error creating class: ' + error);
+                }
+            });
+        })
+           
+        
+
+        function showAlert(type, message) {
+            let icon = '';
+            if (type === 'success') {
+                icon = '<i class="fas fa-check-circle me-2"></i>'; // success icon
+            } else if (type === 'danger') {
+                icon = '<i class="fas fa-exclamation-circle me-2"></i>'; // danger icon
+            }
+
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${icon}${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+
+            $('#alertContainer').html(alertHtml);
+        }
+
+        function displayResults(classData) {
+            const totalGroups = classData.length;
+            const totalCourses = classData.reduce((sum, g) => sum + g.courses.length, 0);
+            const totalClasses = totalCourses;
+
+            document.getElementById('statGroups').textContent = totalGroups;
+            document.getElementById('statSemester').textContent = currentAcademicInfo.semester;
+            document.getElementById('statCourses').textContent = totalCourses;
+            document.getElementById('statClasses').textContent = totalClasses;
+
+            document.getElementById('successText').textContent =
+                `System has automatically generated ${totalClasses} classes for ${currentAcademicInfo.semester} (${currentAcademicInfo.academicYear}) based on the program course structure.`;
+
+            const container = document.getElementById('generatedClasses');
+            container.innerHTML = '';
+
+            classData.forEach(groupData => {
+                const groupCard = document.createElement('div');
+                groupCard.className = 'group-card card';
+
+                groupCard.innerHTML = `
+                    <div class="group-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-1">${groupData.group}</h3>
+                                <div class="opacity-75">${groupData.year} - ${groupData.semester}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="small opacity-75">Courses</div>
+                                <div class="display-4 fw-bold">${groupData.courses.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        ${groupData.courses.map(course => `
+                            <div class="course-item">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="mb-1">${course.code} - ${course.name}</h5>
+                                        <div class="text-muted small">${course.credits} Credits</div>
+                                    </div>
+                                </div>
+                                <div class="section-details">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <div class="text-muted small">Section</div>
+                                            <div class="fw-semibold">${groupData.group}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted small">Lecturer</div>
+                                            <div class="pending-text">To be assigned</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted small">Schedule</div>
+                                            <div class="pending-text">To be scheduled</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted small">Room</div>
+                                            <div class="pending-text">To be assigned</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                container.appendChild(groupCard);
+            });
+
+            document.getElementById('results').classList.remove('d-none');
+
+            // Smooth scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+
+
+    </script>
+}

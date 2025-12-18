@@ -124,6 +124,11 @@ namespace SHAPEE.Models
         public int? Semester { get; set; }
     }
 
+    public class ClassSectionVM
+    {
+        public List<Faculty>? Faculties { get; set; } = [];
+        public List<int>? GroupList { get; set; } = [];
+    } 
     public class ProgramCsvVM
     {
         [Display(Name = "Program ID")]
