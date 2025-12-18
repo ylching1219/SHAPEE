@@ -1,7 +1,7 @@
 ﻿@model SHAPEE.Models.SupportTicket
 
 @{
-    ViewData["Title"] = "Ticket Details - Student";
+    ViewData["Title"] = "Ticket Details";
 }
 
 <style>
@@ -12,96 +12,22 @@
         padding: 0;
     }
 
-    h2 {
+    /* Set headers to Blue and align left */
+    h2, h4 {
         color: #007bff;
-        margin-top: 20px;
-        font-weight: 700;
         text-align: left;
+        font-weight: 700;
+    }
+
+    h2 {
+        margin-top: 20px;
     }
 
     h4 {
         margin-top: 30px;
-        color: #007bff;
-        font-weight: 600;
-        text-align: left;
     }
 
-    .alert-success {
-        padding: 12px 20px;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        color: #155724;
-        margin-bottom: 20px;
-    }
-
-    .ticket-container {
-        padding: 20px 40px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .ticket-info {
-        background: #fff;
-        padding: 25px 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        word-wrap: break-word;
-        margin-bottom: 20px;
-    }
-
-        .ticket-info p {
-            font-size: 1rem;
-            margin-bottom: 12px;
-            color: #555;
-        }
-
-    .list-group-item {
-        background: #fff;
-        border: 1px solid #eef2f7;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    }
-
-    form.reply-form {
-        background: #fff;
-        padding: 25px 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        margin-top: 20px;
-    }
-
-        form.reply-form textarea {
-            width: 100%;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        form.reply-form button {
-            display: inline-block;
-            min-width: 150px;
-            padding: 12px 25px;
-            background: #007bff;
-            color: #fff;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background 0.2s;
-        }
-
-            form.reply-form button:hover {
-                background: #0056b3;
-            }
-
+    /* Fix Back button hover: ensures text remains white */
     .back-btn {
         display: inline-block;
         padding: 10px 20px;
@@ -116,26 +42,91 @@
 
         .back-btn:hover {
             background-color: #0056b3;
-            color: white !important;
+            color: white !important; /* Forces word to stay white on hover */
         }
+
+    .ticket-container {
+        padding: 20px 40px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ticket-info {
+        background: #fff;
+        padding: 25px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+
+    /* Styling for the Description label */
+    .desc-label {
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .ticket-info p {
+        font-size: 1rem;
+        margin-bottom: 12px;
+        color: #555;
+    }
+
+    .list-group-item {
+        background: #fff;
+        border: 1px solid #eef2f7;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+
+        .list-group-item strong {
+            color: #007bff;
+        }
+
+    form.reply-form {
+        background: #fff;
+        padding: 25px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+        form.reply-form textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        /* Send button hover: ensures word stays white */
+        form.reply-form button {
+            padding: 12px 25px;
+            background: #007bff;
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+            form.reply-form button:hover {
+                background: #0056b3;
+                color: white !important;
+            }
 </style>
 
 <audio id="notificationSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
 
 <div class="ticket-container">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-success">@TempData["Message"]</div>
-    }
-
     <div>
         <a href="@Url.Action("TicketList", "Student")" class="back-btn">← Back to My Tickets</a>
     </div>
 
     <div class="ticket-info">
         <h2>Ticket #@Model.Id - @Model.Subject</h2>
-        <p>Status: <strong style="color: @(Model.Status == "Closed" ? "#dc3545" : "#28a745")">@Model.Status</strong> | Priority: <strong>@Model.Priority</strong></p>
-        <p><span style="font-weight: bold; color: #007bff;">Description:</span> @Model.Description</p>
+        <p>Status: <strong>@Model.Status</strong> | Priority: <strong>@Model.Priority</strong></p>
+
+        <p><span class="desc-label">Desc:</span> @Model.Description</p>
     </div>
 
     <h4>Replies</h4>
@@ -143,24 +134,17 @@
         @await Html.PartialAsync("_TicketMessage", Model.TicketMessages.OrderBy(m => m.SentAt).ToList())
     </div>
 
-    @if (Model.Status != "Closed")
-    {
-        <h4>Reply</h4>
-        <form asp-controller="Student" asp-action="Reply" method="post" class="reply-form" id="ticketReplyForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="ticketId" value="@Model.Id" id="hiddenTicketId" />
-            <textarea name="message" id="messageText" placeholder="Write your reply..." required></textarea>
-            <div style="text-align: right;">
-                <button type="submit" id="sendBtn">Send Reply</button>
-            </div>
-        </form>
-    }
-    else
-    {
-        <div style="margin-top:20px; text-align:center; padding: 20px; background: #e9ecef; border-radius: 12px; color: #6c757d; border: 1px solid #dee2e6;">
-            <strong>This ticket is closed.</strong> You cannot send further replies.
+    <h4>Reply</h4>
+    <form asp-action="Reply" method="post" class="reply-form" id="ticketReplyForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ticketId" value="@Model.Id" id="hiddenTicketId" />
+
+        <textarea name="message" id="messageText" placeholder="Write your reply..." required></textarea>
+
+        <div style="text-align: right; margin-top: 15px;">
+            <button type="submit" id="sendBtn">Send Reply</button>
         </div>
-    }
+    </form>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -169,48 +153,37 @@
         const tId = $('#hiddenTicketId').val();
         let msgCount = $('.list-group-item').length;
 
-        // Live polling for new replies
+        // Fast Polling
         setInterval(function() {
             $.get('@Url.Action("GetRepliesPartial", "Student")/' + tId, function(data) {
                 let newCount = $(data).filter('.list-group-item').length || $(data).find('.list-group-item').length;
-
                 if (newCount > msgCount) {
                     document.getElementById('notificationSound').play();
                     msgCount = newCount;
                     $('#repliesContainer').html(data);
-                    $('html, body').animate({ scrollTop: $(document).height() }, 500);
                 }
             });
         }, 3000);
 
-        // AJAX form submit
-        $('#ticketReplyForm').on('submit', function(e) {
+        // Ajax Submit
+        $('#ticketReplyForm').on('submit', function (e) {
             e.preventDefault();
             var $btn = $('#sendBtn');
-            var msg = $('#messageText').val().trim();
-            if (msg === "") return;
+            if ($('#messageText').val().trim() === "") return;
 
             $btn.prop('disabled', true).text('Sending...');
-
             $.ajax({
                 url: $(this).attr('action'),
                 type: 'POST',
                 data: $(this).serialize(),
                 headers: { "X-Requested-With": "XMLHttpRequest" },
-                success: function(res) {
+                success: function () {
                     $('#messageText').val('');
                     $btn.prop('disabled', false).text('Send Reply');
-
-                    // Refresh replies immediately
                     $.get('@Url.Action("GetRepliesPartial", "Student")/' + tId, function(data) {
                         $('#repliesContainer').html(data);
                         msgCount = $(data).filter('.list-group-item').length || $(data).find('.list-group-item').length;
-                        $('html, body').animate({ scrollTop: $(document).height() }, 500);
                     });
-                },
-                error: function() {
-                    alert("Failed to send.");
-                    $btn.prop('disabled', false).text('Send Reply');
                 }
             });
         });
