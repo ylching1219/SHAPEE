@@ -1702,7 +1702,7 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
-            // 1. Basic Validation
+           
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -1712,11 +1712,11 @@ namespace SHAPEE.Controllers
                 return RedirectToAction("TicketDetails", new { id = ticketId });
             }
 
-            // 2. Fetch the ticket
+            // fetch ticket
             var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
             if (ticket == null) return NotFound();
 
-            // 3. CHECK IF TICKET IS CLOSED (This is the part you requested)
+            // check close
             if (ticket.Status == "Closed")
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -1726,7 +1726,7 @@ namespace SHAPEE.Controllers
                 return RedirectToAction("TicketDetails", new { id = ticketId });
             }
 
-            // 4. Create the reply
+            //make reply
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
 
@@ -1777,7 +1777,7 @@ namespace SHAPEE.Controllers
 
 
 
-        ////test
+        //test
         public IActionResult DebugStudent()
         {
             string studentId = "2500001";
@@ -1810,57 +1810,6 @@ namespace SHAPEE.Controllers
             report.AppendLine("or you need a separate query to fetch that related table.");
 
             return Content(report.ToString());
-        }
-
-        //JS
-        public IActionResult Announcements(string? search, string? sort)
-        {
-            ViewData["Title"] = "Announcements";
-
-            var query = db.Announcements.AsQueryable();
-
-            // Apply search filter
-            search = search?.Trim() ?? "";
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(a =>
-                    a.Title.Contains(search) ||
-                    a.Content.Contains(search) ||
-                    a.Author.Contains(search));
-            }
-
-            // Apply sorting
-            query = sort switch
-            {
-                "oldest" => query.OrderBy(a => a.CreatedAt),
-                "title_asc" => query.OrderBy(a => a.Title),
-                "title_desc" => query.OrderByDescending(a => a.Title),
-                _ => query.OrderByDescending(a => a.CreatedAt) // newest first (default)
-            };
-
-            var announcements = query.ToList();
-
-            if (Request.IsAjax())
-            {
-                return PartialView("_AnnouncementsList", announcements);
-            }
-
-            return View(announcements);
-        }
-
-        // GET: Student/AnnouncementDetails
-        [HttpGet]
-        public IActionResult GetAnnouncementDetails(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-                return PartialView("_AnnouncementDetails", null);
-
-            var announcement = db.Announcements.FirstOrDefault(a => a.Id == id);
-
-            if (announcement == null)
-                return PartialView("_AnnouncementDetails", null);
-
-            return PartialView("_AnnouncementDetails", announcement);
         }
 
     }

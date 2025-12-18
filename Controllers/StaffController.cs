@@ -1691,10 +1691,6 @@ namespace SHAPEE.Controllers
         }
         // PAGE VIEW
 
-
-        // SEND MESSAGE
-        // GET: Staff/Chat?classId=SEC001
-        // GET: Staff/Chat
         public IActionResult Chat(string classId)
         {
             if (string.IsNullOrEmpty(classId)) return Content("No class selected.");

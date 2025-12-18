@@ -10,7 +10,7 @@
     </div>
     <hr />
     <div class="mb-3">
-        <input type="text" id="chatSearch" class="form-control" placeholder="Search messages..." autocomplete="off" />
+        <input type="text" id="chatSearch" class="form-control" placeholder="Search messages or userID" autocomplete="off" />
     </div>
     <div id="chatWindow" style="height: 450px; overflow-y: auto; border: 1px solid #ddd; padding: 20px; background: #f8f9fa; border-radius: 8px;">
         @foreach (var m in Model)
@@ -38,11 +38,11 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
      function refreshChat() {
-        // Get the search term from the input field
+        // get search
         var searchTerm = $('#chatSearch').val();
 
         $.ajax({
-            // Pass the search term as a data parameter
+            //pass the search
             url: '@Url.Action("GetMessages", "Staff")',
             type: 'GET',
             data: { search: searchTerm },
@@ -67,7 +67,7 @@
 
                 chatWindow.html(html);
 
-                // Only scroll to bottom if the user is NOT actively searching
+                
                 if (!searchTerm) {
                     chatWindow.scrollTop(chatWindow[0].scrollHeight);
                 }
@@ -75,17 +75,17 @@
         });
     }
 
-    // Add this to your <script> section to make the search live
+    
     $(document).ready(function() {
         $('#chatSearch').on('keyup', function() {
             refreshChat();
         });
     });
 
-    // Auto-refresh every 3 seconds
+    //auto refresh 3 sec
     setInterval(refreshChat, 3000);
 
-    // Initial scroll to bottom
+    
     $(document).ready(function() {
         var chatWindow = $('#chatWindow');
         chatWindow.scrollTop(chatWindow[0].scrollHeight);
