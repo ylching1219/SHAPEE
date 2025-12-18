@@ -1,0 +1,98 @@
+﻿@model RoomManageVM
+
+<form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddRoom">
+    @Html.AntiForgeryToken()
+    <div class="modal-body">
+        <!-- Error message container -->
+        <div id="formErrorMessage" style="display: none;"></div>
+
+        <!-- Room ID input (only for Lecture Hall, hidden otherwise) -->
+        <div class="form-group" id="roomIdGroup" style="display: none;">
+            <label for="RoomID" class="font-weight-medium">Room ID <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="RoomID" name="roomId"
+                   value="@(Model.EditRoom?.Id ?? "")"
+                   placeholder="e.g., DK1, DK2">
+            <small class="form-text text-muted">Enter Lecture Hall ID (e.g., DK1, DK2)</small>
+        </div>
+
+        <div class="form-group">
+            <label for="roomType" class="font-weight-medium">Type <span class="text-danger">*</span></label>
+            <select class="form-control" id="roomType" name="type" required>
+                <option value="">Select Room Type</option>
+                <option value="Classroom" selected="@(Model.EditRoom?.Type == "Classroom")">Classroom</option>
+                <option value="Lab" selected="@(Model.EditRoom?.Type == "Lab")">Lab</option>
+                <option value="Lecture Hall" selected="@(Model.EditRoom?.Type == "Lecture Hall")">Lecture Hall</option>
+            </select>
+        </div>
+
+        <!-- Block, Floor, Room Number selectors (hidden for Lecture Hall) -->
+        <div id="roomComponentsGroup">
+            <div class="form-group">
+                <label for="block" class="font-weight-medium">Block <span class="text-danger">*</span></label>
+                <select class="form-control" id="block" name="block">
+                    <option value="">Select Block</option>
+                    <option value="B" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "B")">Block B</option>
+                    <option value="D" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "D")">Block D</option>
+                    <option value="CC" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "CC")">Block CC</option>
+                    <option value="L" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "L")">Block L</option>
+                    <option value="H" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "H")">Block H</option>
+                    <option value="K" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "K")">Block K</option>
+                    <option value="R" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "R")">Block R</option>
+                    <option value="Q" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "Q")">Block Q</option>
+                    <option value="QA" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "QA")">Block QA</option>
+                    <option value="PA" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "PA")">Block PA</option>
+                    <option value="J" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "J")">Block J</option>
+                    <option value="G" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "G")">Block G</option>
+                    <option value="S" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "S")">Block S</option>
+                    <option value="W" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "W")">Block W</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="floorSelect" class="font-weight-medium">Floor <span class="text-danger">*</span></label>
+                        <select class="form-control" id="floorSelect" name="floor">
+                            <option value="">Select Floor</option>
+                        </select>
+                        <small class="form-text text-muted" id="floorHint">Select room type first</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="roomNumber" class="font-weight-medium">Room Number <span class="text-danger">*</span></label>
+                        <select class="form-control" id="roomNumber" name="roomNumber">
+                            <option value="">Select Number</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info" id="generatedRoomId" style="display: none;">
+                <strong>Generated Room ID:</strong> <span id="roomIdPreview">-</span>
+            </div>
+        </div>
+
+        <div class="form-group" id="statusGroup" style="@(Model.EditRoom != null ? "display:block;" : "display:none;")">
+            <label for="status" class="font-weight-medium">Status</label>
+            <select class="form-control" id="status" name="status">
+                <option value="Available" selected="@(Model.EditRoom?.Status == "Available")">Available</option>
+                <option value="Occupied" selected="@(Model.EditRoom?.Status == "Occupied")">Occupied</option>
+                <option value="Maintenance" selected="@(Model.EditRoom?.Status == "Maintenance")">Maintenance</option>
+            </select>
+        </div>
+    </div>
+    <div class="modal-footer bg-light">
+        <button class="btn btn-secondary closeBtn" type="button" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i> Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" id="saveBtn">
+            <i class="fas fa-save mr-1"></i> Add Room
+        </button>
+    </div>
+</form>

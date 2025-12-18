@@ -30,17 +30,16 @@
 </div>
 
 <div class="tab-content" id="RoomManagementTabContent">
-    <!-- Rooms Tab -->
     <div class="tab-pane fade show active" id="rooms" role="tabpanel">
         <div class="card shadow-sm">
             <!-- Card Header -->
             <div class="card-header bg-white border-bottom py-3">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
                     <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
-                        Rooms (<span id="roomCount">@Model.Rooms.Count()</span>)
+                        Rooms
                     </h5>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditRoomModal" id="addData">
+                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" id="addData" onclick="onAddLoaded()">
                             <i class="fas fa-plus mr-1"></i> Add Room
                         </button>
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
@@ -77,9 +76,11 @@
                         <div class="col-12 col-md-2">
                             <select class="form-control" name="block" id="blockFilter">
                                 <option value="">All Blocks</option>
+                                <!-- Lab Blocks (B, D, CC) -->
                                 <option value="B" data-room-type="Lab">Block B</option>
                                 <option value="D" data-room-type="Lab">Block D</option>
                                 <option value="CC" data-room-type="Lab">Block CC</option>
+                                <!-- Classroom Blocks -->
                                 <option value="L" data-room-type="Classroom">Block L</option>
                                 <option value="H" data-room-type="Classroom">Block H</option>
                                 <option value="K" data-room-type="Classroom">Block K</option>
@@ -91,6 +92,8 @@
                                 <option value="G" data-room-type="Classroom">Block G</option>
                                 <option value="S" data-room-type="Classroom">Block S</option>
                                 <option value="W" data-room-type="Classroom">Block W</option>
+                                <!-- Lecture Hall Block -->
+                                <option value="DK" data-room-type="Lecture Hall">Block DK</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-2">
@@ -103,9 +106,9 @@
                         </div>
                         <div class="col-12 col-md-2">
                             <select class="form-control" name="sort" id="roomSort">
-                                <option value="">Sort By</option>
-                                <option value="1">Room ID (Ascending)</option>
-                                <option value="2">Room ID (Descending)</option>
+                                <option value="">Default Sort</option>
+                                <option value="1">Room ID (A-Z)</option>
+                                <option value="2">Room ID (Z-A)</option>
                                 <option value="3">Floor (Low to High)</option>
                                 <option value="4">Floor (High to Low)</option>
                             </select>
@@ -132,95 +135,24 @@
 </div>
 
 <!-- Add/Edit Room Modal -->
-<div class="modal fade" id="addEditRoomModal" tabindex="-1" role="dialog" aria-labelledby="addEditRoomModalLabel">
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-semibold" id="addEditRoomModalLabel">Add New Room</h5>
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Room</h5>
                 <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div id="AddEditData">
-                <form id="roomForm" method="post" asp-controller="Admin" asp-action="AddRoom">
-                    @Html.AntiForgeryToken()
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="RoomID" class="font-weight-medium">Room ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="RoomID" name="roomId"
-                                   value="@(Model.EditRoom?.Id ?? "")"
-                                   required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="roomType" class="font-weight-medium">Type <span class="text-danger">*</span></label>
-                            <select class="form-control" id="roomType" name="type" required>
-                                <option value="">Select Room Type</option>
-                                <option value="Classroom" selected="@(Model.EditRoom?.Type == "Classroom")">Classroom</option>
-                                <option value="Lab" selected="@(Model.EditRoom?.Type == "Lab")">Lab</option>
-                                <option value="Lecture Hall" selected="@(Model.EditRoom?.Type == "Lecture Hall")">Lecture Hall</option>
-                            </select>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="block" class="font-weight-medium">Block <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="block" name="block" required>
-                                        <option value="">Select Block</option>
-                                        <option value="B" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "B")">Block B</option>
-                                        <option value="D" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "D")">Block D</option>
-                                        <option value="CC" data-room-type="Lab" selected="@(Model.EditRoom?.Block == "CC")">Block CC</option>
-                                        <option value="L" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "L")">Block L</option>
-                                        <option value="H" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "H")">Block H</option>
-                                        <option value="K" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "K")">Block K</option>
-                                        <option value="R" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "R")">Block R</option>
-                                        <option value="Q" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "Q")">Block Q</option>
-                                        <option value="QA" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "QA")">Block QA</option>
-                                        <option value="PA" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "PA")">Block PA</option>
-                                        <option value="J" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "J")">Block J</option>
-                                        <option value="G" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "G")">Block G</option>
-                                        <option value="S" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "S")">Block S</option>
-                                        <option value="W" data-room-type="Classroom" selected="@(Model.EditRoom?.Block == "W")">Block W</option>
-                                        <option value="DK" data-room-type="Lecture Hall" selected="@(Model.EditRoom?.Block == "DK")">DK (Lecture Hall)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="floor" class="font-weight-medium">Floor <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="floor" name="floor"
-                                           value="@Model.EditRoom?.Floor"
-                                           min="0" max="20">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group" id="statusGroup" style="@(Model.EditRoom != null ? "display:block;" : "display:none;")">
-                            <label for="status" class="font-weight-medium">Status</label>
-                            <select class="form-control" id="status" name="status">
-                                <option value="Available" selected="@(Model.EditRoom?.Status == "Available")">Available</option>
-                                <option value="Occupied" selected="@(Model.EditRoom?.Status == "Occupied")">Occupied</option>
-                                <option value="Maintenance" selected="@(Model.EditRoom?.Status == "Maintenance")">Maintenance</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary closeBtn" type="button" data-dismiss="modal">
-                            <i class="fas fa-times mr-1"></i> Cancel
-                        </button>
-                        <button class="btn btn-primary" type="submit" id="saveRoomBtn">
-                            <i class="fas fa-save mr-1"></i> Add Room
-                        </button>
-                    </div>
-                </form>
+                <partial name="_RoomForm" />
             </div>
         </div>
     </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteRoomModal" tabindex="-1" role="dialog" aria-labelledby="deleteRoomModalLabel">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -234,7 +166,7 @@
                     <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
                 </div>
                 <p class="text-center mb-2">Are you sure you want to delete</p>
-                <p class="text-center font-weight-bold mb-3"><span id="roomToDeleteName"></span>?</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
                 <p class="text-danger small text-center mb-0">
                     <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
                 </p>
@@ -245,7 +177,7 @@
                 </button>
                 <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteRoom" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" id="deleteRoomId" name="Id" />
+                    <input type="hidden" id="deleteId" name="Id" />
                     <button class="btn btn-danger btn-sm" type="submit">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
@@ -257,168 +189,365 @@
 
 @section Scripts {
     <script>
-                  $(document).ready(function () {
-            const url = new URL(window.location.href);
-            const editId = url.searchParams.get("editId");
+        $("#exportCsvBtn").on("click", function () {
+            const search = $('#searchInput').val();
+            const type = $('#typeFilter').val();
+            const block = $('#blockFilter').val();
+            const status = $('#statusFilter').val();
 
-            if (editId) {
-                @if (Model.EditRoom != null)
-                {
-                        <text>
-                            $('#addEditRoomModal').modal('show');
-                            $("#addEditRoomModalLabel").text("Edit Room: @Model.EditRoom.Id");
-                            $("#saveRoomBtn").html('<i class="fas fa-save mr-1"></i> Update Room');
-                            $("#RoomID").prop("readonly", true);
-                            $("#roomType").prop("disabled", true);
-                            $("#block").prop("disabled", true);
-                            $("#floor").prop("disabled", true);
-                            $("#statusGroup").show();
-                            $("#roomForm").attr("action", "/Admin/EditRoom");
-                        </text>
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (type) params.append('type', type);
+            if (block) params.append('block', block);
+            if (status) params.append('status', status);
+
+            window.location.href = '/Admin/ExportRoomsCsv?' + params.toString();
+        });
+
+        function onEditLoaded() {
+            console.log("Edit Mode Loaded");
+
+            $("#addEditModal").modal("show");
+            $("#addEditModalLabel").text("Edit Room");
+            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Update Room');
+
+            // In EDIT mode: disable everything except status
+            $("#roomType").prop("disabled", true);
+            $("#block").prop("disabled", true);
+            $("#floorSelect").prop("disabled", true);
+            $("#roomNumber").prop("disabled", true);
+            $("#RoomID").prop("disabled", true);
+
+            // Hide component selectors and room ID input in edit mode
+            $("#roomComponentsGroup").hide();
+            $("#roomIdGroup").hide();
+
+            // Show only the status field
+            $("#statusGroup").show();
+
+            $("#addEditForm").attr("action", "/Admin/EditRoom");
+
+            // Add hidden field for roomId in edit mode
+            if ($("#editRoomId").length === 0) {
+                const roomId = $("#RoomID").val();
+                $("#addEditForm").append(`<input type="hidden" id="editRoomId" name="roomId" value="${roomId}">`);
+            }
+
+            // Clear any previous errors
+            $('#formErrorMessage').hide().html('');
+        }
+
+        function onAddLoaded() {
+            console.log("Add Mode Loaded");
+
+            $("#addEditModalLabel").text("Add Room");
+            $("#saveBtn").html('<i class="fas fa-save mr-1"></i> Add Room');
+
+            // Reset all form fields
+            $("#roomType").val("").prop("disabled", false);
+            $("#block").val("").prop("disabled", false);
+            $("#floorSelect").val("").prop("disabled", false);
+            $("#roomNumber").val("").prop("disabled", false);
+            $("#RoomID").val("").prop("disabled", false);
+            $("#status").val("Available");
+
+            // Hide status in add mode, show component selectors
+            $("#statusGroup").hide();
+            $("#roomComponentsGroup").show();
+            $("#roomIdGroup").hide();
+            $("#generatedRoomId").hide();
+            $("#roomIdPreview").text("-");
+
+            $("#addEditForm").attr("action", "/Admin/AddRoom");
+
+            // Remove edit-specific hidden field if it exists
+            $("#editRoomId").remove();
+
+            // Clear any previous errors
+            $('#formErrorMessage').hide().html('');
+        }
+
+        function prepareDeleteModal(element) {
+            var id = $(element).data("id");
+            var name = $(element).data("name");
+
+            $("#deleteId").val(id);
+            $("#ToDeleteName").text(name);
+        }
+
+        function applyFilters() {
+            const search = $('#searchInput').val();
+            const type = $('#typeFilter').val();
+            const block = $('#blockFilter').val();
+            const status = $('#statusFilter').val();
+            const sort = $('#roomSort').val();
+
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (type) params.append('type', type);
+            if (block) params.append('block', block);
+            if (status) params.append('status', status);
+            if (sort) params.append('sort', sort);
+
+            $.ajax({
+                url: '/Admin/RoomManagement',
+                type: 'GET',
+                data: params.toString(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    $('#roomData').html(data);
+                },
+                error: function() {
+                    alert('Error loading rooms');
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Handle TYPE filter change to update BLOCK filter options
+            $("#typeFilter").on("change", function() {
+                const selectedType = $(this).val();
+                const $blockFilter = $("#blockFilter");
+
+                // Reset block filter
+                $blockFilter.val("");
+
+                // Show/hide block options based on type
+                $blockFilter.find('option').each(function() {
+                    const $option = $(this);
+                    const blockValue = $option.val();
+
+                    if (blockValue === "") {
+                        // Always show "All Blocks" option
+                        $option.show();
+                    } else if (selectedType === "") {
+                        // If no type selected, show all blocks
+                        $option.show();
+                    } else if (selectedType === "Lab") {
+                        // For Lab, only show B, D, CC
+                        if (["B", "D", "CC"].includes(blockValue)) {
+                            $option.show();
+                        } else {
+                            $option.hide();
+                        }
+                    } else if (selectedType === "Classroom") {
+                        // For Classroom, show L, H, K, R, Q, QA, PA, J, G, S, W
+                        if (["L", "H", "K", "R", "Q", "QA", "PA", "J", "G", "S", "W"].includes(blockValue)) {
+                            $option.show();
+                        } else {
+                            $option.hide();
+                        }
+                    } else if (selectedType === "Lecture Hall") {
+                        // For Lecture Hall, only show DK (if you want to add it to filter)
+                        // Or hide all blocks since lecture halls don't use standard blocks
+                        $option.hide();
+                    }
+                });
+
+                // Trigger filter update
+                applyFilters();
+            });
+
+            // Handle room type change
+            $(document).on("change", "#roomType", function () {
+            console.log("Room type changed");
+
+            const type = $(this).val();
+            const $block = $("#block");
+            const $floorSelect = $("#floorSelect");
+
+            // Clear previous selections
+            $floorSelect.html('<option value="">Select Floor</option>');
+            $("#roomNumber").val("");
+            $("#generatedRoomId").hide();
+
+            if (type === "Lecture Hall") {
+                $("#roomIdGroup").show();
+                $("#roomComponentsGroup").hide();
+                $("#RoomID").prop("required", true).prop("disabled", false);
+                $block.prop("required", false);
+                $floorSelect.prop("required", false);
+                $("#roomNumber").prop("required", false);
+                $("#floorHint").text("Lecture Hall - Block DK (no floor specification)");
+            }
+            else if (type === "") {
+                $("#roomIdGroup").hide();
+                $("#roomComponentsGroup").show();
+                $block.prop("disabled", true);
+                $floorSelect.prop("disabled", true);
+                $("#roomNumber").prop("disabled", true);
+                $("#RoomID").prop("required", false);
+                $("#floorHint").text("Select room type first");
+            }
+            else {
+                $("#roomIdGroup").hide();
+                $("#roomComponentsGroup").show();
+                $("#RoomID").prop("required", false);
+
+                $block.prop("disabled", false).prop("required", true);
+                $floorSelect.prop("required", true);
+                $("#roomNumber").prop("required", true).prop("disabled", false);
+
+                // Filter blocks
+                $block.find('option').each(function () {
+                    const optionType = $(this).data('room-type');
+                    if (!optionType || optionType === type) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (type === "Lab") {
+                    $("#floorHint").text("Lab floors: 0-2");
+                    $floorSelect.append('<option value="0">0</option>')
+                                .append('<option value="1">1</option>')
+                                .append('<option value="2">2</option>');
+                } else if (type === "Classroom") {
+                    $("#floorHint").text("Classroom floors: 1-3");
+                    $floorSelect.append('<option value="1">1</option>')
+                                .append('<option value="2">2</option>')
+                                .append('<option value="3">3</option>');
+                }
+
+                $floorSelect.prop("disabled", false);
+            }
+        });
+
+            // Generate Room ID preview when block, floor, or room number changes
+            function updateRoomIdPreview() {
+                const type = $("#roomType").val();
+
+                if (type === "Lecture Hall") {
+                    return; // No preview for lecture hall
+                }
+
+                const block = $("#block").val();
+                const floor = $("#floorSelect").val();
+                const roomNum = $("#roomNumber").val();
+
+                if (block && floor !== "" && roomNum) {
+                    const roomId = `${block}${floor}0${roomNum}`;
+                    $("#roomIdPreview").text(roomId);
+                    $("#generatedRoomId").show();
+
+                    // Set the hidden RoomID value
+                    $("#RoomID").val(roomId);
+                } else {
+                    $("#generatedRoomId").hide();
+                    $("#roomIdPreview").text("-");
+                    $("#RoomID").val("");
                 }
             }
 
-            $(".closeBtn").on("click", function () {
-                window.location.href = '/Admin/RoomManagement';
-            });
+            $("#block, #floorSelect, #roomNumber").on("change", updateRoomIdPreview);
 
-            // === FILTER FUNCTIONALITY ===
-            function applyFilters() {
-                const search = $('#searchInput').val();
-                const type = $('#typeFilter').val();
-                const block = $('#blockFilter').val();
-                const status = $('#statusFilter').val();
-                const sort = $('#roomSort').val();
+            // Handle form submission with AJAX
+            $(document).on('submit', '#addEditForm', function(e) {
+                e.preventDefault();
 
-                const params = new URLSearchParams();
-                if (search) params.append('search', search);
-                if (type) params.append('type', type);
-                if (block) params.append('block', block);
-                if (status) params.append('status', status);
-                if (sort) params.append('sort', sort);
+                // Clear previous errors
+                $('#formErrorMessage').hide().html('');
+
+                const actionUrl = $(this).attr('action');
+                let formData;
+
+                if (actionUrl.includes('AddRoom')) {
+                    const type = $("#roomType").val();
+
+                    if (type === "Lecture Hall") {
+                        // For lecture hall, use the manual room ID and set block to DK
+                        formData = {
+                            roomId: $("#RoomID").val(),
+                            type: type,
+                            block: "DK",
+                            floor: null
+                        };
+                    } else {
+                        // For Lab/Classroom, construct room ID from components
+                        const block = $("#block").val();
+                        const floor = $("#floorSelect").val();
+                        const roomNum = $("#roomNumber").val();
+                        const roomId = `${block}${floor}0${roomNum}`;
+
+                        formData = {
+                            roomId: roomId,
+                            type: type,
+                            block: block,
+                            floor: parseInt(floor)
+                        };
+                    }
+
+                    // Add anti-forgery token
+                    formData.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                } else {
+                    // Edit mode - just serialize the form
+                    formData = $(this).serialize();
+                }
 
                 $.ajax({
-                    url: '/Admin/RoomManagement',
-                    type: 'GET',
-                    data: params.toString(),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                    url: actionUrl,
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            $('#addEditModal').modal('hide');
+
+                            const successAlert = `
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-check-circle mr-2"></i>${response.message}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>`;
+                            $('.tab-content').prepend(successAlert);
+
+                            applyFilters();
+
+                            setTimeout(function() {
+                                $('.alert').alert('close');
+                            }, 5000);
+                        } else {
+                            const errorHtml = `
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle mr-2"></i>${response.message}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>`;
+
+                            $('#formErrorMessage').html(errorHtml).show();
+                        }
                     },
-                    success: function(data) {
-                        $('#roomData').html(data);
-                        const count = $('#roomsTableBody tr[data-room-id]').length;
-                        $('#roomCount').text(count);
-                    },
-                    error: function() {
-                        alert('Error loading rooms');
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred. Please try again.';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        const errorHtml = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle mr-2"></i>${errorMessage}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>`;
+
+                        $('#formErrorMessage').html(errorHtml).show();
                     }
                 });
-            }
+            });
 
             // Trigger filter on change
             $('#searchInput, #typeFilter, #blockFilter, #statusFilter, #roomSort').on('change keyup', function() {
-                // Debounce for search input
                 if ($(this).attr('id') === 'searchInput') {
                     clearTimeout(window.searchTimeout);
                     window.searchTimeout = setTimeout(applyFilters, 500);
                 } else {
                     applyFilters();
-                }
-            });
-
-            // Handle type change for filtering blocks and setting floor constraints
-            function handleTypeChange() {
-                const selectedType = $("#roomType").val();
-                const $blockSelect = $("#block");
-                const $floorInput = $("#floor");
-
-                if (selectedType === 'Lecture Hall') {
-                    $blockSelect.prop('disabled', true);
-                    $blockSelect.val('DK');
-                    $floorInput.prop('disabled', true);
-                    $floorInput.val('');
-                    $floorInput.prop('required', false);
-
-                    $blockSelect.find('option').each(function() {
-                        if ($(this).val() === 'DK' || $(this).val() === '') {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                } else if (selectedType === '') {
-                    $blockSelect.prop('disabled', true);
-                    $floorInput.prop('disabled', true);
-                    $floorInput.prop('required', false);
-                    $blockSelect.val('');
-                    $floorInput.val('');
-                } else {
-                    $blockSelect.prop('disabled', false);
-                    $floorInput.prop('disabled', false);
-                    $floorInput.prop('required', true);
-
-                    if (selectedType === 'Lab') {
-                        $floorInput.attr('min', '0');
-                        $floorInput.attr('max', '2');
-                        $floorInput.attr('placeholder', 'Floor 0-2');
-                    } else if (selectedType === 'Classroom') {
-                        $floorInput.attr('min', '1');
-                        $floorInput.attr('max', '3');
-                        $floorInput.attr('placeholder', 'Floor 1-3');
-                    }
-
-                    $blockSelect.find('option').each(function() {
-                        const $option = $(this);
-                        const optionType = $option.data('room-type');
-
-                        if (!optionType || optionType === selectedType) {
-                            $option.show();
-                        } else {
-                            $option.hide();
-                        }
-                    });
-
-                    const currentBlock = $blockSelect.val();
-                    const currentOption = $blockSelect.find('option[value="' + currentBlock + '"]');
-                    if (currentOption.is(':hidden')) {
-                        $blockSelect.val('');
-                    }
-                }
-            }
-
-            $("#roomType").on("change", handleTypeChange);
-
-            // Handle filter type change
-            $("#typeFilter").on("change", function() {
-                const selectedType = $(this).val();
-                const $blockFilter = $("#blockFilter");
-
-                if (selectedType === 'Lecture Hall') {
-                    $blockFilter.prop('disabled', true);
-                    $blockFilter.val('');
-                } else {
-                    $blockFilter.prop('disabled', false);
-
-                    $blockFilter.find('option').each(function() {
-                        const $option = $(this);
-                        const optionType = $option.data('room-type');
-
-                        if (!optionType) {
-                            $option.show();
-                        } else if (selectedType === '') {
-                            $option.show();
-                        } else if (selectedType !== optionType) {
-                            $option.hide();
-                        } else {
-                            $option.show();
-                        }
-                    });
-
-                    const currentBlock = $blockFilter.val();
-                    const currentOption = $blockFilter.find('option[value="' + currentBlock + '"]');
-                    if (currentOption.is(':hidden')) {
-                        $blockFilter.val('');
-                    }
                 }
             });
 
@@ -430,9 +559,10 @@
                 $('#statusFilter').val('');
                 $('#roomSort').val('');
 
-                setTimeout(function() {
-                    window.location.href = '/Admin/RoomManagement';
-                }, 100);
+                // Show all block options again
+                $('#blockFilter option').show();
+
+                applyFilters();
             });
 
             // Auto-dismiss alerts
@@ -441,103 +571,6 @@
                     $(this).find('.close').click();
                 });
             }, 5000);
-
-            // Export CSV
-            $("#exportCsvBtn").on('click', function() {
-                window.location.href = '@Url.Action("ExportRoomsCSV", "Admin")';
-            });
-
-            // Add Room button - reset form
-            $("#addData").on('click', function() {
-                $("#addEditRoomModalLabel").text("Add New Room");
-                $("#saveRoomBtn").html('<i class="fas fa-save mr-1"></i> Add Room');
-                $("#roomForm").attr("action", "/Admin/AddRoom");
-                $("#RoomID").prop("readonly", false);
-                $("#statusGroup").hide();
-                $("#roomForm")[0].reset();
-
-                // Disable block and floor until type is selected
-                $("#block").prop('disabled', true);
-                $("#floor").prop('disabled', true);
-                $("#floor").prop('required', false);
-
-                // Clear any error messages
-                $('#roomFormError').remove();
-            });
-
-            // Handle Add Room form submission with AJAX
-            $("#roomForm").on('submit', function(e) {
-                // Only handle AJAX for Add Room, not Edit Room
-                if ($(this).attr('action') === '/Admin/AddRoom') {
-                    e.preventDefault();
-
-                    // Clear previous error
-                    $('#roomFormError').remove();
-
-                    const formData = $(this).serialize();
-
-                    $.ajax({
-                        url: '/Admin/AddRoom',
-                        type: 'POST',
-                        data: formData,
-                        success: function(response) {
-                            if (response.success) {
-                                // Close modal and show success message
-                                $('#addEditRoomModal').modal('hide');
-
-                                // Show success alert
-                                const successAlert = `
-                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                        <i class="fas fa-check-circle mr-2"></i>${response.message}
-                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                    </div>`;
-                                $('.tab-content').prepend(successAlert);
-
-                                // Refresh the room list
-                                applyFilters();
-
-                                // Auto-dismiss after 5 seconds
-                                setTimeout(function() {
-                                    $('.alert').alert('close');
-                                }, 5000);
-                            } else {
-                                // Show error in modal
-                                const errorHtml = `
-                                    <div id="roomFormError" class="alert alert-danger alert-dismissible fade show" role="alert">
-                                        <i class="fas fa-exclamation-circle mr-2"></i>${response.message}
-                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                    </div>`;
-
-                                $('#roomForm .modal-body').prepend(errorHtml);
-                            }
-                        },
-                        error: function() {
-                            const errorHtml = `
-                                <div id="roomFormError" class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-exclamation-circle mr-2"></i>An error occurred. Please try again.
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>`;
-
-                            $('#roomForm .modal-body').prepend(errorHtml);
-                        }
-                    });
-                }
-            });
         });
-
-        window.prepareDeleteModal = function(element) {
-            const row = $(element).closest('tr');
-            const roomName = row.attr('data-room-name');
-            const roomId = row.attr('data-room-id');
-
-            $('#roomToDeleteName').text('Room ' + roomName);
-            $('#deleteRoomId').val(roomId);
-        };
     </script>
 }

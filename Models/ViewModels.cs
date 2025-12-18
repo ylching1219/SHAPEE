@@ -234,7 +234,8 @@ namespace SHAPEE.Models
         
         // filter options
         public List<SubjectFilterOption> AvailableSubjects { get; set; } = [];
-        public List<MonthFilterOption> AvailableMonths { get; set; } = [];
+        public List<SemesterFilterOption> AvailableSemesters { get; set; } = [];
+        public string? SelectedSemesterId { get; set; }
     }
 
     public class SubjectFilterOption
@@ -243,10 +244,9 @@ namespace SHAPEE.Models
         public string CourseName { get; set; }
     }
 
-    public class MonthFilterOption
+    public class SemesterFilterOption
     {
-        public int Month { get; set; }
-        public int Year { get; set; }
+        public string SemesterId { get; set; }
         public string DisplayText { get; set; }
     }
 
@@ -404,6 +404,24 @@ namespace SHAPEE.Models
         public Room? EditRoom { get; set; }
     }
 
+    public class RoomCsvVM
+    {
+        [Display(Name = "Room ID")]
+        public string RoomId { get; set; }
+
+        [Display(Name = "Type")]
+        public string Type { get; set; }
+
+        [Display(Name = "Block")]
+        public string Block { get; set; }
+
+        [Display(Name = "Floor")]
+        public int Floor { get; set; }
+
+        [Display(Name = "Status")]
+        public string Status { get; set; }
+    }
+
     public class LeaveApplicationVM
     {
         [Required(ErrorMessage = "Start date is required")]
@@ -434,4 +452,16 @@ namespace SHAPEE.Models
         public string Message { get; set; }
     }
 
+
+    // For displaying Google Classroom-style materials and tasks
+    public class ClassworkVM
+    {
+        // Grouping everything by Course so it looks organized
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+
+        // The items inside the "Classroom"
+        public List<Material> CourseMaterials { get; set; } = [];
+        public List<CourseTask> CourseTasks { get; set; } = [];
+    }
 }

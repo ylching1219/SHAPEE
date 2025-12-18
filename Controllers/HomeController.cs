@@ -22,7 +22,7 @@ public class HomeController(DB db) : Controller
     [Authorize(Roles = "Student, Staff")]
     public IActionResult LeaveApplication()
     {
-        ViewData["Title"] = "Submit Leave Application";
+        ViewData["Title"] = "Leave Application";
 
         var leaveTypes = new List<SelectListItem>
         {
@@ -52,11 +52,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -69,11 +69,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -86,11 +86,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -104,28 +104,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
-            ViewBag.LeaveTypes = leaveTypes;
-
-            return View("LeaveApplication", vm);
-        }
-
-        // CRITICAL: Since database requires document, we must validate that a file is uploaded
-        if (supportDocument == null || supportDocument.Length == 0)
         {
-            TempData["ErrorMessage"] = "Supporting document is required for all leave applications.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -138,6 +121,49 @@ public class HomeController(DB db) : Controller
         {
             TempData["ErrorMessage"] = "User not authenticated. Please log in.";
             return RedirectToAction("Login", "Account");
+        }
+
+        // NEW: Check for overlapping leave applications
+        var hasOverlappingLeave = await db.LeaveApplications
+            .Where(la => la.UserId == userId
+                      && la.Status != "Rejected"
+                      && la.Status != "Cancelled")
+            .AnyAsync(la =>
+                // Check if the new leave period overlaps with existing leave
+                (vm.StartDate <= la.EndDate && vm.EndDate >= la.StartDate)
+            );
+
+        if (hasOverlappingLeave)
+        {
+            TempData["ErrorMessage"] = "You already have a leave application for the selected dates. Please check your leave history and choose different dates.";
+
+            // Repopulate dropdown
+            var leaveTypes = new List<SelectListItem>
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
+            ViewBag.LeaveTypes = leaveTypes;
+
+            return View("LeaveApplication", vm);
+        }
+
+        // CRITICAL: Since database requires document, we must validate that a file is uploaded
+        if (supportDocument == null || supportDocument.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Supporting document is required for all leave applications.";
+
+            // Repopulate dropdown
+            var leaveTypes = new List<SelectListItem>
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
+            ViewBag.LeaveTypes = leaveTypes;
+
+            return View("LeaveApplication", vm);
         }
 
         // Handle file upload (now required)
@@ -153,11 +179,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -171,11 +197,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -205,11 +231,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);
@@ -223,7 +249,7 @@ public class HomeController(DB db) : Controller
             EndDate = vm.EndDate,
             LeaveType = vm.LeaveType!,
             Reason = vm.Reason!.Trim(),
-            SupportDocumentUrl = documentUrl, // Now always has a value
+            SupportDocumentUrl = documentUrl,
             ApplicationDate = DateOnly.FromDateTime(DateTime.Today),
             Status = "Pending",
             RejectReason = null
@@ -233,9 +259,6 @@ public class HomeController(DB db) : Controller
         {
             db.LeaveApplications.Add(leaveApplication);
             await db.SaveChangesAsync();
-
-            //test functionality
-            // ApplyApprovedLeaveToAttendance(leaveApplication.UserId,leaveApplication.StartDate,leaveApplication.EndDate);
 
             TempData["SuccessMessage"] = $"Leave application for {duration} day{(duration != 1 ? "s" : "")} submitted successfully. You will be notified once reviewed.";
 
@@ -248,11 +271,11 @@ public class HomeController(DB db) : Controller
 
             // Repopulate dropdown
             var leaveTypes = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Normal", Text = "Normal" },
-                new SelectListItem { Value = "Medical", Text = "Medical" },
-                new SelectListItem { Value = "Emergency", Text = "Emergency" }
-            };
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
             ViewBag.LeaveTypes = leaveTypes;
 
             return View("LeaveApplication", vm);

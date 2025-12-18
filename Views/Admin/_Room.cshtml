@@ -41,9 +41,7 @@
                     _ => "fa-door-open"
                 };
 
-                <tr class="border-bottom"
-                    data-room-id="@room.Id"
-                    data-room-name="@room.Id">
+                <tr class="border-bottom">
                     <td class="px-4 py-3">
                         <div class="d-flex align-items-center">
                             <div class="icon-circle bg-primary text-white mr-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
@@ -75,11 +73,20 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="@Url.Action("RoomManagement", "Admin", new { editId = room.Id })">
+                                <a class="dropdown-item editBtn"
+                                   data-ajax="true"
+                                   data-ajax-method="GET"
+                                   data-ajax-url="@Url.Action("RoomManagement", "Admin", new { editId = room.Id })"
+                                   data-ajax-update="#AddEditData"
+                                   data-ajax-success="onEditLoaded">
                                     <i class="fas fa-edit mr-2 text-primary"></i> Edit
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteRoomModal">
+                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;"
+                                   data-toggle="modal"
+                                   data-target="#deleteModal"
+                                   data-id="@room.Id"
+                                   data-name="@room.Id">
                                     <i class="fas fa-trash mr-2"></i> Delete
                                 </a>
                             </div>

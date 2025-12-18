@@ -6,11 +6,11 @@
 
 //public class ClassroomController : Controller
 //{
-//    private readonly DB _db;
+//    private readonly DB db;
 
 //    public ClassroomController(DB db)
 //    {
-//        _db = db;
+//        db = db;
 //    }
 
 //    // =======================
@@ -21,11 +21,11 @@
 //        if (string.IsNullOrEmpty(id))
 //            return BadRequest("Course ID is required.");
 
-//        var room = _db.Courses.FirstOrDefault(c => c.Id == id);
+//        var room = db.Courses.FirstOrDefault(c => c.Id == id);
 //        if (room == null)
 //            return NotFound();
 
-//        var materials = _db.Materials
+//        var materials = db.Materials
 //            .Where(m => m.CourseId == id)
 //            .OrderBy(m => m.Title)
 //            .ThenBy(m => m.Id)
@@ -53,7 +53,7 @@
 //        if (!Directory.Exists(uploadFolder))
 //            Directory.CreateDirectory(uploadFolder);
 
-//        var lastMaterial = _db.Materials
+//        var lastMaterial = db.Materials
 //            .OrderByDescending(m => m.Id)
 //            .FirstOrDefault();
 
@@ -85,12 +85,12 @@
 //                MaterialType = Path.GetExtension(file.FileName).TrimStart('.')
 //            };
 
-//            _db.Materials.Add(material);
+//            db.Materials.Add(material);
 //            savedMaterials.Add(material);
 //            nextNumber++;
 //        }
 
-//        _db.SaveChanges();
+//        db.SaveChanges();
 //        return Json(savedMaterials);
 //    }
 
@@ -100,7 +100,7 @@
 //    [HttpGet]
 //    public IActionResult GetMaterials(string courseId)
 //    {
-//        var materials = _db.Materials
+//        var materials = db.Materials
 //            .Where(m => m.CourseId == courseId)
 //            .OrderByDescending(m => m.Id)
 //            .Select(m => new { m.Id, m.Title, m.FileUrl })
@@ -115,7 +115,7 @@
 //    [HttpPost]
 //    public IActionResult DeleteMaterial(string id)
 //    {
-//        var material = _db.Materials.FirstOrDefault(m => m.Id == id);
+//        var material = db.Materials.FirstOrDefault(m => m.Id == id);
 //        if (material != null)
 //        {
 //            var filePath = Path.Combine(
@@ -127,8 +127,8 @@
 //            if (System.IO.File.Exists(filePath))
 //                System.IO.File.Delete(filePath);
 
-//            _db.Materials.Remove(material);
-//            _db.SaveChanges();
+//            db.Materials.Remove(material);
+//            db.SaveChanges();
 //        }
 
 //        return Ok();
@@ -142,7 +142,7 @@
 //        if (string.IsNullOrEmpty(courseId))
 //            return BadRequest("Course ID is required.");
 
-//        var materials = _db.Materials
+//        var materials = db.Materials
 //            .Where(m => m.CourseId == courseId)
 //            .OrderBy(m => m.Title)
 //            .ThenBy(m => m.Id)
@@ -158,7 +158,7 @@
 //    // =======================
 //    public IActionResult ClassroomUI()
 //    {
-//        var courses = _db.Courses
+//        var courses = db.Courses
 //            .OrderBy(c => c.Id)
 //            .ToList();
 
@@ -169,7 +169,7 @@
 //    // =======================
 //    public IActionResult StaffClassroomUI()
 //    {
-//        var courses = _db.Courses
+//        var courses = db.Courses
 //            .OrderBy(c => c.Id)
 //            .ToList();
 

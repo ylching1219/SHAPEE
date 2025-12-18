@@ -1,0 +1,229 @@
+﻿@model Student
+@{
+    ViewData["Title"] = "My Program Courses";
+
+    var programCourses = Model.Program.ProgramCourses;
+    var totalCredits = programCourses.Sum(pc => pc.Course.CreditHours);
+    var yearCount = programCourses.Select(pc => pc.YearLevel).Distinct().Count();
+
+    var years = programCourses
+        .GroupBy(pc => pc.YearLevel)
+        .OrderBy(g => g.Key);
+}
+
+<div class="container-fluid">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800">
+            <i class="fas fa-book-open me-2"></i>My Program Courses
+        </h1>
+        <small class="text-muted">
+            Academic Year: @DateTime.Now.Year / @(DateTime.Now.Year + 1)
+        </small>
+    </div>
+
+    <!-- Program Info -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body bg-gradient-primary text-white rounded">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        @Model.Program.Name
+                    </h5>
+                    <small class="opacity-75">Program ID: @Model.ProgramId</small>
+                </div>
+                <div class="bg-white text-primary rounded p-3 text-center">
+                    <small class="fw-bold d-block">Total Courses</small>
+                    <h4 class="mb-0">@programCourses.Count()</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    @if (!programCourses.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center text-muted">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p class="mb-0">
+                    No courses have been assigned to your program yet.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-left-primary shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Credits
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">@totalCredits</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-left-success shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Subjects
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">@programCourses.Count()</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-left-info shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Study Years
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">@yearCount</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-left-warning shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Current Year
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">
+                            Year @Model.YearLevel
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses by Year -->
+        @foreach (var yearGroup in years)
+        {
+            var isCurrentYear = yearGroup.Key == Model.YearLevel;
+
+            <div class="card shadow-sm mb-4 border-0 @(isCurrentYear ? "border-left-primary" : "")">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-layer-group me-2"></i>
+                            Year @yearGroup.Key
+                        </h5>
+
+                        @if (isCurrentYear)
+                        {
+                            <span class="badge bg-light text-primary">
+                                <i class="fas fa-star me-1"></i>Current Year
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="card-body row g-4">
+                    @foreach (var semGroup in yearGroup
+                                .GroupBy(pc => pc.Semester)
+                                .OrderBy(g => g.Key))
+                    {
+                        var isCurrentSemester =
+                        isCurrentYear && semGroup.Key == Model.Semester;
+
+                        var semesterCredits =
+                        semGroup.Sum(pc => pc.Course.CreditHours);
+
+                        <div class="col-lg-6">
+                            <div class="semester-section @(isCurrentSemester ? "current-semester" : "")">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <h6 class="text-primary mb-0">
+                                        <i class="fas fa-calendar-week me-2"></i>
+                                        Semester @semGroup.Key
+                                    </h6>
+
+                                    <span style="color: white"class="badge bg-secondary">
+                                        @semesterCredits Credits
+                                    </span>
+                                </div>
+
+                                @foreach (var pc in semGroup.OrderBy(pc => pc.Course.Name))
+                                {
+                                    <div class="course-card mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>@pc.Course.Id</strong>
+                                                <div class="text-muted small">
+                                                    @pc.Course.Name
+                                                </div>
+                                            </div>
+                                            <span class="credit-badge">
+                                                @pc.Course.CreditHours
+                                                <small>CR</small>
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .semester-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        border: 2px solid #e3e6f0;
+        transition: 0.3s;
+    }
+
+    .course-card {
+        background: #f8f9fc;
+        border-left: 4px solid #4e73df;
+        padding: 12px;
+        border-radius: 6px;
+        transition: 0.3s;
+    }
+
+        .course-card:hover {
+            transform: translateX(5px);
+            border-left-color: #224abe;
+        }
+
+    .credit-badge {
+        background: #4e73df;
+        color: white;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: center;
+    }
+
+        .credit-badge small {
+            font-size: 10px;
+            display: block;
+            opacity: 0.9;
+        }
+
+    .border-left-primary {
+        border-left: 4px solid #4e73df !important;
+    }
+
+    .opacity-75 {
+        opacity: 0.75;
+    }
+</style>

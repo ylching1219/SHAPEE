@@ -1,0 +1,30 @@
+﻿@model List<SHAPEE.Models.ChatMessage>
+
+@{
+    var myId = ViewBag.UserId as string;
+    string classId = ViewBag.ClassId;
+}
+
+<h2>Chat Room</h2>
+
+<div style="height:400px; overflow-y:scroll; border:1px solid #ddd; padding:10px;">
+
+    @foreach (var msg in Model)
+    {
+        bool mine = msg.SenderId == myId;
+
+        <div style="text-align:@(mine ? "right" : "left")">
+            <b>@msg.SenderId</b><br />
+            @msg.Content<br />
+            <small>@msg.SentAt.ToShortTimeString()</small>
+            <hr />
+        </div>
+    }
+
+</div>
+
+
+<form method="post" asp-action="Send" asp-route-classId="@classId">
+    <textarea name="content" required class="form-control"></textarea>
+    <button type="submit" class="btn btn-primary mt-2">Send</button>
+</form>

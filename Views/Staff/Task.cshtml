@@ -1,0 +1,28 @@
+﻿@model IEnumerable<SHAPEE.Models.CourseTask>
+
+<h2>Assignments</h2>
+
+<a class="btn btn-primary" href="/Staff/TaskCreate">New Task</a>
+
+<br />
+<br />
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Section</th>
+            <th>Title</th>
+            <th>Due</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.ClassSectionId</td>
+                <td>@t.Title</td>
+                <td>@t.DueDate</td>
+            </tr>
+        }
+    </tbody>
+</table>

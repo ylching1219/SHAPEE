@@ -1,3 +1,61 @@
+/* Make the whole viewport used and prevent body scrolling */
+html, body {
+    height: 100%;
+}
+/* Desktop-only sticky layout (≥ 768px) */
+@media (min-width: 768px) {
+
+    body {
+        overflow: hidden; /* only desktop: page itself doesn't scroll */
+    }
+
+    /* Sidebar fixed on the left */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 1030;
+    }
+
+    /* Topbar fixed, starting after the sidebar */
+    .navbar.navbar-expand.navbar-light.bg-white.topbar {
+        position: fixed;
+        top: 0;
+        left: 14rem;   /* same as sidebar width */
+        right: 0;
+        z-index: 1040;
+    }
+
+    /* Main content area scrolls */
+    #content-wrapper {
+        margin-left: 14rem;        /* sidebar width */
+        padding-top: 4.375rem;     /* topbar height (~70px) */
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    /* Avoid nested scrollbars */
+    #content,
+    .container-fluid {
+        height: auto;
+        overflow: visible;
+    }
+
+    #content > .container-fluid {
+        padding-top: 1.25rem;   /* tweak 1–2rem until it looks right */
+    }
+}
+#content {
+    height: auto;
+    overflow: visible;
+}
+.container-fluid {
+    height: auto;
+    overflow: visible
+}
+
 /* Sidebar Toggle Button Styling */
 #sidebarToggle {
     width: 2.5rem;

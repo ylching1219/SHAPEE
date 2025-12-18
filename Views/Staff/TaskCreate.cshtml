@@ -1,0 +1,39 @@
+﻿@model SHAPEE.Models.CourseTask
+
+<h2>Create Assignment</h2>
+
+<form method="post">
+
+    <div class="form-group">
+        <label>Class Section</label>
+        <select name="ClassSectionId" class="form-control">
+            @foreach (var s in ViewBag.Sections)
+            {
+                <option value="@s.SectionId">@s.SectionName (@s.SectionId)</option>
+            }
+        </select>
+    </div>
+    <br />
+
+    <div class="form-group">
+        <label>Title</label>
+        <input name="Title" class="form-control" required />
+    </div>
+    <br />
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea name="Description" class="form-control" required></textarea>
+    </div>
+    <br />
+
+    <div class="form-group">
+        <label>Due date</label>
+        <input type="datetime-local" name="DueDate" class="form-control" required onkeydown="return false;" onpaste="return false;" autocomplete="off" />
+    </div>
+    <br />
+
+    <button class="btn btn-success" type="submit">Create</button>
+    <a class="btn btn-secondary" href="/Staff/Task">Cancel</a>
+
+</form>
