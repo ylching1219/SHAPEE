@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SHAPEE.Migrations
 {
     /// <inheritdoc />
-    public partial class initDB : Migration
+    public partial class shapeeDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -49,7 +49,10 @@ namespace SHAPEE.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CreditHours = table.Column<int>(type: "int", nullable: false)
+                    CreditHours = table.Column<int>(type: "int", nullable: false),
+                    LectureHours = table.Column<int>(type: "int", nullable: false),
+                    PracticalHours = table.Column<int>(type: "int", nullable: true),
+                    TutorialHours = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {

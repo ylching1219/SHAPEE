@@ -1769,10 +1769,11 @@ namespace SHAPEE.Controllers
             var course = db.Courses.FirstOrDefault(c => c.Id == CourseId);
             if (exists)
             {
-                return Json(new{
-                        success = false,
-                        message = "Course " + course!.Id + " - " + course!.Name + " already assigned to this program."
-                    });
+                return Json(new
+                {
+                    success = false,
+                    message = "Course " + course!.Id + " - " + course!.Name + " already assigned to this program."
+                });
             }
             var pc = new ProgramCourse
             {
@@ -1791,7 +1792,7 @@ namespace SHAPEE.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveCourseFromProgram(string courseId , string programId)
+        public IActionResult RemoveCourseFromProgram(string courseId, string programId)
         {
             Console.WriteLine("CourseId: " + courseId + ", ProgramId: " + programId);
             var pc = db.ProgramCourses
@@ -1814,6 +1815,79 @@ namespace SHAPEE.Controllers
                 success = true,
                 message = "Course " + course!.Id + " - " + course!.Name + " removed from program successfully."
             });
+        }
+
+        //Class Section Management
+        public IActionResult ClassSection()
+        {
+            ViewData["Title"] = "Class Section Management";
+
+            var faculty = db.Faculties
+                .OrderBy(f => f.Id)
+                .ToList();
+
+            var vm = new ClassSectionVM
+            {
+                Faculties = faculty
+            };
+            return View(vm);
+        }
+
+        public IActionResult GetGroupFromProgram(string programId)
+        {
+            var groups = db.TutorialGroups
+                .Where(g => g.ProgramId == programId)
+                .OrderBy(g => g.GroupName)
+                .ToList();
+            return Json(groups);
+        }
+
+        public IActionResult CreateClass([FromBody] ClassSectionVM vm)
+        {
+            if (vm == null)
+                return Json(new { success = false, message = "No data received." });
+
+            if (vm.GroupList == null || vm.GroupList.Count == 0)
+                return Json(new { success = false, message = "No groups selected." });
+
+            Console.WriteLine("Number of Groups to Process: " + vm.GroupList.Count);
+            //loop each group id to create class
+            foreach (var groupId in vm.GroupList!)
+            {
+                Console.WriteLine("Processing Group ID: " + groupId);
+                //check if class already exists for the group
+                var group = db.TutorialGroups
+                            .FirstOrDefault(g => g.Id == groupId);
+
+                if (group != null)
+                {
+                    var programCourses = db.ProgramCourses
+                         .Where(pc => pc.ProgramId == group.ProgramId
+                         && pc.YearLevel == group.YearLevel
+                         && pc.Semester == group.Semester)
+                         .ToList();
+
+                    Console.WriteLine("Program Courses Count: " + programCourses.Count);
+                    foreach (var pc in programCourses)
+                    {
+                        var classExists = db.ClassSections.Any(c =>
+                            c.CourseId == pc.CourseId &&
+                            c.TutorialGroupId == group.Id);
+
+                        if (classExists)
+                        {
+                            Console.WriteLine("Class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                            continue; 
+                        }
+
+                        
+                        
+                         Console.WriteLine("Creating class for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                    }
+                }
+            }
+
+            return Json(new { success = true, message = "Class created successfully." });
         }
 
         //JS

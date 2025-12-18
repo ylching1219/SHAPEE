@@ -12,8 +12,8 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251215102858_initDB")]
-    partial class initDB
+    [Migration("20251218144610_shapeeDB")]
+    partial class shapeeDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -257,10 +257,19 @@ namespace SHAPEE.Migrations
                     b.Property<int>("CreditHours")
                         .HasColumnType("int");
 
+                    b.Property<int>("LectureHours")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PracticalHours")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TutorialHours")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
