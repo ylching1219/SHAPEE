@@ -44,6 +44,11 @@ namespace SHAPEE.Controllers
                 .Where(c => c.StaffId == staffId)
                 .AsQueryable();
 
+            if (!isView)
+            {
+                sectionsQuery = sectionsQuery.Where(s => s.Semester != null && s.Semester.IsActive);
+            }
+
             //only filter by today in TAKE mode, not in VIEW mode
             if (!isView)
             {
@@ -189,6 +194,13 @@ namespace SHAPEE.Controllers
 
             if (section == null)
                 return RedirectToAction("ClassSelection");
+            
+            // prevent taking attendance for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                TempData["ErrorMessage"] = "You can only take attendance for classes in an active semester.";
+                return RedirectToAction("ClassSelection", new { mode = "take" });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();   // e.g. "Monday"
@@ -225,8 +237,16 @@ namespace SHAPEE.Controllers
         public IActionResult StartAttendanceSession(string sectionId)
         {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
+            var section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s => s.SectionId == sectionId && s.StaffId == staffId);
             if (section == null) return NotFound();
+
+            // prevent starting sessions for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                return Json(new { success = false, message = "Cannot start attendance for a class in an inactive semester." });
+            }
 
             var now = DateTime.Now;
             var todayName = now.DayOfWeek.ToString();
@@ -358,8 +378,9 @@ namespace SHAPEE.Controllers
             var presentCount = presentStudents.Count;
             var absentCount = absentStudents.Count;
             var flaggedCount = flaggedAttendances.Count;
-            var attendancePercentage = totalEnrolled > 0
-                ? Math.Round((double)presentCount / totalEnrolled * 100, 1)
+            var consideredTotal = presentCount + absentCount;
+            var attendancePercentage = consideredTotal > 0
+                ? Math.Round((double)presentCount / consideredTotal * 100, 1)
                 : 0;
 
             var viewModel = new SessionSummaryVM
@@ -386,6 +407,9 @@ namespace SHAPEE.Controllers
             var section = db.ClassSections
                 .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
             if (section == null) return;
+
+            if (section.Semester == null || !section.Semester.IsActive)
+            return;
 
             var enrolledStudents = db.Students
                 .Where(s => s.TutorialGroupId.HasValue
@@ -493,11 +517,13 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //calculate overall attendance percentage
-            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
-            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
-            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
-            var overallAttendancePercentage = totalPossibleAttendances > 0
-                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+            var totalPresent = allAttendances.Count(a => a.Status == "Present");
+            var totalAbsent  = allAttendances.Count(a => a.Status == "Absent");
+            // ignore Leave, Late, Excused in denominator as you prefer
+
+            var consideredTotal = totalPresent + totalAbsent;
+            var overallAttendancePercentage = consideredTotal > 0
+                ? Math.Round((double)totalPresent / consideredTotal * 100, 1)
                 : 0;
 
             //calculate flaged count
@@ -508,8 +534,7 @@ namespace SHAPEE.Controllers
                 ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
                 : DateOnly.FromDateTime(DateTime.Now);
 
-            var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
-            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+            var totalAbsences = totalAbsent;
 
             return Json(new
             {
@@ -615,12 +640,15 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             //calculate overall attendance percentage
-            var uniqueDates = allAttendances.Select(a => a.Date).Distinct().ToList();
-            var totalPossibleAttendances = totalStudents * uniqueDates.Count;
-            var totalPresentCount = allAttendances.Count(a => a.Status == "Present");
-            var overallAttendancePercentage = totalPossibleAttendances > 0
-                ? Math.Round((double)totalPresentCount / totalPossibleAttendances * 100, 1)
+            var totalPresent = allAttendances.Count(a => a.Status == "Present");
+            var totalAbsent  = allAttendances.Count(a => a.Status == "Absent");
+            // ignore Leave, Late, Excused in denominator as you prefer
+
+            var consideredTotal = totalPresent + totalAbsent;
+            var overallAttendancePercentage = consideredTotal > 0
+                ? Math.Round((double)totalPresent / consideredTotal * 100, 1)
                 : 0;
+
 
             //calculate flaged count
             var flaggedCount = allAttendances.Count(a => a.IsFlaged);
@@ -631,7 +659,7 @@ namespace SHAPEE.Controllers
                 : DateOnly.FromDateTime(DateTime.Now);
 
             var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
-            var totalAbsences = totalStudents * uniqueDates.Count - semesterAttendances.Count(a => a.Status == "Present");
+            var totalAbsences = totalAbsent;
 
             //create view model
             var viewModel = new AttendanceManagementVM
@@ -698,8 +726,11 @@ namespace SHAPEE.Controllers
                     Date = g.Key,
                     PresentCount = g.Count(a => a.Status == "Present"),
                     TotalCount = g.Count(),
-                    AttendancePercentage = totalStudents > 0
-                        ? Math.Round((double)g.Count(a => a.Status == "Present") / totalStudents * 100, 1)
+                    AttendancePercentage = 
+                    (g.Count(a => a.Status == "Present") + g.Count(a => a.Status == "Absent")) > 0
+                        ? Math.Round(
+                            (double)g.Count(a => a.Status == "Present") /
+                            (g.Count(a => a.Status == "Present") + g.Count(a => a.Status == "Absent")) * 100, 1)
                         : 0
                 })
                 .OrderBy(x => x.Date)
@@ -724,7 +755,8 @@ namespace SHAPEE.Controllers
                 status == "Present" ? "#28a745" :
                 status == "Absent" ? "#dc3545" :
                 status == "Late" ? "#ffc107" :
-                status == "Excused" ? "#17a2b8" : "#6c757d"
+                status == "Excused" ? "#17a2b8" :
+                status == "Leave" ? "#6f42c1" : "#6c757d"
             ).ToList();
 
             return Json(new
@@ -763,12 +795,18 @@ namespace SHAPEE.Controllers
             //verify all attendances belong to class sections owned by this staff
             var attendances = db.Attendances
                 .Include(a => a.ClassSection)
+                    .ThenInclude(cs => cs.Semester)
                 .Where(a => request.AttendanceIds.Contains(a.Id) && a.ClassSection.StaffId == staffId)
                 .ToList();
 
             if (attendances.Count != request.AttendanceIds.Count)
             {
                 return Json(new { success = false, message = "Some attendance records were not found or you don't have permission to update them." });
+            }
+
+            if (attendances.Any(a => a.ClassSection.Semester == null || !a.ClassSection.Semester.IsActive))
+            {
+                return Json(new { success = false, message = "You can only update attendance for classes in an active semester." });
             }
 
             //update status for all selected attendances
@@ -1261,7 +1299,14 @@ namespace SHAPEE.Controllers
 
             foreach (var file in files)
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                // remove old name
+                string originalName = Path.GetFileNameWithoutExtension(file.FileName);
+                string cleanName = string.Concat(originalName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+
+                // rename new name
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string fileName = $"{courseId}_{timestamp}_{cleanName}{Path.GetExtension(file.FileName)}";
+
                 var filePath = Path.Combine(uploadFolder, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -1323,38 +1368,6 @@ namespace SHAPEE.Controllers
 
             return View("~/Views/Staff/ClassroomUI.cshtml", courses);
         }
-        //public IActionResult StaffTicketList()
-        //{
-        //    var tickets = db.SupportTickets.OrderByDescending(t => t.CreatedAt).ToList();
-        //    return View(tickets);
-        //}
-
-        //public IActionResult GetStaffTickets(string search = "", string status = "")
-        //{
-        //    var tickets = db.SupportTickets.AsQueryable();
-
-        //    if (!string.IsNullOrWhiteSpace(search))
-        //        tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
-
-        //    if (!string.IsNullOrWhiteSpace(status))
-        //        tickets = tickets.Where(t => t.Status == status);
-
-        //    return PartialView("_StaffTicketTablePartial", tickets.OrderByDescending(t => t.CreatedAt).ToList());
-        //}
-        //public IActionResult StaffTicketDetails(string id)
-        //{
-        //    if (string.IsNullOrEmpty(id))
-        //        return BadRequest("Ticket ID is required.");
-
-        //    var ticket = db.SupportTickets
-        //        .Include(t => t.TicketMessages)
-        //        .FirstOrDefault(t => t.Id == id);
-
-        //    if (ticket == null)
-        //        return NotFound();
-
-        //    return View("~/Views/Staff/StaffTicketDetails.cshtml", ticket);
-        //}
         // =======================
         // STAFF TICKET LIST
         // =======================
@@ -1372,19 +1385,19 @@ namespace SHAPEE.Controllers
         // =======================
         public IActionResult StaffTicketDetails(string id)
         {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
+            if (string.IsNullOrEmpty(id)) return NotFound();
 
             var ticket = db.SupportTickets
                 .Include(t => t.TicketMessages)
                 .FirstOrDefault(t => t.Id == id);
 
-            if (ticket == null)
-                return NotFound();
-            //sort by on sent at
+            if (ticket == null) return NotFound();
+
+            // Sort by date and convert to list for consistency
             ticket.TicketMessages = ticket.TicketMessages
-            .OrderBy(m => m.SentAt)
-            .ToList();
+                .OrderBy(m => m.SentAt)
+                .ToList();
+
             return View("~/Views/Staff/StaffTicketDetails.cshtml", ticket);
         }
 
@@ -1412,24 +1425,31 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
-
+            //validate
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Please enter a message." });
+
                 TempData["Message"] = "Please enter a message.";
                 return RedirectToAction("StaffTicketDetails", new { id = ticketId });
             }
 
             var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
-            if (ticket == null)
+            if (ticket == null) return NotFound();
+
+            //check status closed or no
+            if (ticket.Status == "Closed")
             {
-                TempData["Message"] = "Ticket not found.";
-                return RedirectToAction("StaffTicketList");
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "This ticket is closed and cannot receive replies." });
+
+                TempData["Message"] = "This ticket is closed.";
+                return RedirectToAction("StaffTicketDetails", new { id = ticketId });
             }
 
-            // get staff id 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // id of msg
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
 
             var ticketMessage = new TicketMessage
@@ -1444,10 +1464,54 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
-            TempData["Message"] = "Reply sent successfully.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    success = true,
+                    sender = ticketMessage.SenderId,
+                    time = ticketMessage.SentAt.ToString("dd/MM/yyyy HH:mm"),
+                    content = ticketMessage.Content
+                });
+            }
 
+            TempData["Message"] = "Reply sent successfully.";
             return RedirectToAction("StaffTicketDetails", new { id = ticketId });
         }
+        //get instant reply
+        [HttpGet]
+        public IActionResult GetRepliesPartial(string id)
+        {
+            var ticket = db.SupportTickets
+                           .Include(t => t.TicketMessages)
+                           .FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // sort by date
+            var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
+            return PartialView("_TicketMessage", messages);
+        }
+        //close ticket
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CloseTicket(string id)
+        {
+            // 1. Find the ticket in the database
+            var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // 2. Update the data (No new page needed)
+            ticket.Status = "Closed";
+            ticket.ResolvedAt = DateTime.Now;
+
+            db.SaveChanges();
+
+            // 3. Immediately go back to the List page
+            return RedirectToAction("StaffTicketList");
+        }
+
         //task section
         public IActionResult TaskList()
         {
@@ -1468,7 +1532,7 @@ namespace SHAPEE.Controllers
 
             return View(task);
         }
-
+        //create new task
         [HttpPost]
         public IActionResult CreateTask(CourseTask obj)
         {
@@ -1550,6 +1614,77 @@ namespace SHAPEE.Controllers
             TempData["msg"] = "Assignment created!";
             return RedirectToAction("Index");
         }
+        // PAGE VIEW
 
+
+        // SEND MESSAGE
+        // GET: Staff/Chat?classId=SEC001
+        // GET: Staff/Chat
+        public IActionResult Chat(string classId)
+        {
+            if (string.IsNullOrEmpty(classId)) return Content("No class selected.");
+
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Initial load of messages
+            var messages = db.ChatMessages
+                .Where(x => x.ReceiverId == "STF0002") // Testing with STF0002
+                .OrderBy(x => x.SentAt)
+                .ToList();
+
+            return View(messages);
+        }
+
+        // AJAX API: Staff/GetMessages
+        [HttpGet]
+        public IActionResult GetMessages()
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var messages = db.ChatMessages
+                .Where(x => x.ReceiverId == "STF0002")
+                .OrderBy(x => x.SentAt)
+                .Select(m => new {
+                    sender = m.SenderId,
+                    content = m.Content,
+                    time = m.SentAt.ToString("HH:mm"),
+                    isMe = m.SenderId == currentUserId
+                }).ToList();
+
+            return Json(messages);
+        }
+
+        // POST: Staff/Send
+        [HttpPost]
+        public IActionResult Send(string classId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Chat", new { classId });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Generate CM001 format ID
+            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+            int nextNum = 1;
+            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+            {
+                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+                    nextNum = num + 1;
+            }
+
+            var msg = new ChatMessage
+            {
+                Id = $"CM{nextNum:D3}",
+                SenderId = userId,
+                ReceiverId = "STF0002", // Test Receiver
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+
+            return RedirectToAction("Chat", new { classId });
+        }
     }
 }

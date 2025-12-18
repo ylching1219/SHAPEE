@@ -62,7 +62,12 @@ namespace SHAPEE.Controllers
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // all sections the student has attendance records for
+            //get active semester
+            var activeSemester = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .FirstOrDefault(s => s.IsActive);
+
+            // all sections the student has attendance records for (active semester only)
             var sectionIds = db.Attendances
                 .Where(a => a.StudentId == studentId)
                 .Select(a => a.ClassSectionId)
@@ -71,11 +76,14 @@ namespace SHAPEE.Controllers
 
             var sections = db.ClassSections
                 .Include(cs => cs.Course)
-                .Where(cs => sectionIds.Contains(cs.SectionId))
+                .Where(cs => sectionIds.Contains(cs.SectionId)
+                            && cs.SemesterId == activeSemester.Id)
                 .ToList();
 
+            var activeSectionIds = sections.Select(cs => cs.SectionId).ToList();
+
             var attendances = db.Attendances
-                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .Where(a => a.StudentId == studentId && activeSectionIds.Contains(a.ClassSectionId))
                 .ToList();
 
             var subjectSummaries = sections
@@ -122,7 +130,7 @@ namespace SHAPEE.Controllers
 
         //===============KOH KAI MINN================
         // student main attendance page
-        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? month = null, string? search = null, string? classType = null)
+        public IActionResult ViewAttendance(string? sectionId, string? token, string? subject = null, string? semester = null, string? search = null, string? classType = null)
         {
             ViewData["Title"] = "View Attendance";
 
@@ -139,7 +147,7 @@ namespace SHAPEE.Controllers
                 {
                     ClassAttendances = new List<StudentAttendanceItemVM>(),
                     AvailableSubjects = new List<SubjectFilterOption>(),
-                    AvailableMonths = new List<MonthFilterOption>()
+                    AvailableSemesters = new List<SemesterFilterOption>()
                 });
             }
 
@@ -154,6 +162,13 @@ namespace SHAPEE.Controllers
                 .Include(cs => cs.Course)
                 .Where(cs => sectionIds.Contains(cs.SectionId))
                 .AsQueryable();
+
+            semester = semester?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(semester))
+            {
+                enrolledSectionsQuery = enrolledSectionsQuery
+                    .Where(cs => cs.SemesterId == semester);
+            }
 
             //apply subject filter
             subject = subject?.Trim() ?? "";
@@ -188,15 +203,10 @@ namespace SHAPEE.Controllers
                 .Where(a => a.StudentId == studentId)
                 .AsQueryable();
 
-            //apply month filter
-            month = month?.Trim() ?? "";
-            if (!string.IsNullOrEmpty(month))
+            if (!string.IsNullOrEmpty(semester))
             {
-                if (DateTime.TryParse($"{month}-01", out var m))
-                {
-                    attendancesQuery = attendancesQuery
-                        .Where(a => a.Date.Year == m.Year && a.Date.Month == m.Month);
-                }
+                attendancesQuery = attendancesQuery
+                    .Where(a => a.ClassSection.SemesterId == semester);
             }
 
             var attendances = attendancesQuery
@@ -228,8 +238,6 @@ namespace SHAPEE.Controllers
                     };
                 })
                 .Where(x => x != null)
-                // Only show sections with attendance if month filter is applied
-                .Where(x => string.IsNullOrEmpty(month) || x!.TotalSessions > 0)
                 .OrderBy(x => x!.Course!.Id)
                 .ToList();
 
@@ -247,28 +255,20 @@ namespace SHAPEE.Controllers
                  })
                  .ToList();
 
-
-            //get available months
-            var monthNames = new[]
-            {
-                "January","February","March","April","May","June",
-                "July","August","September","October","November","December"
-            };
-
-            var availableMonths = db.Attendances
-                .Where(a => a.StudentId == studentId)
-                .Select(a => a.Date)
+            var availableSemesters = db.ClassSections
+                .Where(cs => sectionIds.Contains(cs.SectionId))
+                .Include(cs => cs.Semester)
+                .Select(cs => cs.Semester)
+                .Where(s => s != null)
                 .Distinct()
-                .GroupBy(d => new { d.Year, d.Month })
-                .OrderByDescending(g => g.Key.Year)
-                .ThenByDescending(g => g.Key.Month)
-                .Select(g => new MonthFilterOption
+                .OrderByDescending(s => s.Id)
+                .Select(s => new SemesterFilterOption
                 {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    DisplayText = $"{monthNames[g.Key.Month - 1]} {g.Key.Year}"
+                    SemesterId = s.Id,
+                    DisplayText = s.Id // or $"{s.Id} ({s.StartDate:MMM yyyy} - {s.EndDate:MMM yyyy})"
                 })
                 .ToList();
+
 
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
@@ -305,7 +305,8 @@ namespace SHAPEE.Controllers
                 SectionId = sectionId,
                 QrToken = token,
                 AvailableSubjects = availableSubjects,
-                AvailableMonths = availableMonths
+                AvailableSemesters = availableSemesters,
+                SelectedSemesterId = semester
             };
 
             //ajax partial return
@@ -347,10 +348,11 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             var presentCount = attendances.Count(a => a.Status == "Present");
-            var absentCount = attendances.Count(a => a.Status == "Absent");
+            var absentCount  = attendances.Count(a => a.Status == "Absent");
             var totalSessions = attendances.Count;
-            var attendancePercentage = totalSessions > 0
-                ? Math.Round((double)presentCount / totalSessions * 100, 2)
+            var consideredTotal = presentCount + absentCount;
+            var attendancePercentage = consideredTotal > 0
+                ? Math.Round((double)presentCount / consideredTotal * 100, 2)
                 : 0;
 
             var viewModel = new StudentAttendanceDetailsVM
@@ -381,7 +383,9 @@ namespace SHAPEE.Controllers
             ClassSection? section = null;
             if (!string.IsNullOrEmpty(qrToken) && !string.IsNullOrEmpty(sectionId))
             {
-                section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
+                section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s => s.SectionId == sectionId);
                 if (section == null)
                 {
                     if (Request.IsAjax())
@@ -391,7 +395,9 @@ namespace SHAPEE.Controllers
             }
             else if (!string.IsNullOrEmpty(manualCode))
             {
-                section = db.ClassSections.FirstOrDefault(s =>
+                section = db.ClassSections
+                .Include(s => s.Semester)
+                .FirstOrDefault(s =>
                     s.AttendanceCode == manualCode &&
                     s.IsAttendanceSessionActive);
                 if (section == null)
@@ -407,6 +413,14 @@ namespace SHAPEE.Controllers
                 if (Request.IsAjax())
                     return Json(new { success = false, message = "Either QR token or attendance code is required." });
                 return BadRequest("Either QR token or attendance code is required.");
+            }
+
+            // block attendance for not active semester
+            if (section.Semester == null || !section.Semester.IsActive)
+            {
+                if (Request.IsAjax())
+                    return Json(new { success = false, message = "This class belongs to an inactive semester. Attendance cannot be taken." });
+                return BadRequest("This class belongs to an inactive semester. Attendance cannot be taken.");
             }
 
             //check tutorial group match
@@ -1504,73 +1518,210 @@ namespace SHAPEE.Controllers
             return View("~/Views/Student/StudentTicketList.cshtml", tickets);
         }
         [Authorize]
-        public IActionResult TicketDetails(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
+        //public IActionResult TicketDetails(string id)
+        //{
+        //    if (string.IsNullOrEmpty(id))
+        //        return NotFound();
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var ticket = db.SupportTickets
-                .Include(t => t.TicketMessages)   // replies
-                .FirstOrDefault(t => t.Id == id && t.UserId == userId);
+        //    var ticket = db.SupportTickets
+        //        .Include(t => t.TicketMessages)   // replies
+        //        .FirstOrDefault(t => t.Id == id && t.UserId == userId);
 
-            if (ticket == null)
-                return NotFound();
+        //    if (ticket == null)
+        //        return NotFound();
 
-            // sorting by sent at
-            ticket.TicketMessages = ticket.TicketMessages
-                .OrderBy(m => m.SentAt)
-                .ToList();
+        //    // sorting by sent at
+        //    ticket.TicketMessages = ticket.TicketMessages
+        //        .OrderBy(m => m.SentAt)
+        //        .ToList();
 
-            return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
-        }
-        [HttpGet]
-        public IActionResult GetTickets(string search = "", string status = "")
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var tickets = db.SupportTickets
-                            .Where(t => t.UserId == userId);
+        //    return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
+        //}
+        //[HttpGet]
+        //public IActionResult GetTickets(string search = "", string status = "")
+        //{
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var tickets = db.SupportTickets
+        //                    .Where(t => t.UserId == userId);
 
-            if (!string.IsNullOrEmpty(search))
-                tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
+        //    if (!string.IsNullOrEmpty(search))
+        //        tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
 
-            if (!string.IsNullOrEmpty(status))
-                tickets = tickets.Where(t => t.Status == status);
+        //    if (!string.IsNullOrEmpty(status))
+        //        tickets = tickets.Where(t => t.Status == status);
 
-            tickets = tickets.OrderByDescending(t => t.CreatedAt);
+        //    tickets = tickets.OrderByDescending(t => t.CreatedAt);
 
-            return PartialView("_TicketTable", tickets.ToList());
-        }
-        //reply ticket
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Reply(string ticketId, string message)
-        {
-            if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
-            {
-                TempData["Message"] = "Please enter a message.";
-                return RedirectToAction("TicketDetails", new { id = ticketId });
-            }
+        //    return PartialView("_TicketTable", tickets.ToList());
+        //}
+        ////reply ticket
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        ////public IActionResult Reply(string ticketId, string message)
+        ////{
+        ////    //validation
+        ////    if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
+        ////    {
+        ////        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        ////            return Json(new { success = false, message = "Please enter a message." });
 
-            var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
-            if (ticket == null) return NotFound();
+        ////        TempData["Message"] = "Please enter a message.";
+        ////        return RedirectToAction("TicketDetails", new { id = ticketId });
+        ////    }
 
-            var reply = new TicketMessage
-            {
-                Id = Guid.NewGuid().ToString(),
-                SupportTicketId = ticketId,
-                SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                Content = message,
-                SentAt = DateTime.Now
-            };
+        ////    var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
+        ////    if (ticket == null) return NotFound();
 
-            db.TicketMessages.Add(reply);
-            db.SaveChanges();
+        ////    // ticket logic
+        ////    var reply = new TicketMessage
+        ////    {
+        ////        Id = Guid.NewGuid().ToString(),
+        ////        SupportTicketId = ticketId,
+        ////        SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+        ////        Content = message,
+        ////        SentAt = DateTime.Now
+        ////    };
 
-            TempData["Message"] = "Reply sent successfully!";
-            return RedirectToAction("TicketDetails", new { id = ticketId });
-        }
+        ////    db.TicketMessages.Add(reply);
+        ////    db.SaveChanges();
+
+        ////    // check ajax
+        ////    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        ////    {
+        ////        return Json(new
+        ////        {
+        ////            success = true,
+        ////            sender = reply.SenderId,
+        ////            time = reply.SentAt.ToString("dd/MM/yyyy HH:mm"),
+        ////            content = reply.Content
+        ////        });
+        ////    }
+
+        ////    TempData["Message"] = "Reply sent successfully!";
+        ////    return RedirectToAction("TicketDetails", new { id = ticketId });
+        ////}
+        //[HttpGet]
+        //public IActionResult GetRepliesPartial(string id)
+        //{
+        //    var ticket = db.SupportTickets
+        //                   .Include(t => t.TicketMessages)
+        //                   .FirstOrDefault(t => t.Id == id);
+
+        //    if (ticket == null) return NotFound();
+
+        //    var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
+
+        //    // NOTE: Ensure this matches the Partial View filename in your Student folder
+        //    return PartialView("_TicketMessage", messages);
+        //}
+
+
+
+
+
+
+
+
+
+
+        //// List tickets for current student
+        //public IActionResult TicketList()
+        //{
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        //    var tickets = db.SupportTickets
+        //                    .Where(t => t.UserId == userId)
+        //                    .OrderByDescending(t => t.CreatedAt)
+        //                    .ToList();
+
+        //    return View("~/Views/Student/StudentTicketList.cshtml", tickets);
+        //}
+
+        // Ticket details
+        //public IActionResult TicketDetails(string id)
+        //{
+        //    if (string.IsNullOrEmpty(id))
+        //        return NotFound();
+
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        //    var ticket = db.SupportTickets
+        //                   .Include(t => t.TicketMessages)
+        //                   .FirstOrDefault(t => t.Id == id && t.UserId == userId);
+
+        //    if (ticket == null) return NotFound();
+
+        //    ticket.TicketMessages = ticket.TicketMessages
+        //                                 .OrderBy(m => m.SentAt)
+        //                                 .ToList();
+
+        //    return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
+        //}
+
+        // AJAX: Reply to ticket
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult Reply(string ticketId, string message)
+        //{
+        //    if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
+        //    {
+        //        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        //            return Json(new { success = false, message = "Please enter a message." });
+
+        //        TempData["Message"] = "Please enter a message.";
+        //        return RedirectToAction("TicketDetails", new { id = ticketId });
+        //    }
+
+        //    var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId && t.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
+        //    if (ticket == null) return NotFound();
+
+        //    // Students cannot close tickets, so no status check required here
+
+        //    string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
+
+        //    var ticketMessage = new TicketMessage
+        //    {
+        //        Id = msgId,
+        //        SupportTicketId = ticketId,
+        //        SenderId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+        //        Content = message,
+        //        SentAt = DateTime.Now
+        //    };
+
+        //    db.TicketMessages.Add(ticketMessage);
+        //    db.SaveChanges();
+
+        //    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        //    {
+        //        return Json(new
+        //        {
+        //            success = true,
+        //            sender = ticketMessage.SenderId,
+        //            time = ticketMessage.SentAt.ToString("dd/MM/yyyy HH:mm"),
+        //            content = ticketMessage.Content
+        //        });
+        //    }
+
+        //    TempData["Message"] = "Reply sent successfully.";
+        //    return RedirectToAction("TicketDetails", new { id = ticketId });
+        //}
+
+        //// AJAX: Get latest replies for a ticket
+        //[HttpGet]
+        //public IActionResult GetRepliesPartial(string id)
+        //{
+        //    var ticket = db.SupportTickets
+        //                   .Include(t => t.TicketMessages)
+        //                   .FirstOrDefault(t => t.Id == id && t.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        //    if (ticket == null) return NotFound();
+
+        //    var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
+        //    return PartialView("
+        //    ", messages); // make sure your partial matches the Student view
+        //}
         //task section
         public IActionResult TaskList()
         {
@@ -1661,6 +1812,203 @@ namespace SHAPEE.Controllers
             }
 
             return View(student);
+        }
+
+        // PAGE VIEW
+        public IActionResult Index(string classId)
+        {
+            if (string.IsNullOrEmpty(classId))
+                return Content("No class selected.");
+
+            var userId = User.Identity.Name;
+
+            var messages = db.ChatMessages;
+                //.Where(x => x.ClassSectionId == classId)
+                //.OrderBy(x => x.SentAt)
+                //.ToList();
+
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = userId;
+
+            return View(messages);
+        }
+
+        // SEND MESSAGE
+        [HttpPost]
+        public IActionResult Send(string classId, string content)
+        {
+            var userId = User.Identity.Name;
+
+            var msg = new ChatMessage
+            {
+                Id = Guid.NewGuid().ToString(),
+                SenderId = userId,
+                ReceiverId = null,
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+
+            return RedirectToAction("Index", new { classId });
+        }
+
+        // =======================
+        // STUDENT TICKET DETAILS
+        // =======================
+        public IActionResult TicketDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var ticket = db.SupportTickets
+                .Include(t => t.TicketMessages)
+                .FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // Sort messages by date
+            ticket.TicketMessages = ticket.TicketMessages
+                .OrderBy(m => m.SentAt)
+                .ToList();
+
+            return View("~/Views/Student/StudentTicketDetails.cshtml", ticket);
+        }
+
+        // =======================
+        // STUDENT FILTER (AJAX)
+        // =======================
+        [HttpGet]
+        public IActionResult GetTickets(string search = "", string status = "")
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var tickets = db.SupportTickets
+                .Where(t => t.Id == userId)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
+
+            if (!string.IsNullOrWhiteSpace(status))
+                tickets = tickets.Where(t => t.Status == status);
+
+            tickets = tickets.OrderByDescending(t => t.CreatedAt);
+
+            return PartialView("_TicketTable", tickets.ToList());
+        }
+
+        // =======================
+        // STUDENT REPLY
+        // =======================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Reply(string ticketId, string message)
+        {
+            if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "Please enter a message." });
+
+                TempData["Message"] = "Please enter a message.";
+                return RedirectToAction("TicketDetails", new { id = ticketId });
+            }
+
+            var ticket = db.SupportTickets.FirstOrDefault(t => t.Id == ticketId);
+            if (ticket == null) return NotFound();
+
+            if (ticket.Status == "Closed")
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = "This ticket is closed and cannot receive replies." });
+
+                TempData["Message"] = "This ticket is closed.";
+                return RedirectToAction("TicketDetails", new { id = ticketId });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string msgId = $"TM{(db.TicketMessages.Count() + 1):D4}";
+
+            var ticketMessage = new TicketMessage
+            {
+                Id = msgId,
+                SupportTicketId = ticketId,
+                SenderId = userId,
+                Content = message,
+                SentAt = DateTime.Now
+            };
+
+            db.TicketMessages.Add(ticketMessage);
+            db.SaveChanges();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    success = true,
+                    sender = ticketMessage.SenderId,
+                    time = ticketMessage.SentAt.ToString("dd/MM/yyyy HH:mm"),
+                    content = ticketMessage.Content
+                });
+            }
+
+            TempData["Message"] = "Reply sent successfully.";
+            return RedirectToAction("TicketDetails", new { id = ticketId });
+        }
+
+        // =======================
+        // GET REPLIES PARTIAL
+        // =======================
+        [HttpGet]
+        public IActionResult GetRepliesPartial(string id)
+        {
+            var ticket = db.SupportTickets
+                           .Include(t => t.TicketMessages)
+                           .FirstOrDefault(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            var messages = ticket.TicketMessages.OrderBy(m => m.SentAt).ToList();
+            return PartialView("_TicketMessage", messages);
+        }
+
+
+
+
+        ////test
+        public IActionResult DebugStudent()
+        {
+            string studentId = "2500001";
+
+            // 1. Get the student without Includes to avoid SQL crashes
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null) return Content("Student not found.");
+
+            var report = new System.Text.StringBuilder();
+            report.AppendLine("====== RAW STUDENT DATA (PROPERTY DUMP) ======");
+
+            // 2. Automatically loop through every property in the class
+            var properties = student.GetType().GetProperties();
+            foreach (var prop in properties)
+            {
+                try
+                {
+                    var value = prop.GetValue(student, null) ?? "NULL";
+                    report.AppendLine($"[{prop.Name}]: {value}");
+                }
+                catch (Exception ex)
+                {
+                    report.AppendLine($"[{prop.Name}]: ERROR READING ({ex.Message})");
+                }
+            }
+
+            report.AppendLine("\n==============================================");
+            report.AppendLine("Note: If a property is NULL, it means the column is empty ");
+            report.AppendLine("or you need a separate query to fetch that related table.");
+
+            return Content(report.ToString());
         }
 
     }

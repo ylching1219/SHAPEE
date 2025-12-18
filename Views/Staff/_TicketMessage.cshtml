@@ -1,0 +1,18 @@
+﻿@model IEnumerable<SHAPEE.Models.TicketMessage>
+
+@if (Model != null && Model.Any())
+{
+    <ul class="list-group" id="repliesList">
+        @foreach (var r in Model)
+        {
+            <li class="list-group-item">
+                <strong>@r.SenderId</strong> (@r.SentAt.ToString("dd/MM/yyyy HH:mm"))
+                <p>@r.Content</p>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p id="noRepliesText" style="text-align:center; color:#555;">No replies yet.</p>
+}

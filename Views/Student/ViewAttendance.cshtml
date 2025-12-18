@@ -168,12 +168,13 @@
             </div>
 
             <div class="col-12 col-md-2">
-                <select id="monthFilter" class="form-control">
-                    <option value="">All Months</option>
-                    @foreach (var m in Model.AvailableMonths)
+               <select id="semesterFilter" name="semester" class="form-control">
+                    <option value="">All Semesters</option>
+                    @foreach (var sem in Model.AvailableSemesters)
                     {
-                        <option value="@($"{m.Year}-{m.Month:D2}")">
-                            @m.DisplayText
+                        <option value="@sem.SemesterId"
+                                selected="@(sem.SemesterId == Model.SelectedSemesterId ? "selected" : null)">
+                            @sem.DisplayText
                         </option>
                     }
                 </select>
@@ -313,7 +314,7 @@
         function loadAttendance() {
             $.get('@Url.Action("ViewAttendance", "Student")', {
                 subject: $('#subjectFilter').val(),
-                month: $('#monthFilter').val(),
+                semester: $('#semesterFilter').val(),
                 search: $('#searchBox').val(),
                 classType: $('#classTypeFilter').val()
             }, function (html) {
@@ -321,7 +322,7 @@
             });
         }
 
-        $('#subjectFilter, #classTypeFilter, #monthFilter').on('change', loadAttendance); // include classTypeFilter
+        $('#subjectFilter, #classTypeFilter, #semesterFilter').on('change', loadAttendance); // include classTypeFilter
         $('#searchBox').on('keyup', loadAttendance);
 
         //take att
@@ -545,7 +546,7 @@
         $('#resetFilters').on('click', function() {
         $('#subjectFilter').val('');
         $('#classTypeFilter').val('');
-        $('#monthFilter').val('');
+        $('#semesterFilter').val('');
         $('#searchBox').val('');
         loadAttendance();
     });
