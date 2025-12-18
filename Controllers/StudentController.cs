@@ -62,7 +62,12 @@ namespace SHAPEE.Controllers
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // all sections the student has attendance records for
+            //get active semester
+            var activeSemester = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .FirstOrDefault(s => s.IsActive);
+
+            // all sections the student has attendance records for (active semester only)
             var sectionIds = db.Attendances
                 .Where(a => a.StudentId == studentId)
                 .Select(a => a.ClassSectionId)
@@ -71,11 +76,14 @@ namespace SHAPEE.Controllers
 
             var sections = db.ClassSections
                 .Include(cs => cs.Course)
-                .Where(cs => sectionIds.Contains(cs.SectionId))
+                .Where(cs => sectionIds.Contains(cs.SectionId)
+                            && cs.SemesterId == activeSemester.Id)
                 .ToList();
 
+            var activeSectionIds = sections.Select(cs => cs.SectionId).ToList();
+
             var attendances = db.Attendances
-                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .Where(a => a.StudentId == studentId && activeSectionIds.Contains(a.ClassSectionId))
                 .ToList();
 
             var subjectSummaries = sections
@@ -340,10 +348,11 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             var presentCount = attendances.Count(a => a.Status == "Present");
-            var absentCount = attendances.Count(a => a.Status == "Absent");
+            var absentCount  = attendances.Count(a => a.Status == "Absent");
             var totalSessions = attendances.Count;
-            var attendancePercentage = totalSessions > 0
-                ? Math.Round((double)presentCount / totalSessions * 100, 2)
+            var consideredTotal = presentCount + absentCount;
+            var attendancePercentage = consideredTotal > 0
+                ? Math.Round((double)presentCount / consideredTotal * 100, 2)
                 : 0;
 
             var viewModel = new StudentAttendanceDetailsVM

@@ -37,6 +37,7 @@
                     "Late" => "warning",
                     "Absent" => "danger",
                     "Excused" => "info",
+                    "Leave" => "warning",
                     _ => "secondary"
                 };
                 
@@ -57,13 +58,18 @@
                     </td>
                     <td class="px-4 py-3 text-muted">@attendance.RegisteredAt.ToString("hh:mm:ss tt")</td>
                     <td class="px-4 py-3">
-                        <select class="form-control form-control-sm border-left-@statusClass attendance-status-select" 
-                                data-attendance-id="@attendance.Id" 
-                                data-original-status="@attendance.Status">
+                        @{
+                            var isLeave = attendance.Status == "Leave";
+                        }
+                        <select class="form-control form-control-sm border-left-@statusClass attendance-status-select"
+                                data-attendance-id="@attendance.Id"
+                                data-original-status="@attendance.Status"
+                                @(isLeave ? "disabled=\"disabled\"" : "")>
                             <option value="Present" selected="@(attendance.Status == "Present")">Present</option>
-                            <option value="Late" selected="@(attendance.Status == "Late")">Late</option>
-                            <option value="Absent" selected="@(attendance.Status == "Absent")">Absent</option>
+                            <option value="Late"    selected="@(attendance.Status == "Late")">Late</option>
+                            <option value="Absent"  selected="@(attendance.Status == "Absent")">Absent</option>
                             <option value="Excused" selected="@(attendance.Status == "Excused")">Excused</option>
+                            <option value="Leave"   selected="@(attendance.Status == "Leave")">Leave (approved)</option>
                         </select>
                     </td>
                     <td class="px-4 py-3 text-center">
