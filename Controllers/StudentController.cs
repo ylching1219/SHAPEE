@@ -1205,6 +1205,26 @@ namespace SHAPEE.Controllers
                     student.Status = "Active";
 
                 db.SaveChanges();
+
+                //create notification for account unlock
+                HomeController.CreateNotificationForUser(
+                    db,
+                    studentId,
+                    "Account Unlocked",
+                    "Your account has been unlocked. Payment received successfully. You now have full access to all features.",
+                    "success",
+                    "/Student/Dashboard"
+                );
+
+                //create notification for payment success
+                HomeController.CreateNotificationForUser(
+                    db,
+                    studentId,
+                    "Payment Successful",
+                    $"Your payment of RM {invoice.TotalAmount:N2} for invoice {invoice.Id} has been processed successfully.",
+                    "success",
+                    $"/Student/PaymentHistory"
+                );
             }
 
             TempData["SuccessMessage"] = "Payment successful (Stripe).";
@@ -1230,6 +1250,14 @@ namespace SHAPEE.Controllers
             {
                 student.Status = "LockedPayment";
                 db.SaveChanges();
+                HomeController.CreateNotificationForUser(
+                    db,
+                    studentId,
+                    "Account Locked - Payment Overdue",
+                    "Your account has been locked due to overdue payment. Please complete payment to regain access to all features.",
+                    "error",
+                    "/Student/CurrentBilling"
+                );
             }
         }
 

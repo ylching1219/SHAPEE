@@ -381,6 +381,16 @@ public class AccountController(DB db, Helper hp) : Controller
 
             await db.SaveChangesAsync();
 
+            //create notification for password change
+            HomeController.CreateNotificationForUser(
+                db,
+                userId,
+                "Password Changed",
+                "Your account password was updated successfully. If you didn't make this change, please contact administration immediately.",
+                "warning",
+                "/Account/ChangePassword"
+            );
+
             TempData["SuccessMessage"] = "Password changed successfully!";
 
             if (User.IsInRole("Admin"))

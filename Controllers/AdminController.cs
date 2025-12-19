@@ -2481,6 +2481,16 @@ namespace SHAPEE.Controllers
                         leaveApplication.StartDate,
                         leaveApplication.EndDate
                     );
+
+                    //create notification for leave approval
+                    HomeController.CreateNotificationForUser(
+                        db,
+                        leaveApplication.UserId,
+                        "Leave Application Approved",
+                        $"Your leave application from {leaveApplication.StartDate:dd MMM yyyy} to {leaveApplication.EndDate:dd MMM yyyy} has been approved.",
+                        "success",
+                        "/Home/LeaveHistory"
+                    );
                 }
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -2540,6 +2550,16 @@ namespace SHAPEE.Controllers
                     : rejectReason.Trim();
 
                 await db.SaveChangesAsync();
+
+                //create notification for leave rejection
+                HomeController.CreateNotificationForUser(
+                    db,
+                    leaveApplication.UserId,
+                    "Leave Application Rejected",
+                    $"Your leave application from {leaveApplication.StartDate:dd MMM yyyy} to {leaveApplication.EndDate:dd MMM yyyy} has been rejected. Reason: {leaveApplication.RejectReason}",
+                    "error",
+                    "/Home/LeaveHistory"
+                );
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {

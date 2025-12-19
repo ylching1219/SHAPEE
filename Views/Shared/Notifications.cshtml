@@ -1,6 +1,12 @@
+@model List<Notification>
 @{
     ViewData["Title"] = "Notifications";
     var filter = ViewBag.Filter as string ?? "all";
+    var type = ViewBag.Type as string ?? "";
+    var search = ViewBag.Search as string ?? "";
+    var sort = ViewBag.Sort as string ?? "newest";
+    var unreadCount = ViewBag.UnreadCount as int? ?? 0;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
 }
 
 <!-- Page Heading -->
@@ -14,34 +20,33 @@
 <!-- Filter Section -->
 <div class="card shadow mb-4">
     <div class="card-body bg-light border-bottom">
-        <form id="filterForm">
+        <form id="filterForm" method="get" action="@Url.Action("Notifications", "Home")">
             <div class="row g-3">
                 <!-- Status Filter -->
                 <div class="col-12 col-md-2">
-                    <select id="statusFilter" class="form-control">
-                        <option value="">All Status</option>
+                    <select id="statusFilter" name="filter" class="form-control">
                         <option value="all" selected="@(filter == "all" ? "selected" : null)">All</option>
                         <option value="unread" selected="@(filter == "unread" ? "selected" : null)">Unread</option>
-                        <option value="read">Read</option>
+                        <option value="read" selected="@(filter == "read" ? "selected" : null)">Read</option>
                     </select>
                 </div>
 
                 <!-- Type Filter -->
                 <div class="col-12 col-md-2">
-                    <select id="typeFilter" class="form-control">
+                    <select id="typeFilter" name="type" class="form-control">
                         <option value="">All Types</option>
-                        <option value="info">Info</option>
-                        <option value="success">Success</option>
-                        <option value="warning">Warning</option>
-                        <option value="error">Error</option>
+                        <option value="info" selected="@(type == "info" ? "selected" : null)">Info</option>
+                        <option value="success" selected="@(type == "success" ? "selected" : null)">Success</option>
+                        <option value="warning" selected="@(type == "warning" ? "selected" : null)">Warning</option>
+                        <option value="error" selected="@(type == "error" ? "selected" : null)">Error</option>
                     </select>
                 </div>
 
                 <!-- Sort Filter -->
                 <div class="col-12 col-md-2">
-                    <select id="sortFilter" class="form-control">
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
+                    <select id="sortFilter" name="sort" class="form-control">
+                        <option value="newest" selected="@(sort == "newest" ? "selected" : null)">Newest First</option>
+                        <option value="oldest" selected="@(sort == "oldest" ? "selected" : null)">Oldest First</option>
                     </select>
                 </div>
 
@@ -55,16 +60,18 @@
                         </div>
                         <input type="text"
                                id="notificationSearch"
+                               name="search"
                                class="form-control"
-                               placeholder="Search notifications..." />
+                               placeholder="Search notifications..."
+                               value="@search" />
                     </div>
                 </div>
 
                 <!-- Reset Button -->
                 <div class="col-12 col-md-1">
-                    <button type="button" class="btn btn-secondary w-100" id="resetFilters" title="Reset filters">
+                    <a href="@Url.Action("Notifications", "Home")" class="btn btn-secondary w-100" title="Reset filters">
                         <i class="fas fa-undo"></i>
-                    </button>
+                    </a>
                 </div>
             </div>
         </form>
@@ -76,7 +83,13 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <span class="text-muted small" id="notificationCount">0 notifications</span>
+                <span class="text-muted small" id="notificationCount">
+                    @totalCount notification@(totalCount != 1 ? "s" : "")
+                    @if (filter == "unread" && unreadCount > 0)
+                    {
+                        <span class="text-primary">(@unreadCount unread)</span>
+                    }
+                </span>
             </div>
             <button type="button" class="btn btn-sm btn-primary" id="markAllReadBtn">
                 <i class="fas fa-check-double"></i> Mark All as Read
@@ -89,93 +102,139 @@
 <div class="card shadow mb-4">
     <div class="card-body p-0">
         <div id="notificationListContainer" class="notification-list">
-            <!-- AJAX-loaded notifications will appear here -->
-            
-            <!-- Sample notifications (remove when implementing AJAX) -->
-            <div class="notification-item unread">
-                <div class="icon info">
-                    <i class="fas fa-bullhorn"></i>
-                </div>
-                <div class="content">
-                    <div class="title-row">
-                        <span class="title">new features arrived!</span>
-                        <span class="time">10m</span>
-                    </div>
-                    <div class="message">
-                        inventory tracking now includes expiration alerts.
-                    </div>
-                </div>
-                <span class="unread-dot"></span>
-            </div>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var notification in Model)
+                {
+                    var itemClass = notification.IsRead ? "notification-item read" : "notification-item unread";
+                    var iconClass = notification.Type switch
+                    {
+                        "info" => "fas fa-info-circle",
+                        "success" => "fas fa-check-circle",
+                        "warning" => "fas fa-exclamation-triangle",
+                        "error" => "fas fa-times-circle",
+                        _ => "fas fa-bell"
+                    };
+                    var iconBgClass = $"icon {notification.Type}";
+                    var timeAgo = GetRelativeTime(notification.CreatedAt);
+                    var clickUrl = !string.IsNullOrEmpty(notification.ActionUrl) 
+                        ? notification.ActionUrl 
+                        : "#";
 
-            <div class="notification-item unread">
-                <div class="icon success">
-                    <i class="fas fa-check"></i>
+                    <a href="@clickUrl" class="@itemClass" 
+                       data-notification-id="@notification.NotificationId"
+                       onclick="markNotificationAsRead(@notification.NotificationId, event)">
+                        <div class="@iconBgClass">
+                            <i class="@iconClass"></i>
+                        </div>
+                        <div class="content">
+                            <div class="title-row">
+                                <span class="title">@notification.Title</span>
+                                <span class="time">@timeAgo</span>
+                            </div>
+                            <div class="message">@notification.Message</div>
+                        </div>
+                        @if (!notification.IsRead)
+                        {
+                            <span class="unread-dot"></span>
+                        }
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No notifications found</p>
                 </div>
-                <div class="content">
-                    <div class="title-row">
-                        <span class="title">payment successful</span>
-                        <span class="time">30m</span>
-                    </div>
-                    <div class="message">
-                        your semester 2 payment has been received.
-                    </div>
-                </div>
-                <span class="unread-dot"></span>
-            </div>
-
-            <div class="notification-item read">
-                <div class="icon info">
-                    <i class="fas fa-sync-alt"></i>
-                </div>
-                <div class="content">
-                    <div class="title-row">
-                        <span class="title">system updated</span>
-                        <span class="time">2h</span>
-                    </div>
-                    <div class="message">
-                        the system was updated successfully on jan 1, 2024.
-                    </div>
-                </div>
-            </div>
-
-            <div class="notification-item read">
-                <div class="icon warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="content">
-                    <div class="title-row">
-                        <span class="title">attendance warning</span>
-                        <span class="time">yesterday</span>
-                    </div>
-                    <div class="message">
-                        your attendance for web systems is below 80%.
-                    </div>
-                </div>
-            </div>
-
-            <div class="notification-item read">
-                <div class="icon error">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <div class="content">
-                    <div class="title-row">
-                        <span class="title">password changed</span>
-                        <span class="time">3 days ago</span>
-                    </div>
-                    <div class="message">
-                        your account password was updated successfully.
-                    </div>
-                </div>
-            </div>
+            }
         </div>
     </div>
 </div>
 
-<!-- Empty State (hidden by default) -->
-<div id="emptyState" class="card shadow mb-4" style="display: none;">
-    <div class="card-body text-center py-5">
-        <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-        <p class="text-muted mb-0">No notifications found</p>
-    </div>
-</div>
+@functions {
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.Now;
+        var diff = now - dateTime;
+        var diffSec = (int)diff.TotalSeconds;
+        var diffMin = (int)diff.TotalMinutes;
+        var diffHour = (int)diff.TotalHours;
+        var diffDay = (int)diff.TotalDays;
+
+        if (diffSec < 60) return "just now";
+        if (diffMin < 60) return $"{diffMin}m ago";
+        if (diffHour < 24) return $"{diffHour}h ago";
+        if (diffDay < 7) return $"{diffDay}d ago";
+        return dateTime.ToString("MMM dd, yyyy");
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#statusFilter, #typeFilter, #sortFilter').on('change', function() {
+                $('#filterForm').submit();
+            });
+
+            let searchTimer;
+            $('#notificationSearch').on('keyup', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function() {
+                    $('#filterForm').submit();
+                }, 500);
+            });
+
+            //mark all as read
+            $('#markAllReadBtn').on('click', function() {
+                if (confirm('Mark all notifications as read?')) {
+                    $.ajax({
+                        url: '@Url.Action("MarkAllAsRead", "Home")',
+                        type: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function() {
+                            location.reload();
+                        },
+                        error: function() {
+                            alert('Error marking notifications as read');
+                        }
+                    });
+                }
+            });
+
+            //mark single notification as read
+            window.markNotificationAsRead = function(notificationId, event) {
+                const $item = $(event.currentTarget);
+                if ($item.hasClass('read')) {
+                    return; 
+                }
+
+                //prevent navigation if clicking on the notification itself
+                if (event.target.closest('a') === event.currentTarget) {
+                    //allow navigation but mark as read
+                }
+
+                $.ajax({
+                    url: '@Url.Action("MarkAsRead", "Home")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ notificationId: notificationId }),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function() {
+                        $item.removeClass('unread').addClass('read');
+                        $item.find('.unread-dot').remove();
+                    },
+                    error: function() {
+                        console.error('Error marking notification as read');
+                    }
+                });
+            };
+        });
+    </script>
+}

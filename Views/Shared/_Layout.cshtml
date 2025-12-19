@@ -479,7 +479,7 @@
                             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
                                 <span id="notificationBadge"
-                                    class="badge badge-danger badge-counter">14</span>
+                                    class="badge badge-danger badge-counter" style="display: none;">0</span>
                             </a>
 
                             <div class="dropdown-menu dropdown-menu-right shadow notification-dropdown"
@@ -489,7 +489,7 @@
                                 <div class="notification-header">
                                     <span class="title">Notification</span>
                                     <div class="actions">
-                                        <a href="/Home/Notifications" title="expand">
+                                        <a href="@Url.Action("Notifications", "Home")" title="expand">
                                             <i class="fas fa-expand"></i>
                                         </a>
                                         <button class="close-dropdown">&times;</button>
@@ -503,95 +503,16 @@
                                 </div>
 
                                 <!-- list -->
-                               <div class="notification-list" id="notificationList">
-
-                                    <!-- unread -->
-                                    <div class="notification-item unread">
-                                        <div class="icon info">
-                                            <i class="fas fa-bullhorn"></i>
-                                        </div>
-                                        <div class="content">
-                                            <div class="title-row">
-                                                <span class="title">new features arrived!</span>
-                                                <span class="time">10m</span>
-                                            </div>
-                                            <div class="message">
-                                                inventory tracking now includes expiration alerts.
-                                            </div>
-                                        </div>
-                                        <span class="unread-dot"></span>
+                                <div class="notification-list" id="notificationList">
+                                    <!-- AJAX-loaded notifications will appear here -->
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin text-muted"></i>
+                                        <p class="small text-muted mb-0 mt-2">Loading notifications...</p>
                                     </div>
-
-                                    <!-- unread -->
-                                    <div class="notification-item unread">
-                                        <div class="icon success">
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        <div class="content">
-                                            <div class="title-row">
-                                                <span class="title">payment successful</span>
-                                                <span class="time">30m</span>
-                                            </div>
-                                            <div class="message">
-                                                your semester 2 payment has been received.
-                                            </div>
-                                        </div>
-                                        <span class="unread-dot"></span>
-                                    </div>
-
-                                    <!-- read -->
-                                    <div class="notification-item read">
-                                        <div class="icon info">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </div>
-                                        <div class="content">
-                                            <div class="title-row">
-                                                <span class="title">system updated</span>
-                                                <span class="time">2h</span>
-                                            </div>
-                                            <div class="message">
-                                                the system was updated successfully on jan 1, 2024.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- read -->
-                                    <div class="notification-item read">
-                                        <div class="icon warning">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="content">
-                                            <div class="title-row">
-                                                <span class="title">attendance warning</span>
-                                                <span class="time">4h</span>
-                                            </div>
-                                            <div class="message">
-                                                your attendance for web systems is below 80%.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- read -->
-                                    <div class="notification-item read">
-                                        <div class="icon error">
-                                            <i class="fas fa-lock"></i>
-                                        </div>
-                                        <div class="content">
-                                            <div class="title-row">
-                                                <span class="title">password changed</span>
-                                                <span class="time">yesterday</span>
-                                            </div>
-                                            <div class="message">
-                                                your account password was updated successfully.
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
 
-
                                 <!-- footer -->
-                                <a class="notification-footer" href="/Notification/Index">
+                                <a class="notification-footer" href="@Url.Action("Notifications", "Home")">
                                     View all notifications
                                 </a>
                             </div>

@@ -380,16 +380,179 @@ public class HomeController(DB db) : Controller
     }
 
     //KM 
+        // ========================
+    // NOTIFICATION MODULE
+    // ========================
+
     // GET: Home/Notifications
     [Authorize]
-    public IActionResult Notifications(string filter = "all")
+    public IActionResult Notifications(string filter = "all", string? type = null, string? search = null, string? sort = null)
     {
         ViewData["Title"] = "Notifications";
         
-        //empty for now
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return RedirectToAction("Login", "Account");
+
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
+
+        // Status filter
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+        else if (filter == "read")
+            query = query.Where(n => n.IsRead);
+
+        // Type filter
+        if (!string.IsNullOrEmpty(type))
+            query = query.Where(n => n.Type == type);
+
+        // Search filter
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(n => 
+                n.Title.ToLower().Contains(searchLower) || 
+                n.Message.ToLower().Contains(searchLower));
+        }
+
+        // Sort
+        if (sort == "oldest")
+            query = query.OrderBy(n => n.CreatedAt);
+        else
+            query = query.OrderByDescending(n => n.CreatedAt);
+
+        var notifications = query.ToList();
+        var unreadCount = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+
         ViewBag.Filter = filter;
-        
-        return View("~/Views/Shared/Notifications.cshtml");
+        ViewBag.Type = type;
+        ViewBag.Search = search;
+        ViewBag.Sort = sort ?? "newest";
+        ViewBag.UnreadCount = unreadCount;
+        ViewBag.TotalCount = notifications.Count;
+
+        return View("~/Views/Shared/Notifications.cshtml", notifications);
+    }
+
+    // GET: Home/GetUnreadCount (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetUnreadCount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { count = 0 });
+
+        var count = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+        return Json(new { count });
+    }
+
+    // GET: Home/GetLatestNotifications (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetLatestNotifications(int count = 10, string filter = "all")
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { notifications = new List<object>() });
+
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
+
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+
+        var notifications = query
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(count)
+            .ToList();
+
+        var result = notifications.Select(n => new
+        {
+            notificationId = n.NotificationId,
+            title = n.Title,
+            message = n.Message,
+            type = n.Type,
+            isRead = n.IsRead,
+            actionUrl = n.ActionUrl,
+            createdAt = n.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")
+        }).ToList();
+
+        return Json(new { notifications = result });
+    }
+
+    // POST: Home/MarkAsRead (AJAX)
+    [HttpPost]
+    [Authorize]
+    public IActionResult MarkAsRead([FromBody] MarkAsReadRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
+
+        var notification = db.Notification
+            .FirstOrDefault(n => n.NotificationId == request.NotificationId && n.UserId == userId);
+
+        if (notification != null && !notification.IsRead)
+        {
+            notification.IsRead = true;
+            db.SaveChanges();
+        }
+
+        return Json(new { success = true });
+    }
+
+    // POST: Home/MarkAllAsRead (AJAX)
+    [HttpPost]
+    [Authorize]
+    public IActionResult MarkAllAsRead()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
+
+        var unreadNotifications = db.Notification
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ToList();
+
+        foreach (var notification in unreadNotifications)
+        {
+            notification.IsRead = true;
+        }
+
+        db.SaveChanges();
+        return Json(new { success = true });
+    }
+
+
+    //model for marking a notification as read
+    public class MarkAsReadRequest
+    {
+        public int NotificationId { get; set; }
+    }
+
+    //method to create notification for a user (can be called from anywhere)
+    public static void CreateNotificationForUser(DB dbContext, string userId, string title, string message, string type, string? actionUrl = null)
+    {
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            return;
+
+        var notification = new Notification
+        {
+            UserId = userId,
+            Title = title,
+            Message = message,
+            Type = type,
+            ActionUrl = actionUrl,
+            IsRead = false,
+            CreatedAt = DateTime.Now
+        };
+
+        dbContext.Notification.Add(notification);
+        dbContext.SaveChanges();
     }
 
 
