@@ -1,0 +1,62 @@
+--StudentProgramValidate
+SELECT
+    u.Id        AS StudentId,
+    u.ProgramId,
+    u.YearLevel,
+    u.Semester
+FROM Users u
+LEFT JOIN ProgramCourses pc
+    ON pc.ProgramId = u.ProgramId
+   AND pc.YearLevel = u.YearLevel
+   AND pc.Semester  = u.Semester
+WHERE u.Discriminator = 'Student'
+  AND pc.ProgramId IS NULL;
+
+--StudentTutorialGroup
+SELECT
+    u.Id AS StudentId,
+    u.ProgramId,
+    u.YearLevel,
+    u.Semester,
+    tg.ProgramId AS TG_Program,
+    tg.YearLevel AS TG_Year,
+    tg.Semester  AS TG_Sem
+FROM Users u
+JOIN TutorialGroups tg
+    ON tg.Id = u.TutorialGroupId
+WHERE u.Discriminator = 'Student'
+  AND (
+       u.ProgramId <> tg.ProgramId
+    OR u.YearLevel <> tg.YearLevel
+    OR u.Semester <> tg.Semester
+  );
+
+--ClassSectionProgramCourses
+SELECT
+    cs.SectionId,
+    cs.CourseId,
+    tg.ProgramId,
+    tg.YearLevel,
+    tg.Semester
+FROM ClassSections cs
+JOIN TutorialGroups tg
+    ON tg.Id = cs.TutorialGroupId
+LEFT JOIN ProgramCourses pc
+    ON pc.ProgramId = tg.ProgramId
+   AND pc.CourseId  = cs.CourseId
+   AND pc.YearLevel = tg.YearLevel
+   AND pc.Semester  = tg.Semester
+WHERE pc.ProgramId IS NULL;
+
+--TutorialGroupsProgramCourse
+SELECT
+    tg.Id,
+    tg.ProgramId,
+    tg.YearLevel,
+    tg.Semester
+FROM TutorialGroups tg
+LEFT JOIN ProgramCourses pc
+    ON pc.ProgramId = tg.ProgramId
+   AND pc.YearLevel = tg.YearLevel
+   AND pc.Semester  = tg.Semester
+WHERE pc.ProgramId IS NULL;
