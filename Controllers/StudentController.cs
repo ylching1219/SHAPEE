@@ -843,6 +843,16 @@ namespace SHAPEE.Controllers
 
                 db.Invoices.Add(inv);
                 db.SaveChanges();
+
+                //create notification for new invoice
+                HomeController.CreateNotificationForUser(
+                    db,
+                    studentId,
+                    "New Invoice Generated",
+                    $"A new invoice ({inv.Id}) for {activeSemester.Id} has been generated. Amount: RM {totalAmount:N2}. Due date: {inv.DueDate:dd MMM yyyy}.",
+                    "info",
+                    "/Student/CurrentBilling"
+                );
             }
 
             var outstanding = db.Invoices

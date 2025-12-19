@@ -20,7 +20,7 @@
 <!-- Filter Section -->
 <div class="card shadow mb-4">
     <div class="card-body bg-light border-bottom">
-        <form id="filterForm" method="get" action="@Url.Action("Notifications", "Home")">
+        <form id="filterForm">
             <div class="row g-3">
                 <!-- Status Filter -->
                 <div class="col-12 col-md-2">
@@ -69,9 +69,9 @@
 
                 <!-- Reset Button -->
                 <div class="col-12 col-md-1">
-                    <a href="@Url.Action("Notifications", "Home")" class="btn btn-secondary w-100" title="Reset filters">
+                    <button type="button" id="resetFiltersBtn" class="btn btn-secondary w-100" title="Reset filters">
                         <i class="fas fa-undo"></i>
-                    </a>
+                    </button>
                 </div>
             </div>
         </form>
@@ -173,16 +173,141 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            let isLoading = false;
+
+            //function to load filtered notifications via AJAX
+            function loadFilteredNotifications() {
+                if (isLoading) return;
+                isLoading = true;
+
+                const filter = $('#statusFilter').val() || 'all';
+                const type = $('#typeFilter').val() || '';
+                const search = $('#notificationSearch').val() || '';
+                const sort = $('#sortFilter').val() || 'newest';
+
+                $.ajax({
+                    url: '@Url.Action("GetFilteredNotifications", "Home")',
+                    type: 'GET',
+                    data: {
+                        filter: filter,
+                        type: type,
+                        search: search,
+                        sort: sort
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            renderNotifications(response.notifications);
+                            updateNotificationCount(response.totalCount, response.unreadCount, filter);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading notifications:', error);
+                    },
+                    complete: function() {
+                        isLoading = false;
+                    }
+                });
+            }
+
+            //function to render notifications
+            function renderNotifications(notifications) {
+                const container = $('#notificationListContainer');
+                
+                if (!notifications || notifications.length === 0) {
+                    container.html(`
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No notifications found</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                let html = '';
+                notifications.forEach(function(n) {
+                    const itemClass = n.isRead ? 'notification-item read' : 'notification-item unread';
+                    const iconClass = getIconClass(n.type);
+                    const iconBgClass = `icon ${n.type}`;
+                    const unreadDot = n.isRead ? '' : '<span class="unread-dot"></span>';
+
+                    html += `
+                        <a href="${n.actionUrl}" class="${itemClass}" 
+                           data-notification-id="${n.notificationId}"
+                           onclick="markNotificationAsRead(${n.notificationId}, event)">
+                            <div class="${iconBgClass}">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="content">
+                                <div class="title-row">
+                                    <span class="title">${escapeHtml(n.title)}</span>
+                                    <span class="time">${n.timeAgo}</span>
+                                </div>
+                                <div class="message">${escapeHtml(n.message)}</div>
+                            </div>
+                            ${unreadDot}
+                        </a>
+                    `;
+                });
+
+                container.html(html);
+            }
+
+            //helper function to get icon class
+            function getIconClass(type) {
+                const icons = {
+                    'info': 'fas fa-info-circle',
+                    'success': 'fas fa-check-circle',
+                    'warning': 'fas fa-exclamation-triangle',
+                    'error': 'fas fa-times-circle'
+                };
+                return icons[type] || 'fas fa-bell';
+            }
+
+            //helper function to escape HTML
+            function escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+
+            //function to update notification count
+            function updateNotificationCount(totalCount, unreadCount, filter) {
+                let countText = `${totalCount} notification${totalCount !== 1 ? 's' : ''}`;
+                if (filter === 'unread' && unreadCount > 0) {
+                    countText += ` <span class="text-primary">(${unreadCount} unread)</span>`;
+                }
+                $('#notificationCount').html(countText);
+            }
+
+            //event handlers for filters
             $('#statusFilter, #typeFilter, #sortFilter').on('change', function() {
-                $('#filterForm').submit();
+                loadFilteredNotifications();
             });
 
+            //search with debounce
             let searchTimer;
             $('#notificationSearch').on('keyup', function() {
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(function() {
-                    $('#filterForm').submit();
+                    loadFilteredNotifications();
                 }, 500);
+            });
+
+            //reset filters
+            $('#resetFiltersBtn').on('click', function() {
+                $('#statusFilter').val('all');
+                $('#typeFilter').val('');
+                $('#sortFilter').val('newest');
+                $('#notificationSearch').val('');
+                loadFilteredNotifications();
             });
 
             //mark all as read
@@ -196,7 +321,7 @@
                             'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                         },
                         success: function() {
-                            location.reload();
+                            loadFilteredNotifications();
                         },
                         error: function() {
                             alert('Error marking notifications as read');
@@ -212,11 +337,6 @@
                     return; 
                 }
 
-                //prevent navigation if clicking on the notification itself
-                if (event.target.closest('a') === event.currentTarget) {
-                    //allow navigation but mark as read
-                }
-
                 $.ajax({
                     url: '@Url.Action("MarkAsRead", "Home")',
                     type: 'POST',
@@ -229,6 +349,8 @@
                     success: function() {
                         $item.removeClass('unread').addClass('read');
                         $item.find('.unread-dot').remove();
+                        // Reload to update counts
+                        loadFilteredNotifications();
                     },
                     error: function() {
                         console.error('Error marking notification as read');

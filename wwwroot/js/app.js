@@ -321,52 +321,71 @@ $(document).ready(function() {
         `;
     }
 
-    //load notifications
-    function loadNotifications(filter = 'all') {
-        const container = $('#notificationList');
-        if (container.length === 0) return;
-
-        const url = '/Home/GetLatestNotifications?count=10&filter=' + filter;
-
-        $.ajax({
-            url: url,
-            type: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                if (response.notifications && response.notifications.length > 0) {
-                    let html = '';
-                    response.notifications.forEach(function(notif) {
-                        html += renderNotificationItem(notif);
-                    });
-                    container.html(html);
-                } else {
+        //load notifications
+        function loadNotifications(filter = 'all') {
+            const container = $('#notificationList');
+            const footer = $('.notification-footer');
+            if (container.length === 0) return;
+    
+            const url = '/Home/GetLatestNotifications?count=5&filter=' + filter;
+    
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.notifications && response.notifications.length > 0) {
+                        let html = '';
+                        // Only show first 5 notifications
+                        const displayNotifications = response.notifications.slice(0, 5);
+                        displayNotifications.forEach(function(notif) {
+                            html += renderNotificationItem(notif);
+                        });
+                        container.html(html);
+    
+                        // Update footer with "X more notifications" text
+                        const displayedCount = displayNotifications.length;
+                        const totalCount = response.totalCount || displayedCount;
+                        const remainingCount = totalCount - displayedCount;
+    
+                        if (remainingCount > 0) {
+                            footer.html(`
+                                <span class="more-count">${remainingCount} more notification${remainingCount !== 1 ? 's' : ''}</span>
+                                <a href="/Home/Notifications">View all notifications</a>
+                            `);
+                        } else {
+                            footer.html('<a href="/Home/Notifications">View all notifications</a>');
+                        }
+                    } else {
+                        container.html(`
+                            <div class="text-center py-4">
+                                <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
+                                <p class="small text-muted mb-0">No ${filter === 'all' ? '' : 'unread '}notifications</p>
+                            </div>
+                        `);
+                        footer.html('<a href="/Home/Notifications">View all notifications</a>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status !== 401) {
+                        console.error('Error loading notifications:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            error: error
+                        });
+                    }
                     container.html(`
                         <div class="text-center py-4">
-                            <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
-                            <p class="small text-muted mb-0">No ${filter === 'all' ? '' : 'unread '}notifications</p>
+                            <i class="fas fa-exclamation-circle fa-2x text-muted mb-2"></i>
+                            <p class="small text-muted mb-0">Error loading notifications</p>
                         </div>
                     `);
+                    footer.html('<a href="/Home/Notifications">View all notifications</a>');
                 }
-            },
-            error: function(xhr, status, error) {
-                if (xhr.status !== 401) {
-                    console.error('Error loading notifications:', {
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        error: error
-                    });
-                }
-                container.html(`
-                    <div class="text-center py-4">
-                        <i class="fas fa-exclamation-circle fa-2x text-muted mb-2"></i>
-                        <p class="small text-muted mb-0">Error loading notifications</p>
-                    </div>
-                `);
-            }
-        });
-    }
+            });
+        }
 
     //update unread count badge
     function updateUnreadCount() {
@@ -433,8 +452,10 @@ $(document).ready(function() {
     };
 
     //tab switching
-    $(document).on('click', '.notification-tab', function() {
-        $('.notification-tab').removeClass('active');
+    $(document).on('click', '.notification-tabs .tab', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('.notification-tabs .tab').removeClass('active');
         $(this).addClass('active');
         currentFilter = $(this).data('filter');
         loadNotifications(currentFilter);

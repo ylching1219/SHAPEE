@@ -524,3 +524,30 @@ select.form-control-sm {
     }
 }
 
+.notification-footer {
+    display: block;
+    text-align: center;
+    padding: 0.6rem;
+    font-size: 0.8rem;
+    border-top: 1px solid #eee;
+    color: #4e73df;
+}
+
+.notification-footer .more-count {
+    display: block;
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    font-size: 0.75rem;
+}
+
+.notification-footer a {
+    color: #4e73df;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.notification-footer a:hover {
+    text-decoration: underline;
+}
+
