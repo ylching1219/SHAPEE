@@ -1,0 +1,210 @@
+@model SHAPEE.Models.PaymentMonitoringVM
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Revenue</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">RM @Model.TotalRevenue.ToString("N2")</div>
+                        <small class="text-muted">@(Model.Period == "all" ? "All Time" : Model.Period.ToUpper())</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding Payments</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">RM @Model.OutstandingPayments.ToString("N2")</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Overdue Payments Count</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.OverduePaymentsCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Export Reports</div>
+                        <div class="mt-2">
+                            <a href="@Url.Action("ExportPaymentReportCsv", "Admin", new { period = Model.Period, startDate = Model.StartDate, endDate = Model.EndDate })" 
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </a>
+                            <a href="@Url.Action("ExportPaymentReportPdf", "Admin", new { period = Model.Period, startDate = Model.StartDate, endDate = Model.EndDate })" 
+                               class="btn btn-sm btn-danger">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Trends Chart -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Payment Trends @(Model.Period == "all" ? "(Last 12 Months)" : Model.Period == "today" ? "(Today)" : Model.Period == "week" ? "(Last 7 Days)" : Model.Period == "month" ? "(Last 30 Days)" : Model.Period == "year" ? "(Last Year)" : "(Selected Period)")</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="paymentTrendsChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Students with Overdue Payments -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Students with Overdue Payments</h6>
+            </div>
+            <div class="card-body">
+                @if (Model.OverdueStudents.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Student Name</th>
+                                    <th>Invoice ID</th>
+                                    <th>Semester</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Days Overdue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var student in Model.OverdueStudents)
+                                {
+                                    <tr>
+                                        <td>@student.StudentId</td>
+                                        <td>@student.StudentName</td>
+                                        <td>@student.InvoiceId</td>
+                                        <td>@student.SemesterId</td>
+                                        <td>RM @student.Amount.ToString("N2")</td>
+                                        <td>@student.DueDate.ToString("dd-MM-yyyy")</td>
+                                        <td><span class="badge badge-danger">@student.DaysOverdue days</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No overdue payments found.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    //initialize chart after content is loaded
+    (function() {
+        function initChart() {
+            if (typeof Chart === 'undefined') {
+                setTimeout(initChart, 100);
+                return;
+            }
+
+            const canvas = document.getElementById('paymentTrendsChart');
+            if (!canvas) {
+                setTimeout(initChart, 100);
+                return;
+            }
+
+            const trendsData = @Html.Raw(Json.Serialize(Model.PaymentTrends));
+            
+            //destroy existing chart if it exists
+            const existingChart = Chart.getChart('paymentTrendsChart');
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trendsData.map(t => t.month),
+                    datasets: [{
+                        label: 'Revenue (RM)',
+                        data: trendsData.map(t => t.amount),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'RM ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'RM ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        //start initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChart);
+        } else {
+            setTimeout(initChart, 50);
+        }
+    })();
+</script>

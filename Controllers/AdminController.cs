@@ -14,6 +14,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace SHAPEE.Controllers
 {
@@ -2997,6 +3000,579 @@ namespace SHAPEE.Controllers
                 endDate = semester.EndDate.ToString("yyyy-MM-dd"),
                 isActive = semester.IsActive
             });
+        }
+
+
+        // === Payment Trasaction ===
+
+        public IActionResult PaymentTransactions(string? searchQuery, string? facultyFilter, string? programFilter, DateTime? dateFrom, DateTime? dateTo, string? dateSort)
+        {
+            ViewData["Title"] = "Payment Transaction Management";
+            
+            var query = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                    .ThenInclude(i => i.Student)
+                        .ThenInclude(s => s.Program)
+                            .ThenInclude(p => p.Faculty)
+                .AsQueryable();
+            
+            //search by invoice ID, receipt ID, student ID or student name
+            searchQuery = searchQuery?.Trim();
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                query = query.Where(t =>
+                    t.Id.Contains(searchQuery) ||
+                    t.InvoiceId.Contains(searchQuery) ||
+                    t.Invoice.StudentId.Contains(searchQuery) ||
+                    (t.Invoice.Student.FirstName + " " + t.Invoice.Student.LastName).Contains(searchQuery));
+            }
+            
+            //filter by faculty
+            if (!string.IsNullOrEmpty(facultyFilter))
+            {
+                query = query.Where(t => t.Invoice.Student.Program.FacultyId == facultyFilter);
+            }
+            
+            //filter by program
+            if (!string.IsNullOrEmpty(programFilter))
+            {
+                query = query.Where(t => t.Invoice.Student.ProgramId == programFilter);
+            }
+            
+            //filter by date range
+            if (dateFrom.HasValue)
+            {
+                query = query.Where(t => t.TransactionDate >= dateFrom.Value);
+            }
+            if (dateTo.HasValue)
+            {
+                query = query.Where(t => t.TransactionDate <= dateTo.Value.AddDays(1));
+            }
+            
+            //sort by date
+            dateSort = dateSort?.Trim() ?? "newest";
+            if (dateSort == "oldest")
+            {
+                query = query.OrderBy(t => t.TransactionDate);
+            }
+            else
+            {
+                query = query.OrderByDescending(t => t.TransactionDate);
+            }
+            
+            var transactions = query
+                .Select(t => new AdminPaymentTransactionRowVM
+                {
+                    ReceiptId = t.Id,
+                    InvoiceId = t.InvoiceId,
+                    StudentId = t.Invoice.StudentId,
+                    StudentName = (t.Invoice.Student.FirstName + " " + t.Invoice.Student.LastName).Trim(),
+                    SemesterId = t.Invoice.SemesterId,
+                    TransactionDate = t.TransactionDate,
+                    PaymentMethod = t.PaymentMethod,
+                    AmountPaid = t.AmountPaid
+                })
+                .ToList();
+            
+            //get all faculties for filter dropdown
+            var faculties = db.Faculties
+                .OrderBy(f => f.Name)
+                .Select(f => new { f.Id, f.Name })
+                .ToList();
+            ViewBag.Faculties = faculties;
+            
+            //get programs for filter dropdown (filtered by selected faculty if any)
+            var programsQuery = db.Programs.AsQueryable();
+            if (!string.IsNullOrEmpty(facultyFilter))
+            {
+                programsQuery = programsQuery.Where(p => p.FacultyId == facultyFilter);
+            }
+            var programs = programsQuery
+                .OrderBy(p => p.Name)
+                .Select(p => new { p.Id, p.Name })
+                .ToList();
+            ViewBag.Programs = programs;
+            
+            var vm = new PaymentTransactionManagementVM
+            {
+                Transactions = transactions,
+                SearchQuery = searchQuery,
+                FacultyFilter = facultyFilter,
+                ProgramFilter = programFilter,
+                DateFrom = dateFrom,
+                DateTo = dateTo,
+                DateSort = dateSort
+            };
+            
+            //check if AJAX request - return partial view
+            if (Request.IsAjax())
+            {
+                return PartialView("_PaymentTransactions", vm);
+            }
+            
+            return View("PaymentTransactions", vm);
+        }
+
+        //helper method to get programs by faculty
+        [HttpGet]
+        public IActionResult GetProgramsByFaculty(string? facultyId)
+        {
+            var programsQuery = db.Programs.AsQueryable();
+            
+            if (!string.IsNullOrEmpty(facultyId))
+            {
+                programsQuery = programsQuery.Where(p => p.FacultyId == facultyId);
+            }
+            
+            var programs = programsQuery
+                .OrderBy(p => p.Name)
+                .Select(p => new { p.Id, p.Name })
+                .ToList();
+            
+            var options = string.Join("", programs.Select(p => 
+                $"<option value=\"{p.Id}\">{p.Name}</option>"
+            ));
+            
+            return Content(options, "text/html");
+        }
+
+        public IActionResult ViewReceipt(string receiptId)
+        {
+            var tx = db.PaymentTransactions
+                .FirstOrDefault(t => t.Id == receiptId);
+            
+            if (tx == null) return NotFound();
+            
+            var relative = (tx.ReceiptUrl ?? "").Trim().TrimStart('/');
+            var physical = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                relative.Replace('/', Path.DirectorySeparatorChar));
+            
+            if (!System.IO.File.Exists(physical)) return NotFound("Receipt file missing.");
+            
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Path.GetFileName(physical)}\"";
+            return PhysicalFile(physical, "application/pdf");
+        }
+
+        public IActionResult DownloadReceipt(string receiptId)
+        {
+            var tx = db.PaymentTransactions
+                .FirstOrDefault(t => t.Id == receiptId);
+            
+            if (tx == null) return NotFound();
+            
+            var relative = (tx.ReceiptUrl ?? "").Trim().TrimStart('/');
+            var physical = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                relative.Replace('/', Path.DirectorySeparatorChar));
+            
+            if (!System.IO.File.Exists(physical)) return NotFound("Receipt file missing.");
+            
+            Response.Headers["Content-Disposition"] = $"attachment; filename=\"{Path.GetFileName(physical)}\"";
+            return PhysicalFile(physical, "application/pdf");
+        }
+
+        // ========== PAYMENT MONITORING & REPORTS ==========
+
+        public IActionResult PaymentMonitoring(string? period, DateTime? startDate, DateTime? endDate)
+        {
+            ViewData["Title"] = "Payment Monitoring & Reports";
+            
+            var today = DateTime.Today;
+            DateTime? periodStart = null;
+            DateTime? periodEnd = null;
+            
+            //determine date range based on period
+            period = period?.Trim() ?? "all";
+            switch (period)
+            {
+                case "today":
+                    periodStart = today;
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "week":
+                    periodStart = today.AddDays(-7);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "month":
+                    periodStart = today.AddMonths(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "year":
+                    periodStart = today.AddYears(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "custom":
+                    periodStart = startDate;
+                    periodEnd = endDate?.AddDays(1);
+                    break;
+            }
+            
+            //total revenue (paid transactions) - by period
+            var revenueQuery = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                .AsQueryable();
+            
+            if (periodStart.HasValue)
+                revenueQuery = revenueQuery.Where(t => t.TransactionDate >= periodStart.Value);
+            if (periodEnd.HasValue)
+                revenueQuery = revenueQuery.Where(t => t.TransactionDate < periodEnd.Value);
+            
+            var totalRevenue = revenueQuery.Sum(t => (decimal?)t.AmountPaid) ?? 0;
+            
+            //outstanding payments (unpaid invoices)
+            var outstandingPayments = db.Invoices
+                .Where(i => !i.IsPaid)
+                .Sum(i => (decimal?)i.TotalAmount) ?? 0;
+            
+            //overdue payments count
+            var overdueCount = db.Invoices
+                .Count(i => !i.IsPaid && DateTime.Today > i.DueDate.Date);
+            
+           //payment trends - based on selected period
+            var trends = new List<PaymentTrendVM>();
+            var actualStart = periodStart ?? today.AddYears(-1);
+            var actualEnd = periodEnd ?? today.AddDays(1);
+            var daysDiff = (actualEnd - actualStart).TotalDays;
+
+            if (period == "today")
+            {
+                //for today, show hourly data (last 24 hours)
+                var startHour = actualStart.Date;
+                for (int i = 0; i < 24; i++)
+                {
+                    var hourStart = startHour.AddHours(i);
+                    var hourEnd = hourStart.AddHours(1);
+                    var hourName = hourStart.ToString("HH:mm");
+                    
+                    var hourTransactions = db.PaymentTransactions
+                        .Where(t => t.TransactionDate >= hourStart && t.TransactionDate < hourEnd)
+                        .ToList();
+                    
+                    trends.Add(new PaymentTrendVM
+                    {
+                        Month = hourName,
+                        Amount = hourTransactions.Sum(t => t.AmountPaid),
+                        TransactionCount = hourTransactions.Count
+                    });
+                }
+            }
+            else if (period == "week" || (period == "custom" && daysDiff <= 7))
+            {
+                //for week or custom <= 7 days, show daily data
+                var currentDate = actualStart.Date;
+                while (currentDate < actualEnd.Date)
+                {
+                    var dayEnd = currentDate.AddDays(1);
+                    var dayName = currentDate.ToString("dd MMM");
+                    
+                    var dayTransactions = db.PaymentTransactions
+                        .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < dayEnd)
+                        .ToList();
+                    
+                    trends.Add(new PaymentTrendVM
+                    {
+                        Month = dayName,
+                        Amount = dayTransactions.Sum(t => t.AmountPaid),
+                        TransactionCount = dayTransactions.Count
+                    });
+                    
+                    currentDate = dayEnd;
+                }
+            }
+            else if (period == "month" || (period == "custom" && daysDiff <= 31))
+            {
+                //for month or custom <= 31 days, show daily data
+                var currentDate = actualStart.Date;
+                while (currentDate < actualEnd.Date)
+                {
+                    var dayEnd = currentDate.AddDays(1);
+                    var dayName = currentDate.ToString("dd MMM");
+                    
+                    var dayTransactions = db.PaymentTransactions
+                        .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < dayEnd)
+                        .ToList();
+                    
+                    trends.Add(new PaymentTrendVM
+                    {
+                        Month = dayName,
+                        Amount = dayTransactions.Sum(t => t.AmountPaid),
+                        TransactionCount = dayTransactions.Count
+                    });
+                    
+                    currentDate = dayEnd;
+                }
+            }
+            else if (period == "year" || (period == "custom" && daysDiff <= 365))
+            {
+                //for year or custom <= 365 days, show monthly data
+                var currentDate = actualStart.Date;
+                while (currentDate < actualEnd.Date)
+                {
+                    var monthEnd = currentDate.AddMonths(1);
+                    if (monthEnd > actualEnd.Date)
+                        monthEnd = actualEnd.Date;
+                    
+                    var monthName = currentDate.ToString("MMM yyyy");
+                    
+                    var monthTransactions = db.PaymentTransactions
+                        .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < monthEnd)
+                        .ToList();
+                    
+                    trends.Add(new PaymentTrendVM
+                    {
+                        Month = monthName,
+                        Amount = monthTransactions.Sum(t => t.AmountPaid),
+                        TransactionCount = monthTransactions.Count
+                    });
+                    
+                    currentDate = monthEnd;
+                }
+            }
+            else
+            {
+                //for "all" or custom > 365 days, show monthly data (last 12 months)
+                for (int i = 11; i >= 0; i--)
+                {
+                    var monthStart = today.AddMonths(-i).Date;
+                    var monthEnd = monthStart.AddMonths(1);
+                    var monthName = monthStart.ToString("MMM yyyy");
+                    
+                    var monthTransactions = db.PaymentTransactions
+                        .Where(t => t.TransactionDate >= monthStart && t.TransactionDate < monthEnd)
+                        .ToList();
+                    
+                    trends.Add(new PaymentTrendVM
+                    {
+                        Month = monthName,
+                        Amount = monthTransactions.Sum(t => t.AmountPaid),
+                        TransactionCount = monthTransactions.Count
+                    });
+                }
+            }
+            
+            //view students with overdue payments
+            var overdueInvoices = db.Invoices
+                .Include(i => i.Student)
+                .Where(i => !i.IsPaid && i.DueDate.Date < today)
+                .ToList();
+
+            var overdueStudents = overdueInvoices
+                .Select(i => new OverdueStudentVM
+                {
+                    StudentId = i.StudentId,
+                    StudentName = (i.Student.FirstName + " " + i.Student.LastName).Trim(),
+                    InvoiceId = i.Id,
+                    SemesterId = i.SemesterId,
+                    Amount = i.TotalAmount,
+                    DueDate = i.DueDate,
+                    DaysOverdue = (today - i.DueDate.Date).Days
+                })
+                .OrderByDescending(s => s.DaysOverdue)
+                .ToList();
+            
+            var vm = new PaymentMonitoringVM
+            {
+                TotalRevenue = totalRevenue,
+                OutstandingPayments = outstandingPayments,
+                OverduePaymentsCount = overdueCount,
+                Period = period,
+                StartDate = periodStart,
+                EndDate = periodEnd?.AddDays(-1),
+                PaymentTrends = trends,
+                OverdueStudents = overdueStudents
+            };
+            
+            if (Request.IsAjax())
+            {
+                return PartialView("_PaymentMonitoring", vm);
+            }
+
+            return View("PaymentMonitoring", vm);
+        }
+
+        public IActionResult ExportPaymentReportCsv(string? period, DateTime? startDate, DateTime? endDate)
+        {
+            var query = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                    .ThenInclude(i => i.Student)
+                .AsQueryable();
+            
+            //apply period filter
+            var today = DateTime.Today;
+            DateTime? periodStart = null;
+            DateTime? periodEnd = null;
+            
+            period = period?.Trim() ?? "all";
+            switch (period)
+            {
+                case "today":
+                    periodStart = today;
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "week":
+                    periodStart = today.AddDays(-7);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "month":
+                    periodStart = today.AddMonths(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "year":
+                    periodStart = today.AddYears(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "custom":
+                    periodStart = startDate;
+                    periodEnd = endDate?.AddDays(1);
+                    break;
+            }
+            
+            if (periodStart.HasValue)
+                query = query.Where(t => t.TransactionDate >= periodStart.Value);
+            if (periodEnd.HasValue)
+                query = query.Where(t => t.TransactionDate < periodEnd.Value);
+            
+            var data = query
+                .OrderByDescending(t => t.TransactionDate)
+                .Select(t => new PaymentReportCsvVM
+                {
+                    ReceiptId = t.Id,
+                    InvoiceId = t.InvoiceId,
+                    StudentId = t.Invoice.StudentId,
+                    StudentName = (t.Invoice.Student.FirstName + " " + t.Invoice.Student.LastName).Trim(),
+                    SemesterId = t.Invoice.SemesterId,
+                    TransactionDate = t.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentMethod = t.PaymentMethod,
+                    AmountPaid = t.AmountPaid
+                })
+                .ToList();
+            
+            var bytes = Helper.ExportToCsv(data);
+            var fileName = $"PaymentReport_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            return File(bytes, "text/csv", fileName);
+        }
+
+        public IActionResult ExportPaymentReportPdf(string? period, DateTime? startDate, DateTime? endDate)
+        {
+            var query = db.PaymentTransactions
+                .Include(t => t.Invoice)
+                    .ThenInclude(i => i.Student)
+                .AsQueryable();
+            
+            //apply period filter
+            var today = DateTime.Today;
+            DateTime? periodStart = null;
+            DateTime? periodEnd = null;
+            
+            period = period?.Trim() ?? "all";
+            switch (period)
+            {
+                case "today":
+                    periodStart = today;
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "week":
+                    periodStart = today.AddDays(-7);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "month":
+                    periodStart = today.AddMonths(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "year":
+                    periodStart = today.AddYears(-1);
+                    periodEnd = today.AddDays(1);
+                    break;
+                case "custom":
+                    periodStart = startDate;
+                    periodEnd = endDate?.AddDays(1);
+                    break;
+            }
+            
+            if (periodStart.HasValue)
+                query = query.Where(t => t.TransactionDate >= periodStart.Value);
+            if (periodEnd.HasValue)
+                query = query.Where(t => t.TransactionDate < periodEnd.Value);
+            
+            var transactions = query
+                .OrderByDescending(t => t.TransactionDate)
+                .ToList();
+            
+            //generate PDF
+            var pdfBytes = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(40);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                    
+                    page.Header().Column(col =>
+                    {
+                        col.Item().Text("TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY")
+                            .FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
+                        col.Item().PaddingTop(10).Text("PAYMENT TRANSACTION REPORT")
+                            .FontSize(16).Bold();
+                        col.Item().PaddingTop(5).Text($"Generated on: {DateTime.Now:dd-MM-yyyy HH:mm:ss}")
+                            .FontSize(9).FontColor(Colors.Grey.Medium);
+                    });
+                    
+                    page.Content().PaddingTop(20).Element(e =>
+                    {
+                        if (!transactions.Any())
+                        {
+                            e.Text("No transactions found.").FontSize(12);
+                            return;
+                        }
+                        
+                        e.Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1.2f); // Receipt ID
+                                columns.RelativeColumn(1.2f); // Invoice ID
+                                columns.RelativeColumn(1.5f); // Student Name
+                                columns.RelativeColumn(1f);   // Date
+                                columns.RelativeColumn(1f);   // Method
+                                columns.RelativeColumn(1f);   // Amount
+                            });
+                            
+                            // Header
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Receipt ID").Bold();
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Invoice ID").Bold();
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Student Name").Bold();
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Date").Bold();
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Method").Bold();
+                            table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Amount").Bold();
+                            
+                            // Rows
+                            foreach (var t in transactions)
+                            {
+                                var studentName = (t.Invoice.Student.FirstName + " " + t.Invoice.Student.LastName).Trim();
+                                table.Cell().Padding(4).Text(t.Id);
+                                table.Cell().Padding(4).Text(t.InvoiceId);
+                                table.Cell().Padding(4).Text(studentName);
+                                table.Cell().Padding(4).Text(t.TransactionDate.ToString("dd-MM-yyyy"));
+                                table.Cell().Padding(4).Text(t.PaymentMethod);
+                                table.Cell().Padding(4).Text($"RM {t.AmountPaid:N2}");
+                            }
+                            
+                            // Footer row
+                            table.Cell().Padding(4).Text("TOTAL").Bold().AlignRight();
+                            table.Cell().Padding(4).Text("").Bold();
+                            table.Cell().Padding(4).Text("").Bold();
+                            table.Cell().Padding(4).Text("").Bold();
+                            table.Cell().Padding(4).Text("").Bold();
+                            table.Cell().Padding(4).Text($"RM {transactions.Sum(t => t.AmountPaid):N2}").Bold();
+                        });
+                    });
+                });
+            })
+            .GeneratePdf();
+            
+            var fileName = $"PaymentReport_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            
+            //return PDF directly for prevewi and download
+            return File(pdfBytes, "application/pdf", fileName);
         }
 
     }

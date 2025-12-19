@@ -156,6 +156,21 @@
                         </a>
                     </li>
 
+                    <!-- Nav Item - Payment Management -->
+                    <li class="nav-item">
+                        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePayments" aria-expanded="true" aria-controls="collapsePayments">
+                            <i class="fas fa-fw fa-money-bill-wave"></i>
+                            <span>Payment Management</span>
+                        </a>
+                        <div id="collapsePayments" class="collapse" aria-labelledby="headingPayments" data-parent="#accordionSidebar">
+                            <div class="bg-white py-2 collapse-inner rounded">
+                                <h6 class="collapse-header">Payments</h6>
+                                <a class="collapse-item" href="@Url.Action("PaymentTransactions", "Admin")">Payment Transactions</a>
+                                <a class="collapse-item" href="@Url.Action("PaymentMonitoring", "Admin")">Payment Monitoring & Reports</a>
+                            </div>
+                        </div>
+                    </li>
+
                     <!-- Nav Item - Reports -->
                     <li class="nav-item">
                         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReports" aria-expanded="true" aria-controls="collapseReports">

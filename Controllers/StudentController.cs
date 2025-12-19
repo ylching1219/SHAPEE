@@ -828,7 +828,7 @@ namespace SHAPEE.Controllers
                 i.StudentId == studentId &&
                 i.SemesterId == activeSemester.Id);
 
-            if (inv == null)
+            if (inv == null && totalAmount > 0)
             {
                 inv = new Invoice
                 {
@@ -846,7 +846,7 @@ namespace SHAPEE.Controllers
             }
 
             var outstanding = db.Invoices
-                .Where(i => i.StudentId == studentId && !i.IsPaid)
+                .Where(i => i.StudentId == studentId && !i.IsPaid && i.TotalAmount > 0)
                 .OrderBy(i => i.DueDate)
                 .ToList();
 
@@ -860,10 +860,10 @@ namespace SHAPEE.Controllers
                 TotalCredits = totalCredits,
                 CostPerCreditHour = rate,
 
-                CurrentInvoiceId = inv.Id,
-                CurrentInvoiceDueDate = inv.DueDate,
-                CurrentInvoiceAmount = inv.TotalAmount,
-                CurrentInvoiceIsPaid = inv.IsPaid,
+                CurrentInvoiceId = inv?.Id,
+                CurrentInvoiceDueDate = inv?.DueDate,
+                CurrentInvoiceAmount = inv?.TotalAmount ?? 0,
+                CurrentInvoiceIsPaid = inv?.IsPaid ?? false,
 
                 OutstandingInvoices = outstanding.Select(x => new InvoiceRowVM
                 {

@@ -1,0 +1,108 @@
+@model SHAPEE.Models.PaymentMonitoringVM
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Monitoring & Reports</h1>
+    </div>
+
+    <!-- Period Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Period</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <select id="periodSelect" class="form-control">
+                        <option value="all" selected="@(Model.Period == "all" ? "selected" : null)">All Time</option>
+                        <option value="today" selected="@(Model.Period == "today" ? "selected" : null)">Today</option>
+                        <option value="week" selected="@(Model.Period == "week" ? "selected" : null)">Last 7 Days</option>
+                        <option value="month" selected="@(Model.Period == "month" ? "selected" : null)">Last 30 Days</option>
+                        <option value="year" selected="@(Model.Period == "year" ? "selected" : null)">Last Year</option>
+                        <option value="custom" selected="@(Model.Period == "custom" ? "selected" : null)">Custom Range</option>
+                    </select>
+                </div>
+                <div id="customDateRange" class="col-md-6" style="display: @(Model.Period == "custom" ? "block" : "none");">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="date" id="startDate" class="form-control" 
+                                   value="@Model.StartDate?.ToString("yyyy-MM-dd")" placeholder="Start Date" />
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" id="endDate" class="form-control" 
+                                   value="@Model.EndDate?.ToString("yyyy-MM-dd")" placeholder="End Date" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-secondary" id="resetFilters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Container (Updated via AJAX) -->
+    <div id="paymentMonitoringContent">
+        <partial name="_PaymentMonitoring" model="Model" />
+    </div>
+</div>
+
+@section Scripts {
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function toggleCustomDates() {
+            const periodSelect = document.getElementById('periodSelect');
+            const customDateRange = document.getElementById('customDateRange');
+            if (periodSelect && customDateRange) {
+                if (periodSelect.value === 'custom') {
+                    customDateRange.style.display = 'block';
+                } else {
+                    customDateRange.style.display = 'none';
+                }
+            }
+        }
+
+        function loadPaymentMonitoring() {
+            const period = $('#periodSelect').val();
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+
+            $.get('@Url.Action("PaymentMonitoring", "Admin")', {
+                period: period,
+                startDate: startDate || null,
+                endDate: endDate || null
+            }, function (html) {
+                $('#paymentMonitoringContent').html(html);
+            });
+        }
+
+        $(document).ready(function() {
+            toggleCustomDates();
+
+            $('#periodSelect').on('change', function(e) {
+                e.preventDefault();
+                toggleCustomDates();
+                loadPaymentMonitoring();
+            });
+
+            $('#startDate, #endDate').on('change', function(e) {
+                e.preventDefault();
+                if ($('#periodSelect').val() === 'custom') {
+                    loadPaymentMonitoring();
+                }
+            });
+
+            $('#resetFilters').on('click', function(e) {
+                e.preventDefault();
+                $('#periodSelect').val('all');
+                $('#startDate').val('');
+                $('#endDate').val('');
+                toggleCustomDates();
+                loadPaymentMonitoring();
+            });
+        });
+    </script>
+}

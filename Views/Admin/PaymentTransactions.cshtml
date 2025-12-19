@@ -1,0 +1,143 @@
+@model SHAPEE.Models.PaymentTransactionManagementVM
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Payment Transaction Management</h1>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Search & Filter</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="searchQuery" class="small text-muted mb-1">Search</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                        <input type="text" id="searchQuery" class="form-control" 
+                               placeholder="Invoice ID, Receipt ID, Student ID, or Student Name" 
+                               value="@Model.SearchQuery" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label for="facultyFilter" class="small text-muted mb-1">Faculty</label>
+                    <select id="facultyFilter" class="form-control">
+                        <option value="">All Faculties</option>
+                        @foreach (var faculty in ViewBag.Faculties)
+                        {
+                            <option value="@faculty.Id" selected="@(Model.FacultyFilter == faculty.Id ? "selected" : null)">@faculty.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="programFilter" class="small text-muted mb-1">Program</label>
+                    <select id="programFilter" class="form-control">
+                        <option value="">All Programs</option>
+                        @foreach (var program in ViewBag.Programs)
+                        {
+                            <option value="@program.Id" selected="@(Model.ProgramFilter == program.Id ? "selected" : null)">@program.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="dateFrom" class="small text-muted mb-1">From Date</label>
+                    <input type="date" id="dateFrom" class="form-control" 
+                        value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2">
+                    <label for="dateTo" class="small text-muted mb-1">To Date</label>
+                    <input type="date" id="dateTo" class="form-control" 
+                        value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-1">
+                    <label for="dateSort" class="small text-muted mb-1">Sort</label>
+                    <select id="dateSort" class="form-control">
+                        <option value="newest" selected="@(Model.DateSort == "newest" || string.IsNullOrEmpty(Model.DateSort) ? "selected" : null)">Newest</option>
+                        <option value="oldest" selected="@(Model.DateSort == "oldest" ? "selected" : null)">Oldest</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Payment Transactions</h6>
+        </div>
+        <div class="card-body">
+            <div id="transactionsTableContainer">
+                <partial name="_PaymentTransactions" model="Model" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function loadPaymentTransactions() {
+            const searchQuery = document.getElementById('searchQuery').value;
+            const facultyFilter = document.getElementById('facultyFilter').value;
+            const programFilter = document.getElementById('programFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const dateSort = document.getElementById('dateSort').value;
+
+            // Use $.get() - no URL updates
+            $.get('@Url.Action("PaymentTransactions", "Admin")', {
+                searchQuery: searchQuery || null,
+                facultyFilter: facultyFilter || null,
+                programFilter: programFilter || null,
+                dateFrom: dateFrom || null,
+                dateTo: dateTo || null,
+                dateSort: dateSort || null
+            }, function (html) {
+                $('#transactionsTableContainer').html(html);
+            });
+        }
+
+        // instant update on change
+        $(document).ready(function() {
+            //search on keyup with debounce
+            let searchTimeout;
+            $('#searchQuery').on('keyup', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(loadPaymentTransactions, 500);
+            });
+
+            //filter changes
+            $('#facultyFilter').on('change', function() {
+                //reset program filter when faculty changes
+                $('#programFilter').val('');
+                loadPaymentTransactions();
+                //reload programs based on selected faculty
+                loadProgramsForFaculty($(this).val());
+            });
+
+            $('#programFilter').on('change', loadPaymentTransactions);
+            $('#dateFrom, #dateTo').on('change', loadPaymentTransactions);
+            $('#dateSort').on('change', loadPaymentTransactions);
+        });
+
+        //load programs based on selected faculty
+        function loadProgramsForFaculty(facultyId) {
+            if (!facultyId) {
+                //load all programs
+                $.get('@Url.Action("GetProgramsByFaculty", "Admin")', { facultyId: '' }, function(html) {
+                    $('#programFilter').html('<option value="">All Programs</option>' + html);
+                });
+                return;
+            }
+
+            $.get('@Url.Action("GetProgramsByFaculty", "Admin")', { facultyId: facultyId }, function(html) {
+                $('#programFilter').html('<option value="">All Programs</option>' + html);
+            });
+        }
+    </script>
+}

@@ -1,0 +1,53 @@
+@model SHAPEE.Models.PaymentTransactionManagementVM
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Receipt ID</th>
+                <th>Invoice ID</th>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Semester</th>
+                <th>Transaction Date</th>
+                <th>Payment Method</th>
+                <th>Amount Paid</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Transactions.Any())
+            {
+                @foreach (var txn in Model.Transactions)
+                {
+                    <tr>
+                        <td>@txn.ReceiptId</td>
+                        <td>@txn.InvoiceId</td>
+                        <td>@txn.StudentId</td>
+                        <td>@txn.StudentName</td>
+                        <td>@txn.SemesterId</td>
+                        <td>@txn.TransactionDate.ToString("dd-MM-yyyy HH:mm")</td>
+                        <td>@txn.PaymentMethod</td>
+                        <td>RM @txn.AmountPaid.ToString("N2")</td>
+                        <td>
+                            <a href="@Url.Action("ViewReceipt", "Admin", new { receiptId = txn.ReceiptId })" 
+                               target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="@Url.Action("DownloadReceipt", "Admin", new { receiptId = txn.ReceiptId })" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="9" class="text-center text-muted">No transactions found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
