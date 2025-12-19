@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using SHAPEE.Services;
+using SHAPEE.Services;
+using Stripe;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
@@ -12,7 +14,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static SHAPEE.Models.DB;
-using SHAPEE.Services;
 
 namespace SHAPEE.Controllers
 {
@@ -1267,7 +1268,12 @@ namespace SHAPEE.Controllers
             var vm = new CourseManageVM
             {
                 Courses = courseList,
-                EditCourse = editCourse
+                CourseId = editCourse?.Id,
+                CourseName = editCourse?.Name,
+                CreditHours = editCourse?.CreditHours,
+                LectureHours = editCourse?.LectureHours,
+                PracticalHours = editCourse?.PracticalHours,
+                TutorialHours = editCourse?.TutorialHours
             };
 
             if (!string.IsNullOrEmpty(editId))
@@ -1295,11 +1301,15 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(CourseManagement));
                 }
 
+
                 var p = new Course
                 {
                     Id = vm.CourseId!,
                     Name = vm.CourseName!,
-                    CreditHours = vm.CreditHours ?? 0
+                    CreditHours = vm.CreditHours ?? 0,
+                    LectureHours = vm.LectureHours ?? 1,
+                    PracticalHours = vm.PracticalHours,
+                    TutorialHours = vm.TutorialHours ?? 1
                 };
 
                 db.Courses.Add(p);
@@ -1332,6 +1342,9 @@ namespace SHAPEE.Controllers
             // Only update properties, never change the primary key
             s.Name = vm.CourseName!.Trim();
             s.CreditHours = vm.CreditHours ?? 0;
+            s.LectureHours = vm.LectureHours ?? 1;
+            s.PracticalHours = vm.PracticalHours;
+            s.TutorialHours = vm.TutorialHours ?? 1;
 
             db.SaveChanges(); // tracked entity, no Update() needed
 
@@ -1852,14 +1865,34 @@ namespace SHAPEE.Controllers
             if (vm.GroupList == null || vm.GroupList.Count == 0)
                 return Json(new { success = false, message = "No groups selected." });
 
- 
+            var possibleStartTimes = new List<TimeSpan>
+            {
+                new TimeSpan(8, 0, 0),
+                new TimeSpan(9, 30, 0),
+                new TimeSpan(11, 0, 0),
+                new TimeSpan(13, 0, 0),
+                new TimeSpan(14, 30, 0),
+                new TimeSpan(16, 0, 0),
+                new TimeSpan(18, 0, 0),
+            };
+            var possibleDays = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            //get random start time and day
+            var random = new Random();
+            var randomDay = possibleDays[random.Next(possibleDays.Count)];
+            var startTime = possibleStartTimes[random.Next(possibleStartTimes.Count)];
+
+            Console.WriteLine("tier1");
             //loop each group id to create class
             foreach (var groupId in vm.GroupList!)
             {
                 //check if class already exists for the group
                 var group = db.TutorialGroups
+                            .Include(g => g.Program)
+                            .Include(g => g.Program.Faculty)
                             .FirstOrDefault(g => g.Id == groupId);
 
+
+                Console.WriteLine("tier2");
                 if (group != null)
                 {
                     var programCourses = db.ProgramCourses
@@ -1868,26 +1901,73 @@ namespace SHAPEE.Controllers
                          && pc.Semester == group.Semester)
                          .ToList();
 
+
+                    Console.WriteLine("tier3");
                     foreach (var pc in programCourses)
                     {
-                        var classExists = db.ClassSections.Any(c =>
+                        
+                        // check if lecture class exists for the course in the year level and semester
+                        bool LectureExists = db.ClassSections.Any(c =>
                             c.CourseId == pc.CourseId &&
-                            c.TutorialGroupId == group.Id);
+                            c.TutorialGroupId == null &&
+                            c.YearLevel == group!.YearLevel &&
+                            c.Sem == group.Semester &&
+                            c.SectionType == "Lecture");
 
-                        if (classExists)
+                        
+                  
+                        var staff = db.Staffs
+                        .Where(s => s.FacultyId == group.Program.FacultyId)
+                        .OrderBy(s => EF.Functions.Random()) // EF Core 7+ for SQL Server or SQLite
+                        .FirstOrDefault();
+                        Console.WriteLine("Assigned Staff to Lecture Class: " + (staff != null ? staff.FullName : "No staff available"));
+                        
+                      
+                        Console.WriteLine("tier4");
+                        if (!LectureExists)
                         {
-                            Console.WriteLine("Class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
-                            continue; 
+                            //create lecture class
+                            CreateClassSection();
+                        }
+                        else
+                        {
+
                         }
 
-                        var staff = db.Staffs
-                                    .Where(s => s.FacultyId == group.Program.FacultyId)
-                                    .OrderBy(s => Guid.NewGuid())
-                                    .FirstOrDefault();
+                        if (pc.Course?.PracticalHours.GetValueOrDefault() > 0)
+                        {
+                            //check if practical class exists for the course and group
+                            var PclassExists = db.ClassSections.Any(c =>
+                            c.CourseId == pc.CourseId &&
+                            c.TutorialGroupId == group.Id &&
+                            c.SectionType == "Practical");
 
+                            if (!PclassExists)
+                            {
+                                //create practical class  
+                            }
+                            else
+                            {
+                                Console.WriteLine("Practical class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                            }
+                        }
 
+                        Console.WriteLine("tier5");
 
-                        Console.WriteLine("Creating class for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                        var TclassExists = db.ClassSections.Any(c =>
+                             c.CourseId == pc.CourseId &&
+                             c.TutorialGroupId == group.Id &&
+                             c.SectionType == "Tutorial");
+
+                        if (!TclassExists)
+                        {
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("Tutorial Class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group!.GroupName);
+                        }
+
                     }
                 }
             }
@@ -1895,6 +1975,10 @@ namespace SHAPEE.Controllers
             return Json(new { success = true, message = "Class created successfully." });
         }
 
+        public void CreateClassSection()
+        {
+            // Method intentionally left empty.
+        }
         //JS
         // Add this method to your AdminController.cs
 

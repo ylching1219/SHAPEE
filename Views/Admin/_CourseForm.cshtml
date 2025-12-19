@@ -1,35 +1,47 @@
 ﻿@model CourseManageVM
-<form id="addEditForm" method="post" asp-controller="Admin" asp-action="AddCourse">
+<form id="addEditForm" method="post"
+      asp-controller="Admin"
+      asp-action="AddCourse">
+
     <div class="modal-body">
 
         <div class="form-group">
             <label for="ProgramId" class="font-weight-medium">Program ID <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="CourseId" name="CourseId"
-                   value="@(Model.EditCourse?.Id != null ? Model.EditCourse.Id : "")"
-                   required>
+            <input asp-for="CourseId" type="text" class="form-control" id="CourseId" name="CourseId" required>
             <span asp-validation-for="CourseId" class="text-danger"></span>
         </div>
 
         <div class="form-group">
             <div class="form-group">
                 <label for="ProgramName" class="font-weight-medium">Program Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="CourseName" name="CourseName"
-                       value="@(Model.EditCourse?.Name != null ? Model.EditCourse.Name : "")"
-                       required>
+                <input asp-for="CourseName" type="text" class="form-control" required>
                 <span asp-validation-for="CourseName" class="text-danger"></span>
             </div>
         </div>
 
         <div class="form-group">
             <label for="FacultyId" class="font-weight-medium">Credit Hour<span class="text-danger">*</span></label>
-            <input type="number" class="form-control" id="CreditHours" name="CreditHours" step=" 1" 
-                   value="@(Model.EditCourse?.CreditHours != null ? Model.EditCourse.CreditHours : "")"
-                   required>
+            <input asp-for="CreditHours" type="number" class="form-control" min="1" step=" 1" required>
             <span asp-validation-for="CreditHours" class="text-danger"></span>
-
-
         </div>
 
+        <div class="form-group">
+            <label for="FacultyId" class="font-weight-medium">Lecture Hour<span class="text-danger">*</span></label>
+            <input asp-for="LectureHours" type="number" class="form-control" min="1" step=" 1" required>
+            <span asp-validation-for="LectureHours" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="FacultyId" class="font-weight-medium">Practical Hour</label>
+            <input asp-for="PracticalHours" type="number" class="form-control" step=" 1" />
+            <span asp-validation-for="PracticalHours" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="FacultyId" class="font-weight-medium">Tutorial Hour<span class="text-danger">*</span></label>
+            <input asp-for="TutorialHours" type="number" class="form-control" min="1" step=" 1" required>
+            <span asp-validation-for="TutorialHours" class="text-danger"></span>
+        </div>
     </div>
     <div class="modal-footer bg-light">
         <button class="btn btn closeBtn" type="button" data-dismiss="modal">

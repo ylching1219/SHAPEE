@@ -69,12 +69,21 @@ namespace SHAPEE.Models
     public class CourseManageVM
     {
         public List<Course>? Courses { get; set; } = [];
-        public Course? EditCourse { get; set; }
 
         public string? CourseId { get; set; }
         public string? CourseName { get; set; }
-        public int? CreditHours { get; set; } 
 
+        [Range(1, int.MaxValue, ErrorMessage = "Credit hours must be at least 1.")]
+        public int? CreditHours { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Lecture hours must be greater than 0.")]
+        public int? LectureHours { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Practical hours must be greater than 0.")]
+        public int? PracticalHours{get; set;}
+
+        [Range(1, int.MaxValue, ErrorMessage = "Tutorial hours must be greater than 0.")]
+        public int? TutorialHours { get; set; }
     }
 
     public class GroupManageVM

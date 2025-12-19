@@ -7,6 +7,9 @@
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Course Code</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Name</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Credit Hours</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Lecture Hours</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Practical Hours</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Tutorial Hours</th>
             <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
         </tr>
     </thead>
@@ -30,6 +33,9 @@
                     </td>
                     <td class="px-4 py-3 text-muted">@f.Name</td>
                     <td class="px-4 py-3 text-muted">@f.CreditHours</td>
+                    <td class="px-4 py-3 text-muted">@f.LectureHours</td>
+                    <td class="px-4 py-3 text-muted">@(f.PracticalHours != null ?f.PracticalHours :"-")</td>
+                    <td class="px-4 py-3 text-muted">@f.TutorialHours</td>
 
                     <td class="px-4 py-3 text-center">
                         <div class="dropdown">
