@@ -1686,17 +1686,38 @@ namespace SHAPEE.Controllers
             return View(messages);
         }
 
-        // SEND MESSAGE
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Send(string classId, string content)
         {
-            var userId = User.Identity.Name;
+            if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // 1. Find the actual Lecturer for this course based on the student's group
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student == null) return Json(new { success = false, message = "Student not found" });
+
+            var lecturerId = db.ClassSections
+                .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
+                .Select(cs => cs.StaffId)
+                .FirstOrDefault() ?? "STF0002"; // Fallback if no section found
+
+            // 2. Generate ID (CM001...)
+            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+            int nextNum = 1;
+            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+            {
+                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+                    nextNum = num + 1;
+            }
 
             var msg = new ChatMessage
             {
-                Id = Guid.NewGuid().ToString(),
-                SenderId = userId,
-                ReceiverId = null,
+                Id = $"CM{nextNum:D3}",
+                SenderId = studentId,
+                ReceiverId = lecturerId,
                 Content = content,
                 SentAt = DateTime.Now,
                 IsRead = false
@@ -1705,8 +1726,41 @@ namespace SHAPEE.Controllers
             db.ChatMessages.Add(msg);
             db.SaveChanges();
 
-            return RedirectToAction("Index", new { classId });
+            return Json(new { success = true });
         }
+        //// SEND MESSAGE
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult Send(string classId, string content)
+        //{
+        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
+
+        //    var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        //    // 1. Find the actual Lecturer for this course and student group
+        //    var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+        //    var lecturerId = db.ClassSections
+        //        .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
+        //        .Select(cs => cs.StaffId)
+        //        .FirstOrDefault() ?? "STF0002"; // Fallback to test ID
+
+        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+        //    int nextNum = (lastMsg != null && lastMsg.Id.StartsWith("CM") && int.TryParse(lastMsg.Id.Substring(2), out int num)) ? num + 1 : 1;
+
+        //    var msg = new ChatMessage
+        //    {
+        //        Id = $"CM{nextNum:D3}",
+        //        SenderId = studentId,
+        //        ReceiverId = lecturerId, // Dynamic Receiver
+        //        Content = content,
+        //        SentAt = DateTime.Now,
+        //        IsRead = false
+        //    };
+
+        //    db.ChatMessages.Add(msg);
+        //    db.SaveChanges();
+        //    return Json(new { success = true });
+        //}
 
         // =======================
         // STUDENT TICKET DETAILS
@@ -1903,34 +1957,34 @@ namespace SHAPEE.Controllers
             return Json(messages);
         }
 
-        [HttpPost]
-        public IActionResult Send(string content)
-        {
-            if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
+        //[HttpPost]
+        //public IActionResult Send(string content)
+        //{
+        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-            int nextNum = 1;
-            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
-            {
-                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
-                    nextNum = num + 1;
-            }
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+        //    int nextNum = 1;
+        //    if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+        //    {
+        //        if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+        //            nextNum = num + 1;
+        //    }
 
-            var msg = new ChatMessage
-            {
-                Id = $"CM{nextNum:D3}",
-                SenderId = userId,
-                ReceiverId = "STF0002", // Reply goes to Staff
-                Content = content,
-                SentAt = DateTime.Now,
-                IsRead = false
-            };
+        //    var msg = new ChatMessage
+        //    {
+        //        Id = $"CM{nextNum:D3}",
+        //        SenderId = userId,
+        //        ReceiverId = "STF0002", // Reply goes to Staff
+        //        Content = content,
+        //        SentAt = DateTime.Now,
+        //        IsRead = false
+        //    };
 
-            db.ChatMessages.Add(msg);
-            db.SaveChanges();
-            return Json(new { success = true });
-        }
+        //    db.ChatMessages.Add(msg);
+        //    db.SaveChanges();
+        //    return Json(new { success = true });
+        //}
 
         //JS
         public IActionResult Announcements(string? search, string? sort)

@@ -4,6 +4,7 @@
 }
 
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <div class="d-flex justify-content-between align-items-center">
         <h2>Chat: @ViewBag.ClassId <small class="text-muted">(Student View)</small></h2>
         <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary">Back</a>
@@ -68,19 +69,31 @@
         });
     }
 
-    function submitMessage() {
+      function submitMessage() {
         var content = $('#msgContent').val();
         if (!content.trim()) return;
 
         $.ajax({
             url: '@Url.Action("Send", "Student")',
             type: 'POST',
-            data: { content: content },
+            data: {
+                classId: classId,
+                content: content,
+                // This line fixes the "Error connecting to server" (Security Token)
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
             success: function (response) {
                 if (response.success) {
                     $('#msgContent').val('');
                     refreshChat();
+                } else {
+                    alert("Server rejected the message.");
                 }
+            },
+            error: function(xhr) {
+                // Check console (F12) to see if it's a 400 or 500 error
+                console.error(xhr.responseText);
+                alert("Error connecting to server.");
             }
         });
     }

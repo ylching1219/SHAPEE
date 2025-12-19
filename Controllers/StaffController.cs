@@ -1648,18 +1648,20 @@
 
                 return View(tasks);
             }
+        //taskdetails
+        public IActionResult TaskDetails(string id) 
+        {
+            var task = db.CourseTasks
+                .Include(x => x.Submissions)
+                    .ThenInclude(x => x.Student) //  displaying @sub.Student.FullName
+                .FirstOrDefault(x => x.Id == id); 
 
-            public IActionResult TaskDetails(string id)
-            {
-                var task = db.CourseTasks
-                    .Include(x => x.Submissions)
-                    .ThenInclude(x => x.CourseTask)
-                    .FirstOrDefault(x => x.Id == id);
+            if (task == null) return NotFound();
 
-                return View(task);
-            }
-            //create new task
-            [HttpPost]
+            return View(task);
+        }
+        //create new task
+        [HttpPost]
             public IActionResult CreateTask(CourseTask obj)
             {
                 obj.Id = "T" + (db.CourseTasks.Count() + 1).ToString("D4");
@@ -1703,7 +1705,7 @@
             }
 
             // ======================
-            // CREATE PAGE FORM
+            // task
             // ======================
             [HttpGet]
             public IActionResult TaskCreate()
@@ -1717,44 +1719,69 @@
 
                 return View();
             }
+        // ======================
+        // Task create
+        // ======================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
+        {
+            // generate id
+            var lastTask = await db.CourseTasks
+                .OrderByDescending(t => t.Id)
+                .FirstOrDefaultAsync();
 
-
-            [HttpPost]
-            public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
+            int nextNum = 1;
+            if (lastTask != null && lastTask.Id.StartsWith("CT"))
             {
-                // generate id
-                task.Id = Guid.NewGuid().ToString();
-
-                // add to db
-                db.CourseTasks.Add(task);
-
-                // link
-                if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
+                //id
+                if (int.TryParse(lastTask.Id.Substring(2), out int currentMax))
                 {
-                    foreach (var matId in SelectedMaterialIds)
-                    {
-                        var tm = new TaskMaterial
-                        {
-                            Id = Guid.NewGuid().ToString(),
-                            CourseTaskId = task.Id,
-                            MaterialId = matId
-                        };
-
-                        // Temporary fix
-                        db.Set<TaskMaterial>().Add(tm);
-                    }
+                    nextNum = currentMax + 1;
                 }
+            }
 
-                // save all change
+            //assign new id
+            task.Id = $"CT{nextNum:D3}";
+
+            // add to db
+            db.CourseTasks.Add(task);
+
+            //link selected material
+            if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
+            {
+                foreach (var matId in SelectedMaterialIds)
+                {
+                    var tm = new TaskMaterial
+                    {
+                        Id = Guid.NewGuid().ToString("N"), // Unique ID for the link itself
+                        CourseTaskId = task.Id,           
+                        MaterialId = matId
+                    };
+                 
+                    db.Set<TaskMaterial>().Add(tm);
+                }
+            }
+
+            try
+            {
                 await db.SaveChangesAsync();
-
-                // back to list
+                TempData["msg"] = $"Task {task.Id} created successfully!";
                 return RedirectToAction("TaskList");
             }
-            // ======================
-            // CREATE POST SAVE
-            // ======================
-            [HttpPost]
+            catch (Exception ex)
+            {
+                // Log error and return to view
+                ModelState.AddModelError("", "Database error: " + ex.Message);
+                ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+                ViewBag.Materials = db.Materials.ToList();
+                return View(task);
+            }
+        }
+        // ======================
+        // CREATE POST SAVE
+        // ======================
+        [HttpPost]
             [ValidateAntiForgeryToken]
             public IActionResult Create(CourseTask task)
             {
@@ -1779,100 +1806,127 @@
                 TempData["msg"] = "Assignment created!";
                 return RedirectToAction("Index");
             }
-            // PAGE VIEW
+        //chat
 
-            public IActionResult Chat(string classId)
+        public IActionResult Chat(string classId, string? studentId)
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        
+            var students = db.ClassSections
+                .Include(cs => cs.TutorialGroup)
+                    .ThenInclude(tg => tg.Students)
+                .Where(cs => cs.CourseId == classId && cs.StaffId == staffId)
+                .SelectMany(cs => cs.TutorialGroup.Students) // list of students
+                .Distinct()
+                .ToList();
+
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = staffId;
+            ViewBag.SelectedStudentId = studentId;
+
+            return View(students); //  Sidebar
+        }
+
+        [HttpGet]
+        public IActionResult GetMessages(string targetUserId)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //Get messages between STUDENT
+            var messages = db.ChatMessages
+                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == targetUserId) ||
+                            (x.SenderId == targetUserId && x.ReceiverId == currentUserId))
+                .OrderBy(x => x.SentAt)
+                .Select(m => new {
+                    sender = m.SenderId,
+                    content = m.Content,
+                    time = m.SentAt.ToString("HH:mm"),
+                    isMe = m.SenderId == currentUserId
+                }).ToList();
+
+            return Json(messages);
+        }
+
+        [HttpPost]
+        public IActionResult MarkAsRead(string targetUserId)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Find messages sent TO me 
+            var unreadMessages = db.ChatMessages
+                .Where(m => m.ReceiverId == currentUserId &&
+                            m.SenderId == targetUserId &&
+                            m.IsRead == false)
+                .ToList();
+
+            if (unreadMessages.Any())
             {
-                if (string.IsNullOrEmpty(classId)) return Content("No class selected.");
-
-                ViewBag.ClassId = classId;
-                ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                // Initial load of messages
-                var messages = db.ChatMessages
-                    .Where(x => x.ReceiverId == "STF0002") // Testing with STF0002
-                    .OrderBy(x => x.SentAt)
-                    .ToList();
-
-                return View(messages);
-            }
-
-            // AJAX API: Staff/GetMessages
-            [HttpGet]
-            public IActionResult GetMessages(string? search)
-            {
-                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-          
-                var query = db.ChatMessages
-                    .Where(x => x.ReceiverId == "STF0002");
-
-                if (!string.IsNullOrEmpty(search))
-                {
-                    var s = search.ToLower();
-                    query = query.Where(m => m.Content.ToLower().Contains(s) ||
-                                            m.SenderId.ToLower().Contains(s));
-                }
-
-         
-                var messages = query
-                    .OrderBy(x => x.SentAt)
-                    .Select(m => new {
-                        sender = m.SenderId,
-                        content = m.Content,
-                        time = m.SentAt.ToString("HH:mm"),
-                        isMe = m.SenderId == currentUserId
-                    }).ToList();
-
-                return Json(messages);
-            }
-
-            // POST: Staff/Send
-            [HttpPost]
-            public IActionResult Send(string classId, string content)
-            {
-                if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Chat", new { classId });
-
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                // Generate CM001 format ID
-                var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-                int nextNum = 1;
-                if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
-                {
-                    if (int.TryParse(lastMsg.Id.Substring(2), out int num))
-                        nextNum = num + 1;
-                }
-
-                var msg = new ChatMessage
-                {
-                    Id = $"CM{nextNum:D3}",
-                    SenderId = userId,
-                    ReceiverId = "STF0002", // Test Receiver
-                    Content = content,
-                    SentAt = DateTime.Now,
-                    IsRead = false
-                };
-
-                db.ChatMessages.Add(msg);
+                unreadMessages.ForEach(m => m.IsRead = true);
                 db.SaveChanges();
-
-                return RedirectToAction("Chat", new { classId });
             }
-            [HttpPost]
-            public async Task<IActionResult> GradeSubmission(string SubmissionId, decimal Grade, string Feedback)
+
+            return Ok();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Send(string receiverId, string content) // Accept receiverId 
+        {
+            if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Generate format ID 
+            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+            int nextNum = 1;
+            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+            {
+                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+                    nextNum = num + 1;
+            }
+
+            var msg = new ChatMessage
+            {
+                Id = $"CM{nextNum:D3}",
+                SenderId = userId,
+                ReceiverId = receiverId, 
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+
+            return Json(new { success = true }); // Return JSON 
+        }
+        //grade
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GradeSubmission(string SubmissionId, decimal? Grade, string Feedback)
+        {
+            try
             {
                 var submission = await db.Submissions.FindAsync(SubmissionId);
-                if (submission != null)
-                {
-                    submission.Grade = Grade;
-                    submission.Feedback = Feedback;
-                    await db.SaveChangesAsync();
-                }
-                return RedirectToAction("ViewSubmissions", new { id = submission.CourseTaskId });
+
+                if (submission == null)
+                    return Json(new { success = false, message = "Submission not found." });
+
+                // Update values
+                submission.Grade = Grade;
+                submission.Feedback = Feedback;
+
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true });
             }
-            // Simple thread-safe dictionary to track typing users: <ClassId, <UserId, LastTime>>
-            private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, DateTime>>
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+        // track typing users: <ClassId, <UserId, LastTime>>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, DateTime>>
                 TypingTrack = new();
 
             [HttpPost]
@@ -1897,7 +1951,7 @@
                 {
                     lock (classTypers)
                     {
-                        // Find users who typed in the last 4 seconds (excluding yourself)
+                        // Find users who typed in the last 4 seconds 
                         var typingUsers = classTypers
                             .Where(kvp => kvp.Key != currentUserId && kvp.Value > DateTime.Now.AddSeconds(-4))
                             .Select(kvp => kvp.Key)
