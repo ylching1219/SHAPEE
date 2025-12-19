@@ -281,7 +281,6 @@ namespace SHAPEE.Migrations
                     TutorialGroupId = table.Column<int>(type: "int", nullable: true),
                     RoomId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     AttendanceCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    JoinCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     CurrentQrToken = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CurrentQrExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsAttendanceSessionActive = table.Column<bool>(type: "bit", nullable: false)

@@ -1866,10 +1866,23 @@ namespace SHAPEE.Controllers
                 return Json(new { success = false, message = "No groups selected." });
 
             
-            //get random start time and day
-           
 
-            Console.WriteLine("tier1");
+            //get random start time and day
+            var random = new Random();
+
+            // Possible days and start times
+            var possibleDays = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            var possibleStartTimes = new List<TimeOnly>
+            {
+                new TimeOnly(8, 0),
+                new TimeOnly(9, 30),
+                new TimeOnly(11, 0),
+                new TimeOnly(13, 0),
+                new TimeOnly(14, 30),
+                new TimeOnly(16, 0),
+                new TimeOnly(18, 0)
+            };
+
             //loop each group id to create class
             foreach (var groupId in vm.GroupList!)
             {
@@ -1880,17 +1893,15 @@ namespace SHAPEE.Controllers
                             .FirstOrDefault(g => g.Id == groupId);
 
 
-                Console.WriteLine("tier2");
                 if (group != null)
                 {
                     var programCourses = db.ProgramCourses
+                        .Include(pc => pc.Course)
                          .Where(pc => pc.ProgramId == group.ProgramId
                          && pc.YearLevel == group.YearLevel
                          && pc.Semester == group.Semester)
                          .ToList();
 
-
-                    Console.WriteLine("tier3");
                     foreach (var pc in programCourses)
                     {
                         
@@ -1906,21 +1917,16 @@ namespace SHAPEE.Controllers
                   
                         var staff = db.Staffs
                             .Where(s => s.FacultyId == group.Program.FacultyId)
-                            .OrderBy(s => EF.Functions.Random()) // EF Core 7+ for SQL Server or SQLite
+                            .OrderBy(s => EF.Functions.Random()) 
                             .FirstOrDefault();
-                        Console.WriteLine("Assigned Staff to Lecture Class: " + (staff != null ? staff.FullName : "No staff available"));
                         
                       
-                        Console.WriteLine("tier4");
                         if (!LectureExists)
                         {
                             //create lecture class
-                            CreateClassSection(staff!,group,pc,"Lecture");
+                            CreateAndSaveClassSection(group, pc, staff!, "Lecture", possibleDays, possibleStartTimes);
                         }
-                        else
-                        {
 
-                        }
 
                         if (pc.Course?.PracticalHours.GetValueOrDefault() > 0)
                         {
@@ -1932,15 +1938,9 @@ namespace SHAPEE.Controllers
 
                             if (!PclassExists)
                             {
-                                //create practical class  
-                            }
-                            else
-                            {
-                                Console.WriteLine("Practical class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                                CreateAndSaveClassSection(group, pc, staff!, "Practical", possibleDays, possibleStartTimes);
                             }
                         }
-
-                        Console.WriteLine("tier5");
 
                         var TclassExists = db.ClassSections.Any(c =>
                              c.CourseId == pc.CourseId &&
@@ -1949,13 +1949,8 @@ namespace SHAPEE.Controllers
 
                         if (!TclassExists)
                         {
-
+                            CreateAndSaveClassSection(group, pc, staff!, "Tutorial", possibleDays, possibleStartTimes);
                         }
-                        else
-                        {
-                            Console.WriteLine("Tutorial Class already exists for CourseId: " + pc.CourseId + ", GroupId: " + group!.GroupName);
-                        }
-
                     }
                 }
             }
@@ -1963,30 +1958,104 @@ namespace SHAPEE.Controllers
             return Json(new { success = true, message = "Class created successfully." });
         }
 
-        public ClassSection CreateClassSection(Staff staff,TutorialGroup group,ProgramCourse pc,string sectionType)
+        private void CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
         {
-            var possibleStartTimes = new List<TimeSpan>
-            {
-                new TimeSpan(8, 0, 0),
-                new TimeSpan(9, 30, 0),
-                new TimeSpan(11, 0, 0),
-                new TimeSpan(13, 0, 0),
-                new TimeSpan(14, 30, 0),
-                new TimeSpan(16, 0, 0),
-                new TimeSpan(18, 0, 0),
-            };
-            var possibleDays = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            int maxAttempts = 20;
+            int attempts = 0;
+            ClassSection cs;
 
-            var random = new Random();
-            var randomDay = possibleDays[random.Next(possibleDays.Count)];
-            var startTime = possibleStartTimes[random.Next(possibleStartTimes.Count)];
-            ClassSection cs = new ClassSection
-            {
-              
-            };
+            DateOnly targetDate = DateOnly.FromDateTime(DateTime.Today).AddMonths(1);
 
-            return cs;
+            var semester = db.Semesters
+                .Where(s =>
+                    s.IsActive &&
+                    s.StartDate <= targetDate &&
+                    s.EndDate >= targetDate)
+                .Select(s => s.Id)
+                .FirstOrDefault();
+
+            do
+            {
+                // Random day/time
+                string randomDay = possibleDays[new Random().Next(possibleDays.Count)];
+                TimeOnly randomTime = possibleStartTimes[new Random().Next(possibleStartTimes.Count)];
+
+                var roomType = GetRoomType(sectionType);
+
+                var room = db.Rooms
+                    .Where(r => r.Type == roomType)
+                    .OrderBy(r => EF.Functions.Random())
+                    .FirstOrDefault();
+
+
+                cs = new ClassSection
+                {
+                    SectionId = $"{pc.CourseId}-{semester}-{group.Id}-{Guid.NewGuid().ToString("N")[..8]}",
+                    CourseId = pc.CourseId,
+                    StaffId = staff.Id,
+                    SemesterId = semester!,
+                    TutorialGroupId = sectionType == "Lecture" ? null : group.Id,
+                    SectionType = sectionType,
+                    YearLevel = group.YearLevel,
+                    Sem = group.Semester,
+                    RoomId = room!.Id,
+                    Day = randomDay,
+                    StartTime = randomTime,
+                    EndTime = randomTime.AddHours(GetDuration(pc, sectionType))
+                };
+
+                attempts++;
+            }
+            while (IsScheduleConflict(cs) && attempts < maxAttempts);
+
+            if (attempts >= maxAttempts)
+            {
+                Console.WriteLine($"Could not schedule {sectionType} for course {pc.CourseId} and group {group.GroupName}");
+            }
+            else
+            {
+                db.ClassSections.Add(cs);
+                db.SaveChanges();
+                Console.WriteLine($"Created {sectionType} for course {pc.CourseId}, group {group.GroupName}, staff {staff.FullName} on {cs.Day} at {cs.StartTime}");
+            }
         }
+
+        public bool IsScheduleConflict(ClassSection cs)
+        {
+            return db.ClassSections.Any(c =>
+                c.Day == cs.Day &&
+                c.StartTime < cs.EndTime &&
+                cs.StartTime < c.EndTime &&
+                (
+                    c.StaffId == cs.StaffId ||
+                    c.TutorialGroupId == cs.TutorialGroupId ||
+                    c.RoomId == cs.RoomId
+                )
+            );
+        }
+
+        private double GetDuration(ProgramCourse pc, string sectionType)
+        {
+            return sectionType switch
+            {
+                "Lecture" => pc.Course.LectureHours,
+                "Tutorial" => pc.Course.TutorialHours,
+                "Practical" => pc.Course.PracticalHours.GetValueOrDefault(),
+                _ => 1
+            };
+        }
+
+        private string GetRoomType(string sectionType)
+        {
+            return sectionType switch
+            {
+                "Lecture" => "Lecture Hall",
+                "Practical" => "Lab",
+                "Tutorial" => "Classroom",
+                _ => "Classroom"
+            };
+        }
+
         //JS
         // Add this method to your AdminController.cs
 

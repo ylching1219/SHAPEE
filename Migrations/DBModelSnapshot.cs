@@ -198,10 +198,6 @@ namespace SHAPEE.Migrations
                     b.Property<bool>("IsAttendanceSessionActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("JoinCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<string>("RoomId")
                         .IsRequired()
                         .HasColumnType("nvarchar(50)");
