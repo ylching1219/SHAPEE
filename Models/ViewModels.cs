@@ -222,6 +222,8 @@ namespace SHAPEE.Models
     public class StudentDashboardVM
     {
         public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
+
+        public List<Announcement> LatestAnnouncements { get; set; } = new();
     }
     
     // student view attendacne
