@@ -380,101 +380,17 @@ public class HomeController(DB db) : Controller
     }
 
     //KM 
-    //apply approved leave to attendance
-    private void ApplyApprovedLeaveToAttendance(string studentId, DateOnly startDate, DateOnly endDate)
+    // GET: Home/Notifications
+    [Authorize]
+    public IActionResult Notifications(string filter = "all")
     {
-        var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-        if (student == null || !student.TutorialGroupId.HasValue)
-            return;
-
-        var tutorialGroupId = student.TutorialGroupId.Value;
-
-        //all sections this tutorial group attend
-        var sections = db.ClassSections
-            .Include(cs => cs.Semester)
-            .Where(cs => cs.TutorialGroupId == tutorialGroupId)
-            .ToList();
-
-        if (!sections.Any())
-            return;
-
-        //day mapping for section
-        var dayMapping = new Dictionary<DayOfWeek, string>
-        {
-            { DayOfWeek.Monday,    "Mon"  },
-            { DayOfWeek.Tuesday,   "Tues" },
-            { DayOfWeek.Wednesday, "Wed"  },
-            { DayOfWeek.Thursday,  "Thurs"},
-            { DayOfWeek.Friday,    "Fri"  },
-            { DayOfWeek.Saturday,  "Sat"  },
-            { DayOfWeek.Sunday,    "Sun"  }
-        };
-
-        for (var date = startDate; date <= endDate; date = date.AddDays(1))
-        {
-            var dateTime = date.ToDateTime(TimeOnly.MinValue);
-            var todayName = dateTime.DayOfWeek.ToString(); // e.g. "Monday"
-            var todayNameLower = todayName.ToLower();
-            var todayAbbrevLower = todayNameLower.Substring(0, 3); // "mon"
-
-            var sectionsForDay = sections.Where(cs =>
-            {
-                if (cs.Semester == null || string.IsNullOrEmpty(cs.Day))
-                    return false;
-
-                // semester window (DateOnly -> DateOnly comparison)
-                var semStart = cs.Semester.StartDate;
-                var semEnd   = cs.Semester.EndDate;
-                if (date < semStart || date > semEnd)
-                    return false;
-
-                var dayLower = cs.Day.ToLower();
-
-                // match full name or abbreviation, same as ClassSelection
-                return dayLower == todayNameLower || dayLower.StartsWith(todayAbbrevLower);
-            }).ToList();
-
-            if (!sectionsForDay.Any())
-                continue;
-
-            foreach (var section in sectionsForDay)
-            {
-                var sectionId = section.SectionId;
-
-                var att = db.Attendances
-                    .FirstOrDefault(a =>
-                        a.ClassSectionId == sectionId &&
-                        a.StudentId == studentId &&
-                        a.Date == date);
-
-                if (att == null)
-                {
-                    db.Attendances.Add(new Attendance
-                    {
-                        Id = Guid.NewGuid().ToString("N"),
-                        ClassSectionId = sectionId,
-                        StudentId = studentId,
-                        Date = date,
-                        RegisteredAt = DateTime.Now,
-                        Status = "Leave",
-                        IpAddress = null,
-                        UserAgent = "LEAVE||SYSTEM",
-                        IsFlaged = false,
-                        FlagReason = "Approved leave"
-                    });
-                }
-                else
-                {
-                    // if you want to convert both Absent and Present to Leave:
-                    if (att.Status != "Leave")
-                    {
-                        att.Status = "Leave";
-                        att.FlagReason = "Approved leave (updated from " + att.Status + ")";
-                    }
-                }
-            }
-        }
-
-        db.SaveChanges();
+        ViewData["Title"] = "Notifications";
+        
+        //empty for now
+        ViewBag.Filter = filter;
+        
+        return View("~/Views/Shared/Notifications.cshtml");
     }
+
+
 }
