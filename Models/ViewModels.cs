@@ -454,6 +454,13 @@ namespace SHAPEE.Models
         public string? Reason { get; set; }
     }
 
+    public class AnnouncementManageVM
+    {
+        public List<Announcement> Announcements { get; set; } = [];
+        public Announcement? EditAnnouncement { get; set; }
+        public Staff? Staff { get; set; }
+    }
+
 
     public class EmailVs
     {

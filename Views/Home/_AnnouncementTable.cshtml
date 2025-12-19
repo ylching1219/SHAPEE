@@ -1,0 +1,93 @@
+﻿@model AnnouncementManageVM
+
+@if (Model.Announcements == null || !Model.Announcements.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+        <p class="text-muted mb-0">No announcements found</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover mb-0" style="min-width: 950px;">
+            <thead class="bg-light">
+                <tr>
+                    <th scope="col" style="width: 16%; white-space: nowrap; font-weight: 600;">Title</th>
+                    <th scope="col" style="width: 35%; white-space: nowrap; font-weight: 600;">Content</th>
+                    <th scope="col" style="width: 13%; white-space: nowrap; font-weight: 600;">Author</th>
+                    <th scope="col" style="width: 13%; white-space: nowrap; font-weight: 600;">Created At</th>
+                    <th scope="col" style="width: 13%; white-space: nowrap; font-weight: 600;">Last Updated</th>
+                    <th scope="col" style="width: 10%; white-space: nowrap; font-weight: 600;" class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var announcement in Model.Announcements)
+                {
+                    <tr class="border-bottom">
+                        <td class="px-3 py-3 align-middle" style="word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
+                            <div class="font-weight-medium text-gray-900">@announcement.Title</div>
+                        </td>
+                        <td class="px-3 py-3 align-middle" style="word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
+                            <p class="mb-0 text-muted" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                @announcement.Content
+                            </p>
+                        </td>
+                        <td class="px-3 py-3 align-middle" style="word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
+                            <p class="mb-0 text-muted" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                @announcement.Author
+                            </p>
+                        </td>
+                        <td class="px-3 py-3 text-muted align-middle" style="white-space: nowrap;">
+                            <small class="d-block">@announcement.CreatedAt.ToString("dd MMM yyyy")</small>
+                            <small>@announcement.CreatedAt.ToString("hh:mm tt")</small>
+                        </td>
+                        <td class="px-3 py-3 text-muted align-middle" style="white-space: nowrap;">
+                            @if (announcement.UpdatedAt.HasValue)
+                            {
+                                <small class="d-block">@announcement.UpdatedAt.Value.ToString("dd MMM yyyy")</small>
+                                <small>@announcement.UpdatedAt.Value.ToString("hh:mm tt")</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">-</small>
+                            }
+                        </td>
+                        <td class="px-3 py-3 text-center align-middle">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                    <a class="dropdown-item editBtn"
+                                       data-ajax="true"
+                                       data-ajax-method="GET"
+                                       data-ajax-url="@Url.Action("GetEditAnnouncementForm", "Home", new { id = announcement.Id })"
+                                       data-ajax-update="#announcementFormContainer"
+                                       data-ajax-success="onEditLoaded">
+                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                       data-toggle="modal"
+                                       data-target="#deleteModal"
+                                       data-id="@announcement.Id"
+                                       data-title="@announcement.Title"
+                                       onclick="prepareDeleteModal(this)">
+                                        <i class="fas fa-trash mr-2"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+</style>

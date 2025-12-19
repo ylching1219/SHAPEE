@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using SHAPEE.Models;
-using System.Security.Claims;
-using System.Globalization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using SHAPEE.Models;
+using System.Globalization;
+using System.Linq;
+using System.Security.Claims;
 
 namespace SHAPEE.Controllers;
 
@@ -376,6 +377,269 @@ public class HomeController(DB db) : Controller
             }
             TempData["ErrorMessage"] = $"Failed to cancel leave application: {ex.Message}";
             return RedirectToAction(nameof(LeaveHistory));
+        }
+    }
+
+    // GET: Announcement Management
+    [Authorize(Roles = "Staff, Admin")]
+    public IActionResult AnnouncementManagement(string? search, string? sort)
+    {
+        ViewData["Title"] = "Announcement Management";
+
+        var query = db.Announcements.AsQueryable();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var staff = db.Staffs
+            .Include(s => s.Faculty)
+            .FirstOrDefault(a => a.Id == userId);
+
+
+        // Apply search filter
+        search = search?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(a =>
+                a.Title.Contains(search) ||
+                a.Content.Contains(search) ||
+                a.Author.Contains(search));
+        }
+
+        // Apply sorting
+        query = sort switch
+        {
+            "oldest" => query.OrderBy(a => a.CreatedAt),
+            "title_asc" => query.OrderBy(a => a.Title),
+            "title_desc" => query.OrderByDescending(a => a.Title),
+            "author_asc" => query.OrderBy(a => a.Author),
+            "author_desc" => query.OrderByDescending(a => a.Author),
+            _ => query.OrderByDescending(a => a.CreatedAt) // newest first (default)
+        };
+
+        var announcements = query.ToList();
+
+        var vm = new AnnouncementManageVM
+        {
+            Announcements = announcements,
+            Staff = staff
+        };
+
+        // Check if it's an AJAX request using the same method as StudentController
+        if (Request.IsAjax())
+        {
+            return PartialView("_AnnouncementTable", vm);
+        }
+
+        return View(vm);
+    }
+
+    // POST: Create Announcement
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff, Admin")]
+    public async Task<IActionResult> CreateAnnouncement(string title, string content, bool useFacultyName = false)
+    {
+        try
+        {
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return Json(new { success = false, message = "Title is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return Json(new { success = false, message = "Content is required." });
+            }
+
+            if (title.Length > 100)
+            {
+                return Json(new { success = false, message = "Title cannot exceed 100 characters." });
+            }
+
+            if (content.Length > 500)
+            {
+                return Json(new { success = false, message = "Content cannot exceed 500 characters." });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string authorName;
+
+            if (User.IsInRole("Admin"))
+            {
+                authorName = "Admin";
+            }
+            else if (User.IsInRole("Staff"))
+            {
+                var staff = await db.Staffs
+                    .Include(s => s.Faculty)
+                    .FirstOrDefaultAsync(s => s.Id == userId);
+
+                if (staff == null)
+                {
+                    return Json(new { success = false, message = "Staff not found." });
+                }
+
+                // Use faculty name if checkbox is checked and faculty exists
+                if (useFacultyName && staff.Faculty != null)
+                {
+                    authorName = staff.Faculty.Name;
+                }
+                else
+                {
+                    authorName = staff.FullName.Trim();
+                }
+            }
+            else
+            {
+                return Json(new { success = false, message = "Unauthorized role." });
+            }
+
+            // Generate new announcement ID
+            var lastAnnouncement = await db.Announcements
+                .OrderByDescending(a => a.Id)
+                .FirstOrDefaultAsync();
+
+            string newId;
+            if (lastAnnouncement == null || lastAnnouncement.Id.Length < 2)
+            {
+                newId = "A001";
+            }
+            else
+            {
+                var numPart = lastAnnouncement.Id.Substring(1);
+                if (int.TryParse(numPart, out int lastNum))
+                {
+                    newId = $"A{(lastNum + 1):D3}";
+                }
+                else
+                {
+                    newId = "A001";
+                }
+            }
+
+            var announcement = new Announcement
+            {
+                Id = newId,
+                Title = title.Trim(),
+                Content = content.Trim(),
+                Author = authorName,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = null
+            };
+
+            db.Announcements.Add(announcement);
+            await db.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Announcement created successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error creating announcement: {ex.Message}" });
+        }
+    }
+
+    // POST: Edit Announcement
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff, Admin")]
+    public async Task<IActionResult> EditAnnouncement(string id, string title, string content, bool useFacultyName = false)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return Json(new { success = false, message = "Title is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return Json(new { success = false, message = "Content is required." });
+            }
+
+            if (title.Length > 100)
+            {
+                return Json(new { success = false, message = "Title cannot exceed 100 characters." });
+            }
+
+            if (content.Length > 500)
+            {
+                return Json(new { success = false, message = "Content cannot exceed 500 characters." });
+            }
+
+            var announcement = await db.Announcements.FindAsync(id);
+            if (announcement == null)
+            {
+                return Json(new { success = false, message = "Announcement not found." });
+            }
+
+            // Update only title and content, preserve the original author
+            announcement.Title = title.Trim();
+            announcement.Content = content.Trim();
+            announcement.UpdatedAt = DateTime.Now;
+            // DO NOT change announcement.Author
+
+            db.Announcements.Update(announcement);
+            await db.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Announcement updated successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error updating announcement: {ex.Message}" });
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Staff, Admin")]
+    public IActionResult GetEditAnnouncementForm(string id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var staff = db.Staffs
+            .Include(s => s.Faculty)
+            .FirstOrDefault(a => a.Id == userId);
+        var announcement = db.Announcements.FirstOrDefault(a => a.Id == id);
+
+        if (announcement == null)
+        {
+            return Content("<div class='alert alert-danger m-3'>Announcement not found</div>");
+        }
+
+        var vm = new AnnouncementManageVM
+        {
+            EditAnnouncement = announcement,
+            Staff = staff
+        };
+
+        return PartialView("_AnnouncementForm", vm);
+    }
+
+    // POST: Delete Announcement
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff, Admin")]
+    public async Task<IActionResult> DeleteAnnouncement(string id)
+    {
+        try
+        {
+            var announcement = await db.Announcements.FindAsync(id);
+
+            if (announcement == null)
+            {
+                TempData["ErrorMessage"] = "Announcement not found.";
+                return RedirectToAction(nameof(AnnouncementManagement));
+            }
+
+            var announcementTitle = announcement.Title;
+
+            db.Announcements.Remove(announcement);
+            await db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Announcement '{announcementTitle}' deleted successfully!";
+            return RedirectToAction(nameof(AnnouncementManagement));
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error deleting announcement: {ex.Message}";
+            return RedirectToAction(nameof(AnnouncementManagement));
         }
     }
 

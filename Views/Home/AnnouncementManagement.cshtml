@@ -1,0 +1,268 @@
+﻿@model AnnouncementManageVM
+@{
+    ViewData["Title"] = "Announcement Management";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-bullhorn text-primary mr-2"></i>Announcement Management
+    </h1>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                All Announcements
+                <span class="badge badge-primary badge-pill ml-2">@Model.Announcements.Count</span>
+            </h5>
+            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" onclick="onAddLoaded()">
+                <i class="fas fa-plus mr-1"></i> Create Announcement
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body bg-light border-bottom">
+        <form id="filterForm" onsubmit="return false;">
+            <div class="row g-3">
+                <div class="col-12 col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" id="searchInput" placeholder="Search announcements...">
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select class="form-control" name="sort" id="sortSelect">
+                        <option value="">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title_asc">Title (A-Z)</option>
+                        <option value="title_desc">Title (Z-A)</option>
+                        <option value="author_asc">Author (A-Z)</option>
+                        <option value="author_desc">Author (Z-A)</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-1">
+                    <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <div id="announcementData">
+                <partial name="_AnnouncementTable"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Create Announcement</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="announcementFormContainer">
+                <partial name="_AnnouncementForm"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteForm" method="post" asp-controller="Home" asp-action="DeleteAnnouncement" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteId" name="id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+
+        function onAddLoaded() {
+            console.log("Add Mode Loaded");
+
+            // UI Updates
+            $('#addEditModalLabel').text('Create Announcement');
+            $('#saveBtn').html('<i class="fas fa-save mr-1"></i> Create Announcement');
+
+            // Reset fields to fix persistence issue
+            $('#announcementId').val('');
+            $('#title').val('');
+            $('textarea').val('');
+            $('#authorOptionsSection').show();
+            $('#useFacultyName').prop('checked', false);
+
+            // Reset character counters
+            $('#titleCount').text('0');
+            $('#contentCount').text('0');
+
+            // Update Form Action
+            $('#addEditForm').attr('action', '/Home/CreateAnnouncement');
+
+            // Hide Edit-only elements
+            $('#authorDisplayGroup').hide();
+            $('#formErrorMessage').hide().html('');
+        }
+
+        function onEditLoaded() {
+            console.log("Edit Mode Loaded");
+            $('#addEditModal').modal('show');
+            $('#addEditModalLabel').text('Edit Announcement');
+            $('#saveBtn').html('<i class="fas fa-save mr-1"></i> Update Announcement');
+            $('#authorOptionsSection').hide();
+
+            // Update Form Action
+            $('#addEditForm').attr('action', '/Home/EditAnnouncement');
+
+            // Show Author and update counters for loaded data
+            $('#authorDisplayGroup').show();
+            $('#titleCount').text($('#title').val().length);
+            $('#contentCount').text($('#content').val().length);
+
+            $('#formErrorMessage').hide().html('');
+        }
+
+      
+
+        function prepareDeleteModal(element) {
+            var id = $(element).data('id');
+            var title = $(element).data('title');
+            $('#deleteId').val(id);
+            $('#ToDeleteName').text(title);
+        }
+
+        function applyFilters() {
+            const search = $('#searchInput').val();
+            const sort = $('#sortSelect').val();
+
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (sort) params.append('sort', sort);
+
+            $.ajax({
+                url: '/Home/AnnouncementManagement',
+                type: 'GET',
+                data: params.toString(),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(data) {
+                    $('#announcementData').html(data);
+                },
+                error: function() {
+                    $('#announcementData').html('<div class="text-center text-danger p-4"><p>Error loading announcements</p></div>');
+                }
+            });
+        }
+
+        $(document).on('submit', '#addEditForm', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#addEditModal').modal('hide');
+                        applyFilters();
+
+                        const successAlert = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle mr-2"></i>${response.message}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>`;
+                        $('.bg-white.border-bottom.px-4').after(successAlert);
+
+                        setTimeout(function() {
+                            $('.alert').alert('close');
+                        }, 5000);
+                    } else {
+                        $('#formErrorMessage').html('<div class="alert alert-danger">' + response.message + '</div>').show();
+                    }
+                }
+            });
+        });
+
+        $(document).ready(function() {
+
+            $('#filterForm').on('submit', function(e) { e.preventDefault(); });
+
+            let searchTimeout;
+            $('#searchInput').on('keyup', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(applyFilters, 300);
+            });
+
+            $('#sortSelect').on('change', applyFilters);
+
+            $('#filterForm button[type="reset"]').on('click', function() {
+                $('#searchInput').val('');
+                $('#sortSelect').val('');
+                applyFilters();
+            });
+
+            setTimeout(function() {
+                $('.alert').each(function() {
+                    $(this).find('.close').click();
+                });
+            }, 5000);
+        });
+    </script>
+}
