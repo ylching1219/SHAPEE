@@ -6,9 +6,17 @@
             <h2 class="mb-0">Assignment Management</h2>
             <p class="text-muted small">Manage student assignments and grading</p>
         </div>
-        <a href="/Staff/TaskCreate" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Create New Task
-        </a>
+        <div class="d-flex gap-2">
+            <select id="sortFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="newest" selected="@(ViewBag.CurrentSort == "newest")">Newest Due Date</option>
+                <option value="oldest" selected="@(ViewBag.CurrentSort == "oldest")">Oldest Due Date</option>
+                <option value="title" selected="@(ViewBag.CurrentSort == "title")">Task Title (A-Z)</option>
+            </select>
+
+            <a href="/Staff/TaskCreate" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create New Task
+            </a>
+        </div>
     </div>
 
     <div class="table-responsive shadow-sm">
@@ -23,6 +31,12 @@
                 </tr>
             </thead>
             <tbody class="table-hover">
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted italic">No tasks found. Create one to get started!</td>
+                    </tr>
+                }
                 @foreach (var task in Model)
                 {
                     <tr>
@@ -38,12 +52,8 @@
                         </td>
                         <td>
                             @{
-                                // Reaches into the Section -> Group -> Students to get the class size
                                 var totalInClass = task.ClassSection?.TutorialGroup?.Students?.Count ?? 0;
-                                // Counts actual records in the Submissions table for this task
                                 var subCount = task.Submissions?.Count ?? 0;
-
-                                // Logic: If everyone submitted, green. Otherwise, yellow.
                                 bool allSubmitted = subCount >= totalInClass && totalInClass > 0;
                             }
                             <span class="badge @(allSubmitted ? "bg-success" : "bg-warning") text-white">
@@ -66,3 +76,14 @@
         </table>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // When the sort dropdown changes, reload the page with the sort parameter
+        $('#sortFilter').change(function () {
+            var sortVal = $(this).val();
+            window.location.href = '@Url.Action("TaskList", "Staff")?sort=' + sortVal;
+        });
+    });
+</script>

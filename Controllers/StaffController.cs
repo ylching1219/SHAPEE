@@ -1639,18 +1639,29 @@
 
 
         //task section
-        public IActionResult TaskList()
+        public IActionResult TaskList(string? sort)
         {
-            
-            var tasks = db.CourseTasks
-                .Include(t => t.Submissions)                  //  'subCount'
+            // all necessary Includes
+            var tasksQuery = db.CourseTasks
+                .Include(t => t.Submissions)
                 .Include(t => t.ClassSection)
                     .ThenInclude(cs => cs.TutorialGroup)
-                        .ThenInclude(tg => tg.Students)       //'totalInClass'
-                .OrderByDescending(t => t.DueDate)
-                .ToList();
+                        .ThenInclude(tg => tg.Students)
+                .AsQueryable();
 
-            return View(tasks);
+            // Sorting logic
+            tasksQuery = sort switch
+            {
+                "oldest" => tasksQuery.OrderBy(t => t.DueDate),
+                "newest" => tasksQuery.OrderByDescending(t => t.DueDate),
+                "title" => tasksQuery.OrderBy(t => t.Title),
+                _ => tasksQuery.OrderByDescending(t => t.DueDate) // Default to newest
+            };
+
+            // Keep track of the current sort for the dropdown UI
+            ViewBag.CurrentSort = sort ?? "newest";
+
+            return View(tasksQuery.ToList());
         }
         //taskdetails
         public IActionResult TaskDetails(string id)
@@ -1719,21 +1730,33 @@
                 return View(tasks);
             }
 
-            // ======================
-            // task
-            // ======================
-            [HttpGet]
-            public IActionResult TaskCreate()
+        // ======================
+        // task
+        // ======================
+        [HttpGet]
+        public IActionResult TaskCreate(string? sectionId)
+        {
+            ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+
+            // If sectionId is null, a blank model so the "Select" placeholder shows
+            var model = new CourseTask { ClassSectionId = sectionId };
+
+            if (!string.IsNullOrEmpty(sectionId))
             {
-                ViewBag.Sections = db.ClassSections
-                    .Include(s => s.Course)
-                    .ToList();
-
-                // get all material for pick
-                ViewBag.Materials = db.Materials.ToList();
-
-                return View();
+                var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
+                if (section != null)
+                {
+                    ViewBag.Materials = db.Materials.Where(m => m.CourseId == section.CourseId).ToList();
+                }
             }
+            else
+            {
+                // No section chosen yet
+                ViewBag.Materials = new List<Material>();
+            }
+
+            return View(model);
+        }
         // ======================
         // Task create
         // ======================
@@ -1982,22 +2005,20 @@
         [HttpGet]
         public async Task<IActionResult> TaskEdit(string id)
         {
-            var task = await db.CourseTasks
-                .Include(t => t.Materials) 
-                .FirstOrDefaultAsync(t => t.Id == id);
-
+            var task = await db.CourseTasks.Include(t => t.ClassSection).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null) return NotFound();
 
             ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
-            ViewBag.Materials = db.Materials.ToList();
 
-            // pass the existing Selected IDs to the view
-            ViewBag.SelectedIds = db.Set<TaskMaterial>()
+            // Filter materials by the course assigned to this task
+            ViewBag.Materials = db.Materials.Where(m => m.CourseId == task.ClassSection.CourseId).ToList();
+
+            ViewBag.SelectedIds = db.TaskMaterials
                 .Where(tm => tm.CourseTaskId == id)
                 .Select(tm => tm.MaterialId)
                 .ToList();
 
-            return View("TaskCreate", task); // Reuse the TaskCreate view
+            return View("TaskCreate", task);
         }
 
         // POST: Staff/TaskEdit
