@@ -371,8 +371,8 @@ namespace SHAPEE.Models
         public decimal CostPerCreditHour { get; set; }
 
         // current invoice 
-        public string CurrentInvoiceId { get; set; }
-        public DateTime CurrentInvoiceDueDate { get; set; }
+        public string? CurrentInvoiceId { get; set; }
+        public DateTime? CurrentInvoiceDueDate { get; set; }
         public decimal CurrentInvoiceAmount { get; set; }
         public bool CurrentInvoiceIsPaid { get; set; }
 
@@ -406,6 +406,88 @@ namespace SHAPEE.Models
     public class PaymentHistoryVM
     {
         public List<PaymentTransactionRowVM> Transactions { get; set; } = [];
+    }
+
+    //Payment Transaction Management
+    public class PaymentTransactionManagementVM
+    {
+        public List<AdminPaymentTransactionRowVM> Transactions { get; set; } = [];
+        public string? SearchQuery { get; set; }
+        public string? FacultyFilter { get; set; }
+        public string? ProgramFilter { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+        public string? DateSort { get; set; } 
+    }
+
+    public class AdminPaymentTransactionRowVM
+    {
+        public string ReceiptId { get; set; }
+        public string InvoiceId { get; set; }
+        public string StudentId { get; set; }
+        public string StudentName { get; set; }
+        public string SemesterId { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public string PaymentMethod { get; set; }
+        public decimal AmountPaid { get; set; }
+    }
+
+    //Payment monitoring and reports
+    public class PaymentMonitoringVM
+    {
+        public decimal TotalRevenue { get; set; }
+        public decimal OutstandingPayments { get; set; }
+        public int OverduePaymentsCount { get; set; }
+        public string Period { get; set; } = "all"; // all, today, week, month, year, custom
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public List<PaymentTrendVM> PaymentTrends { get; set; } = [];
+        public List<OverdueStudentVM> OverdueStudents { get; set; } = [];
+    }
+
+    public class PaymentTrendVM
+    {
+        public string Month { get; set; }
+        public decimal Amount { get; set; }
+        public int TransactionCount { get; set; }
+    }
+
+    public class OverdueStudentVM
+    {
+        public string StudentId { get; set; }
+        public string StudentName { get; set; }
+        public string InvoiceId { get; set; }
+        public string SemesterId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime DueDate { get; set; }
+        public int DaysOverdue { get; set; }
+    }
+
+    public class PaymentReportCsvVM
+    {
+        [Display(Name = "Receipt ID")]
+        public string ReceiptId { get; set; }
+        
+        [Display(Name = "Invoice ID")]
+        public string InvoiceId { get; set; }
+        
+        [Display(Name = "Student ID")]
+        public string StudentId { get; set; }
+        
+        [Display(Name = "Student Name")]
+        public string StudentName { get; set; }
+        
+        [Display(Name = "Semester")]
+        public string SemesterId { get; set; }
+        
+        [Display(Name = "Transaction Date")]
+        public string TransactionDate { get; set; }
+        
+        [Display(Name = "Payment Method")]
+        public string PaymentMethod { get; set; }
+        
+        [Display(Name = "Amount Paid")]
+        public decimal AmountPaid { get; set; }
     }
         
     // JS

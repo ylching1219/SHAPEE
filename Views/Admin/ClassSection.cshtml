@@ -69,13 +69,18 @@
         color: #f59e0b;
         font-weight: 500;
     }
+
+    .stat-icon {
+        color:white;
+    }
+
 </style>
 
 <div id="alertContainer"></div>
 
 <!-- Header -->
 <div class="bg-white border-bottom px-4 py-3 mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Automatic Class Generation System</h1>
+    <h1 class="h3 mb-0 text-gray-800">Automatic Class Generation </h1>
 </div>
 
 
@@ -131,11 +136,13 @@
 <!-- Results Section -->
 <div id="results" class="d-none">
     <!-- Stats Cards -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 mt-4">
+        <div class="col-md-1"></div>
+
         <div class="col-md-4">
             <div class="card stat-card">
                 <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                    <div class="stat-icon bg-primary bg-opacity-10 me-3">
                         <i class="bi bi-people-fill"></i>
                     </div>
                     <div>
@@ -147,25 +154,12 @@
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
-                        <i class="bi bi-book-fill"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Courses</div>
-                        <div class="stat-number text-success" id="statCourses">0</div>
-                        <div class="text-muted small">This semester</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="col-md-2"></div>
 
         <div class="col-md-4">
             <div class="card stat-card">
                 <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3">
+                    <div class="stat-icon bg-warning bg-opacity-10 me-3">
                         <i class="bi bi-calendar-check-fill"></i>
                     </div>
                     <div>
@@ -178,16 +172,6 @@
         </div>
     </div>
 
-    <!-- Success Alert -->
-    <div class="alert alert-success" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-check-circle-fill fs-3 me-3"></i>
-            <div>
-                <h5 class="alert-heading mb-1">Classes Generated Successfully!</h5>
-                <p class="mb-0" id="successText"></p>
-            </div>
-        </div>
-    </div>
 
     <!-- Generated Classes -->
     <div id="generatedClasses"></div>
@@ -210,6 +194,7 @@
              $("#groupBadges").empty();
              $("#detectionText").text('');
              $("#detectionAlert").addClass("d-none");
+             $("#results").addClass("d-none");
              if (!facultyId) return;
 
              $.ajax({
@@ -243,7 +228,7 @@
         $("#program").on("change",function(e){
             const programId = $(this).val();
             const programName = $("#program option:selected").text();
-
+            $("#results").addClass("d-none");
             const container = $("#groupBadges");
             $.ajax({
                 url: '/Admin/GetGroupFromProgram',
@@ -296,6 +281,12 @@
 
                     if(data.success){
                         showAlert('success', 'Classes created successfully.');
+                        $("#statGroups").text(data.groupCnt);
+                        $("#statClasses").text(data.successClass.length);
+                        console.log(data.successClass); 
+                        console.log(data.failedClass);
+                        groupList.length = 0;
+                        $("#results").removeClass("d-none");
 
                     } else {
                         showAlert('danger', 'Error: ' + data.message);

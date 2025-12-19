@@ -20,10 +20,18 @@ namespace SHAPEE.Services
 
             var tutorialGroupId = student.TutorialGroupId.Value;
 
-            // All sections this tutorial group attend
             var sections = _db.ClassSections
                 .Include(cs => cs.Semester)
-                .Where(cs => cs.TutorialGroupId == tutorialGroupId)
+                .Where(cs =>
+                    (cs.TutorialGroupId.HasValue &&
+                    cs.TutorialGroupId.Value == tutorialGroupId)
+                    || (cs.TutorialGroupId == null
+                        && cs.SectionType == "Lecture"
+                        && _db.ProgramCourses.Any(pc =>
+                            pc.CourseId == cs.CourseId &&
+                            pc.ProgramId == student.ProgramId &&
+                            pc.YearLevel == student.YearLevel &&
+                            pc.Semester == student.Semester)))
                 .ToList();
 
             if (!sections.Any())

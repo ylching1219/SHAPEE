@@ -168,6 +168,6 @@
     searchInput.addEventListener("keyup", loadTickets);
     statusSelect.addEventListener("change", loadTickets);
 
-    // Auto-refresh every 5 minutes
-    setInterval(loadTickets, 5 * 60 * 1000);
+    // Auto-refresh every 3sec
+    setInterval(loadTickets, 3000);
 </script>

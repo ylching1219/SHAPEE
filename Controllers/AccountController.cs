@@ -301,6 +301,16 @@ public class AccountController(DB db, Helper hp) : Controller
 
             await db.SaveChangesAsync();
 
+            //create notification for password reset
+            HomeController.CreateNotificationForUser(
+                db,
+                user.Id,
+                "Password Reset Successful",
+                "Your account password has been reset successfully. If you didn't make this change, please contact administration immediately.",
+                "warning",
+                "/Account/ChangePassword"
+            );
+
             TempData["ResetSuccess"] = "Password reset successfully! You can now login with your new password.";
             return RedirectToAction("Login");
         }
@@ -380,6 +390,16 @@ public class AccountController(DB db, Helper hp) : Controller
             user.Hash = newPasswordHash;
 
             await db.SaveChangesAsync();
+
+            //create notification for password change
+            HomeController.CreateNotificationForUser(
+                db,
+                userId,
+                "Password Changed",
+                "Your account password was updated successfully. If you didn't make this change, please contact administration immediately.",
+                "warning",
+                "/Account/ChangePassword"
+            );
 
             TempData["SuccessMessage"] = "Password changed successfully!";
 

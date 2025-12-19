@@ -1,24 +1,39 @@
 ﻿@model SHAPEE.Models.CourseTask
 
 @{
-    ViewData["Title"] = "Create Assignment";
+    // Determine if editing or creating
+    bool isEdit = !string.IsNullOrEmpty(Model?.Id);
+    ViewData["Title"] = isEdit ? "Edit Assignment" : "Create Assignment";
 }
 
 <div class="container mt-4">
     <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">Create New Course Task</h2>
+        <div class="card-header @(isEdit ? "bg-info" : "bg-primary") text-white">
+            <h2 class="mb-0">@(isEdit ? $"Edit Course Task: {Model.Id}" : "Create New Course Task")</h2>
         </div>
         <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
+
+            <form method="post" action="@(isEdit ? "/Staff/TaskEdit" : "/Staff/TaskCreate")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                @if (isEdit)
+                {
+                    <input type="hidden" asp-for="Id" />
+                }
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Class Section</label>
-                        <select asp-for="ClassSectionId" class="form-select" required>
-                            <option value="">-- Select Section --</option>
+                        <select asp-for="ClassSectionId" id="ClassSectionId" class="form-select" required>
+                            @if (string.IsNullOrEmpty(Model.ClassSectionId))
+                            {
+                                <option value="" selected disabled>-- Select a Class Section --</option>
+                            }
                             @foreach (var s in ViewBag.Sections)
                             {
-                                <option value="@s.SectionId">@s.Course.Name (@s.SectionId)</option>
+                                <option value="@s.SectionId" selected="@(s.SectionId == Model.ClassSectionId)">
+                                    @s.Course.Name (@s.SectionId)
+                                </option>
                             }
                         </select>
                     </div>
@@ -26,7 +41,8 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Due Date</label>
                         <input type="datetime-local" asp-for="DueDate" class="form-control" required
-                               onkeydown="return false;" onpaste="return false;" />
+                               placeholder="dd/mm/yyyy --:-- --"
+                               value="@(Model.DueDate == DateTime.MinValue ? "" : Model.DueDate.ToString("yyyy-MM-ddTHH:mm"))" />
                     </div>
                 </div>
 
@@ -42,34 +58,59 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold text-primary">Attach Course Materials</label>
-                    <p class="text-muted small">Select the materials students need for this task:</p>
-                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                        @if (ViewBag.Materials != null)
+                    <div class="border rounded p-3" style="max-height: 250px; overflow-y: auto;">
+                        @if (ViewBag.Materials != null && ((IEnumerable<SHAPEE.Models.Material>)ViewBag.Materials).Any())
                         {
+                            var selectedIds = (List<string>)ViewBag.SelectedIds ?? new List<string>();
                             @foreach (var m in (IEnumerable<SHAPEE.Models.Material>)ViewBag.Materials)
                             {
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="SelectedMaterialIds" value="@m.Id" id="mat_@m.Id">
-                                    <label class="form-check-label" for="mat_@m.Id">
-                                        <span class="badge bg-secondary">@m.MaterialType</span> @m.Title
-                                    </label>
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedMaterialIds"
+                                               value="@m.Id" id="mat_@m.Id"
+                                               @(selectedIds.Contains(m.Id) ? "checked" : "")>
+                                        <label class="form-check-label" for="mat_@m.Id">
+                                            @m.Title
+                                        </label>
+                                    </div>
+                                    @* View button added here *@
+                                    <a href="@m.FileUrl" target="_blank" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
                                 </div>
                             }
                         }
                         else
                         {
-                            <p class="text-danger italic">No materials found for this course.</p>
+                            <p class="text-muted italic mb-0">Please select a Class Section first to load related materials.</p>
                         }
                     </div>
                 </div>
 
                 <div class="mt-4">
-                    <button class="btn btn-success px-4" type="submit">
-                        <i class="bi bi-plus-circle"></i> Create Task
+                    <button class="btn @(isEdit ? "btn-info" : "btn-success") px-4 text-white" type="submit">
+                        <i class="bi @(isEdit ? "bi-save" : "bi-plus-circle")"></i>
+                        @(isEdit ? "Save Changes" : "Create Task")
                     </button>
-                    <a class="btn btn-outline-secondary px-4" href="/Staff/Task">Cancel</a>
+                    <a class="btn btn-outline-secondary px-4" href="/Staff/TaskList">Cancel</a>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#ClassSectionId').change(function () {
+            var sectionId = $(this).val();
+            var taskId = '@(Model?.Id ?? "")';
+            var urlParams = new URLSearchParams(window.location.search);
+
+            if (sectionId && sectionId !== "" && urlParams.get('sectionId') !== sectionId) {
+                var baseUrl = taskId !== "" ? '/Staff/TaskEdit/' + taskId : '/Staff/TaskCreate';
+                window.location.href = baseUrl + '?sectionId=' + encodeURIComponent(sectionId);
+            }
+        });
+    });
+</script>

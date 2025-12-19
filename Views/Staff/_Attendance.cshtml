@@ -31,6 +31,7 @@
             @foreach (var attendance in Model.Attendances)
             {
                 var student = attendance.Student;
+                var isLeave = attendance.Status == "Leave";
                 var statusClass = attendance.Status switch
                 {
                     "Present" => "success",
@@ -45,7 +46,7 @@
                 
                 <tr class="border-bottom @rowClass" data-attendance-id="@attendance.Id">
                     <td class="px-4 py-3 text-center">
-                        <input type="checkbox" class="attendance-checkbox" value="@attendance.Id">
+                        <input type="checkbox" class="attendance-checkbox" value="@attendance.Id" @(isLeave ? "disabled=\"disabled\"" : "")>
                     </td>
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@attendance.Date.ToString("yyyy-MM-dd")</div>
@@ -58,9 +59,6 @@
                     </td>
                     <td class="px-4 py-3 text-muted">@attendance.RegisteredAt.ToString("hh:mm:ss tt")</td>
                     <td class="px-4 py-3">
-                        @{
-                            var isLeave = attendance.Status == "Leave";
-                        }
                         <select class="form-control form-control-sm border-left-@statusClass attendance-status-select"
                                 data-attendance-id="@attendance.Id"
                                 data-original-status="@attendance.Status"

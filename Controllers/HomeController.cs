@@ -644,101 +644,260 @@ public class HomeController(DB db) : Controller
     }
 
     //KM 
-    //apply approved leave to attendance
-    private void ApplyApprovedLeaveToAttendance(string studentId, DateOnly startDate, DateOnly endDate)
+        // ========================
+    // NOTIFICATION MODULE
+    // ========================
+
+    // GET: Home/Notifications
+    [Authorize]
+    public IActionResult Notifications(string filter = "all", string? type = null, string? search = null, string? sort = null)
     {
-        var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-        if (student == null || !student.TutorialGroupId.HasValue)
-            return;
+        ViewData["Title"] = "Notifications";
+        
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return RedirectToAction("Login", "Account");
 
-        var tutorialGroupId = student.TutorialGroupId.Value;
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
 
-        //all sections this tutorial group attend
-        var sections = db.ClassSections
-            .Include(cs => cs.Semester)
-            .Where(cs => cs.TutorialGroupId == tutorialGroupId)
+        // Status filter
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+        else if (filter == "read")
+            query = query.Where(n => n.IsRead);
+
+        // Type filter
+        if (!string.IsNullOrEmpty(type))
+            query = query.Where(n => n.Type == type);
+
+        // Search filter
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(n => 
+                n.Title.ToLower().Contains(searchLower) || 
+                n.Message.ToLower().Contains(searchLower));
+        }
+
+        // Sort
+        if (sort == "oldest")
+            query = query.OrderBy(n => n.CreatedAt);
+        else
+            query = query.OrderByDescending(n => n.CreatedAt);
+
+        var notifications = query.ToList();
+        var unreadCount = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+
+        ViewBag.Filter = filter;
+        ViewBag.Type = type;
+        ViewBag.Search = search;
+        ViewBag.Sort = sort ?? "newest";
+        ViewBag.UnreadCount = unreadCount;
+        ViewBag.TotalCount = notifications.Count;
+
+        return View("~/Views/Shared/Notifications.cshtml", notifications);
+    }
+
+    // GET: Home/GetUnreadCount (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetUnreadCount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { count = 0 });
+
+        var count = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+        return Json(new { count });
+    }
+
+    // GET: Home/GetLatestNotifications (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetLatestNotifications(int count = 5, string filter = "all")
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { notifications = new List<object>(), totalCount = 0 });
+
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
+
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+
+        // Get total count before limiting
+        var totalCount = query.Count();
+
+        var notifications = query
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(count)
             .ToList();
 
-        if (!sections.Any())
-            return;
-
-        //day mapping for section
-        var dayMapping = new Dictionary<DayOfWeek, string>
+        var result = notifications.Select(n => new
         {
-            { DayOfWeek.Monday,    "Mon"  },
-            { DayOfWeek.Tuesday,   "Tues" },
-            { DayOfWeek.Wednesday, "Wed"  },
-            { DayOfWeek.Thursday,  "Thurs"},
-            { DayOfWeek.Friday,    "Fri"  },
-            { DayOfWeek.Saturday,  "Sat"  },
-            { DayOfWeek.Sunday,    "Sun"  }
-        };
+            notificationId = n.NotificationId,
+            title = n.Title,
+            message = n.Message,
+            type = n.Type,
+            isRead = n.IsRead,
+            actionUrl = n.ActionUrl,
+            createdAt = n.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")
+        }).ToList();
 
-        for (var date = startDate; date <= endDate; date = date.AddDays(1))
+        return Json(new { notifications = result, totalCount = totalCount });
+    }
+
+    // POST: Home/MarkAsRead (AJAX)
+    [HttpPost]
+    [Authorize]
+    public IActionResult MarkAsRead([FromBody] MarkAsReadRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
+
+        var notification = db.Notification
+            .FirstOrDefault(n => n.NotificationId == request.NotificationId && n.UserId == userId);
+
+        if (notification != null && !notification.IsRead)
         {
-            var dateTime = date.ToDateTime(TimeOnly.MinValue);
-            var todayName = dateTime.DayOfWeek.ToString(); // e.g. "Monday"
-            var todayNameLower = todayName.ToLower();
-            var todayAbbrevLower = todayNameLower.Substring(0, 3); // "mon"
+            notification.IsRead = true;
+            db.SaveChanges();
+        }
 
-            var sectionsForDay = sections.Where(cs =>
-            {
-                if (cs.Semester == null || string.IsNullOrEmpty(cs.Day))
-                    return false;
+        return Json(new { success = true });
+    }
 
-                // semester window (DateOnly -> DateOnly comparison)
-                var semStart = cs.Semester.StartDate;
-                var semEnd   = cs.Semester.EndDate;
-                if (date < semStart || date > semEnd)
-                    return false;
+    // POST: Home/MarkAllAsRead (AJAX)
+    [HttpPost]
+    [Authorize]
+    public IActionResult MarkAllAsRead()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
 
-                var dayLower = cs.Day.ToLower();
+        var unreadNotifications = db.Notification
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ToList();
 
-                // match full name or abbreviation, same as ClassSelection
-                return dayLower == todayNameLower || dayLower.StartsWith(todayAbbrevLower);
-            }).ToList();
-
-            if (!sectionsForDay.Any())
-                continue;
-
-            foreach (var section in sectionsForDay)
-            {
-                var sectionId = section.SectionId;
-
-                var att = db.Attendances
-                    .FirstOrDefault(a =>
-                        a.ClassSectionId == sectionId &&
-                        a.StudentId == studentId &&
-                        a.Date == date);
-
-                if (att == null)
-                {
-                    db.Attendances.Add(new Attendance
-                    {
-                        Id = Guid.NewGuid().ToString("N"),
-                        ClassSectionId = sectionId,
-                        StudentId = studentId,
-                        Date = date,
-                        RegisteredAt = DateTime.Now,
-                        Status = "Leave",
-                        IpAddress = null,
-                        UserAgent = "LEAVE||SYSTEM",
-                        IsFlaged = false,
-                        FlagReason = "Approved leave"
-                    });
-                }
-                else
-                {
-                    // if you want to convert both Absent and Present to Leave:
-                    if (att.Status != "Leave")
-                    {
-                        att.Status = "Leave";
-                        att.FlagReason = "Approved leave (updated from " + att.Status + ")";
-                    }
-                }
-            }
+        foreach (var notification in unreadNotifications)
+        {
+            notification.IsRead = true;
         }
 
         db.SaveChanges();
+        return Json(new { success = true });
     }
+
+    // GET: Home/GetFilteredNotifications (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetFilteredNotifications(string filter = "all", string? type = null, string? search = null, string? sort = null)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
+
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
+
+        // Status filter
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+        else if (filter == "read")
+            query = query.Where(n => n.IsRead);
+
+        // Type filter
+        if (!string.IsNullOrEmpty(type))
+            query = query.Where(n => n.Type == type);
+
+        // Search filter
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(n =>
+                n.Title.ToLower().Contains(searchLower) ||
+                n.Message.ToLower().Contains(searchLower));
+        }
+
+        // Sort
+        if (sort == "oldest")
+            query = query.OrderBy(n => n.CreatedAt);
+        else
+            query = query.OrderByDescending(n => n.CreatedAt);
+
+        var notifications = query.ToList();
+        var unreadCount = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+
+        var result = notifications.Select(n => new
+        {
+            notificationId = n.NotificationId,
+            title = n.Title,
+            message = n.Message,
+            type = n.Type,
+            isRead = n.IsRead,
+            actionUrl = n.ActionUrl ?? "#",
+            createdAt = n.CreatedAt,
+            timeAgo = GetRelativeTime(n.CreatedAt)
+        }).ToList();
+
+        return Json(new
+        {
+            success = true,
+            notifications = result,
+            totalCount = notifications.Count,
+            unreadCount = unreadCount
+        });
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.Now;
+        var diff = now - dateTime;
+        var diffSec = (int)diff.TotalSeconds;
+        var diffMin = (int)diff.TotalMinutes;
+        var diffHour = (int)diff.TotalHours;
+        var diffDay = (int)diff.TotalDays;
+
+        if (diffSec < 60) return "just now";
+        if (diffMin < 60) return $"{diffMin}m ago";
+        if (diffHour < 24) return $"{diffHour}h ago";
+        if (diffDay < 7) return $"{diffDay}d ago";
+        return dateTime.ToString("MMM dd, yyyy");
+    }
+
+    //model for marking a notification as read
+    public class MarkAsReadRequest
+    {
+        public int NotificationId { get; set; }
+    }
+
+    //method to create notification for a user (can be called from anywhere)
+    public static void CreateNotificationForUser(DB dbContext, string userId, string title, string message, string type, string? actionUrl = null)
+    {
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            return;
+
+        var notification = new Notification
+        {
+            UserId = userId,
+            Title = title,
+            Message = message,
+            Type = type,
+            ActionUrl = actionUrl,
+            IsRead = false,
+            CreatedAt = DateTime.Now
+        };
+
+        dbContext.Notification.Add(notification);
+        dbContext.SaveChanges();
+    }
+
+
 }

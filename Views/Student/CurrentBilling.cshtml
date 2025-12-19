@@ -27,7 +27,7 @@
                             Total Payable
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">RM @Model.TotalPayable.ToString("N2")</div>
-                        <small class="text-muted">Current invoice: @Model.CurrentInvoiceId</small>
+                        <small class="text-muted">Current invoice: @(Model.CurrentInvoiceId ?? "N/A")</small>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -102,7 +102,7 @@
                         foreach (var inv in Model.OutstandingInvoices)
                         {
                             var isCurrent = inv.SemesterId == Model.ActiveSemesterId;
-                            var creditsText = isCurrent && inv.InvoiceId == Model.CurrentInvoiceId ? Model.TotalCredits.ToString() : "-";
+                            var creditsText = isCurrent && inv.InvoiceId == Model.CurrentInvoiceId && Model.CurrentInvoiceId != null ? Model.TotalCredits.ToString() : "-";
 
                             <tr class="@(inv.IsOverdue ? "table-danger border-bottom-0" : "")">
                                 <td class="ps-4 fw-bold">@inv.InvoiceId</td>

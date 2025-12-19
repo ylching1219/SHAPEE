@@ -1,42 +1,202 @@
 ﻿@model SHAPEE.Models.CourseTask
 
-<h2>@Model.Title</h2>
-
-<h4>Submissions</h4>
-
-<table class="table table-bordered">
-    <tr>
-        <th>Student</th>
-        <th>File</th>
-        <th>Submitted</th>
-        <th>Grade</th>
-        <th></th>
-    </tr>
-
-    @foreach (var s in Model.Submissions)
-    {
-        <tr>
-            <td>@s.StudentId</td>
-            <td><a href="@s.FileUrl" target="_blank">Download</a></td>
-            <td>@s.SubmittedAt</td>
-            <td>@s.Grade</td>
-
-            <td>
-                <form method="post" action="/AssignmentStaff/Grade">
-
-                    <input type="hidden" name="id" value="@s.Id" />
-
-                    <input type="number"
-                           name="grade"
-                           class="form-control"
-                           step="0.01" />
-
-                    <textarea name="feedback"
-                          class="form-control"></textarea>
-
-                    <button class="btn btn-success">Save</button>
-                </form>
-            </td>
-        </tr>
+<style>
+    /* Styling for the auto-expanding textarea */
+    .auto-expand {
+        overflow: hidden;
+        min-height: 38px;
+        resize: none;
+        transition: background-color 0.3s ease;
     }
-</table>
+
+    .graded-row {
+        transition: background-color 0.5s ease;
+    }
+    /* Disable hover effect on the header row  */
+    thead tr:hover {
+        background-color: transparent !important;
+    }
+
+    /* only body rows show the hover color */
+    tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.075); /* Bootstrap hover color */
+    }
+</style>
+
+@{
+    // Determine if we are editing or creating (from your layout logic)
+    bool isEdit = !string.IsNullOrEmpty(Model?.Id);
+    ViewData["Title"] = isEdit ? "Edit Assignment" : "Create Assignment";
+}
+
+<div class="container mt-4">
+    @Html.AntiForgeryToken()
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-0">@Model.Title</h2>
+            @* Update the count to show actual total students in the class *@
+            <p class="text-muted">Class Roster: @(((IEnumerable<SHAPEE.Models.Student>)ViewBag.AllStudents).Count()) Students</p>
+        </div>
+        <a href="/Staff/TaskList" class="btn btn-outline-secondary btn-sm">Back to Tasks</a>
+    </div>
+
+    <table class="table align-middle shadow-sm bg-white border">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 20%">Student</th>
+                <th style="width: 10%">File</th>
+                <th style="width: 15%">Submitted</th>
+                <th style="width: 15%">Grade (/100)</th>
+                <th style="width: 30%">Feedback</th>
+                <th style="width: 10%">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in (IEnumerable<SHAPEE.Models.Student>)ViewBag.AllStudents)
+            {
+                // Logic: Find the submission record for this specific student in the Task's submission list
+                var sub = Model.Submissions.FirstOrDefault(s => s.StudentId == student.Id);
+                bool hasSubmitted = sub != null;
+
+                <tr id="row-@(hasSubmitted? sub.Id: "pending-" + student.Id)">
+                    <td>
+                        <div class="fw-bold">@student.FullName</div>
+                        <small class="text-muted">@student.Id</small><br />
+
+                        @if (hasSubmitted)
+                        {
+                            <span id="badge-@sub.Id" class="badge @(sub.Grade != null ? "bg-success" : "bg-warning text-dark")">
+                                @(sub.Grade != null ? "Graded" : "Submitted")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Not Submitted</span>
+                        }
+                    </td>
+                    <td>
+                        @if (hasSubmitted)
+                        {
+                            <a href="@sub.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-file-download"></i> View
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small italic">N/A</span>
+                        }
+                    </td>
+                    <td><small class="text-muted">@(hasSubmitted? sub.SubmittedAt.ToString("dd MMM, HH:mm") : "-")</small></td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="grade-@(hasSubmitted? sub.Id: "")" class="form-control"
+                                   value="@sub?.Grade" step="0.01" min="0" max="100" placeholder="0.00"
+                                   @(hasSubmitted ? "" : "disabled") />
+                            <span class="input-group-text">/100</span>
+                        </div>
+                    </td>
+                    <td>
+                        <textarea id="feedback-@(hasSubmitted? sub.Id: "")" class="form-control form-control-sm auto-expand"
+                              rows="1" placeholder="@(hasSubmitted ? "Add comments..." : "Awaiting student...")"
+                              @(hasSubmitted ? "" : "disabled")
+                              oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">@sub?.Feedback</textarea>
+                    </td>
+                    <td>
+                        @if (hasSubmitted)
+                        {
+                            <button type="button" onclick="saveGrade('@sub.Id')" class="btn btn-success btn-sm w-100">
+                                Save
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                Save
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="saveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i> Grade saved successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function saveGrade(submissionId) {
+        var gradeInput = $('#grade-' + submissionId);
+        var feedbackInput = $('#feedback-' + submissionId);
+        var gradeVal = gradeInput.val();
+        var feedbackVal = feedbackInput.val();
+        var btn = $('#row-' + submissionId + ' button');
+        var badge = $('#badge-' + submissionId);
+
+        if (gradeVal > 100 || gradeVal < 0) {
+            alert("Please enter a grade between 0 and 100.");
+            return;
+        }
+
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.ajax({
+            url: '@Url.Action("GradeSubmission", "Staff")',
+            type: 'POST',
+            data: {
+                SubmissionId: submissionId,
+                Grade: gradeVal,
+                Feedback: feedbackVal,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (res) {
+                if (res.success) {
+                    badge.removeClass('bg-warning text-dark').addClass('bg-success').text('Graded');
+                    if(gradeVal) {
+                        gradeInput.val(parseFloat(gradeVal).toFixed(2));
+                    }
+                    $('#row-' + submissionId).css('background-color', '#e8f5e9');
+                    setTimeout(function() {
+                        $('#row-' + submissionId).css('background-color', 'transparent');
+                    }, 1500);
+
+                    var toastEl = document.getElementById('saveToast');
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                } else {
+                    alert("Error: " + res.message);
+                }
+            },
+            error: function () {
+                alert("Critical error: Could not contact server.");
+            },
+            complete: function() {
+                btn.prop('disabled', false).text('Save');
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        $('.auto-expand').each(function() {
+            if (this.scrollHeight > 38) {
+                this.style.height = (this.scrollHeight) + 'px';
+            }
+        });
+
+        $('.auto-expand').on('keypress', function (e) {
+            if (e.which == 13 && !e.shiftKey) {
+                e.preventDefault();
+                var id = $(this).attr('id').replace('feedback-', '');
+                if(id !== "") saveGrade(id);
+            }
+        });
+    });
+</script>
