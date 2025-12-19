@@ -12,7 +12,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251219032032_SHAPEEDB")]
+    [Migration("20251219090017_SHAPEEDB")]
     partial class SHAPEEDB
     {
         /// <inheritdoc />
@@ -200,10 +200,6 @@ namespace SHAPEE.Migrations
 
                     b.Property<bool>("IsAttendanceSessionActive")
                         .HasColumnType("bit");
-
-                    b.Property<string>("JoinCode")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("RoomId")
                         .IsRequired()

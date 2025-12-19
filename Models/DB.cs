@@ -253,9 +253,6 @@ public class ClassSection
     [MaxLength(10)]
     public string? AttendanceCode { get; set; }
 
-    [MaxLength(10)]
-    public string? JoinCode { get; set; }
-
     //1 class section have many attendance records
     public List<Attendance> Attendances { get; set; } = [];
 
