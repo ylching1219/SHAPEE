@@ -129,8 +129,12 @@
             }
         });
     }
-
     $(document).ready(function() {
-        setInterval(refreshChat, 3000);
+        // Refresh every 3 seconds ONLY if a student conversation is open
+        setInterval(function() {
+            if (selectedStudentId !== "") {
+                refreshChat();
+            }
+        }, 3000);
     });
 </script>

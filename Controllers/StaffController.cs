@@ -1563,18 +1563,20 @@
 
                 return View(tasks);
             }
+        //taskdetails
+        public IActionResult TaskDetails(string id) 
+        {
+            var task = db.CourseTasks
+                .Include(x => x.Submissions)
+                    .ThenInclude(x => x.Student) //  displaying @sub.Student.FullName
+                .FirstOrDefault(x => x.Id == id); 
 
-            public IActionResult TaskDetails(string id)
-            {
-                var task = db.CourseTasks
-                    .Include(x => x.Submissions)
-                    .ThenInclude(x => x.CourseTask)
-                    .FirstOrDefault(x => x.Id == id);
+            if (task == null) return NotFound();
 
-                return View(task);
-            }
-            //create new task
-            [HttpPost]
+            return View(task);
+        }
+        //create new task
+        [HttpPost]
             public IActionResult CreateTask(CourseTask obj)
             {
                 obj.Id = "T" + (db.CourseTasks.Count() + 1).ToString("D4");
@@ -1618,7 +1620,7 @@
             }
 
             // ======================
-            // CREATE PAGE FORM
+            // task
             // ======================
             [HttpGet]
             public IActionResult TaskCreate()
@@ -1632,44 +1634,69 @@
 
                 return View();
             }
+        // ======================
+        // Task create
+        // ======================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
+        {
+            // generate id
+            var lastTask = await db.CourseTasks
+                .OrderByDescending(t => t.Id)
+                .FirstOrDefaultAsync();
 
-
-            [HttpPost]
-            public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
+            int nextNum = 1;
+            if (lastTask != null && lastTask.Id.StartsWith("CT"))
             {
-                // generate id
-                task.Id = Guid.NewGuid().ToString();
-
-                // add to db
-                db.CourseTasks.Add(task);
-
-                // link
-                if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
+                //id
+                if (int.TryParse(lastTask.Id.Substring(2), out int currentMax))
                 {
-                    foreach (var matId in SelectedMaterialIds)
-                    {
-                        var tm = new TaskMaterial
-                        {
-                            Id = Guid.NewGuid().ToString(),
-                            CourseTaskId = task.Id,
-                            MaterialId = matId
-                        };
-
-                        // Temporary fix
-                        db.Set<TaskMaterial>().Add(tm);
-                    }
+                    nextNum = currentMax + 1;
                 }
+            }
 
-                // save all change
+            //assign new id
+            task.Id = $"CT{nextNum:D3}";
+
+            // add to db
+            db.CourseTasks.Add(task);
+
+            //link selected material
+            if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
+            {
+                foreach (var matId in SelectedMaterialIds)
+                {
+                    var tm = new TaskMaterial
+                    {
+                        Id = Guid.NewGuid().ToString("N"), // Unique ID for the link itself
+                        CourseTaskId = task.Id,           
+                        MaterialId = matId
+                    };
+                 
+                    db.Set<TaskMaterial>().Add(tm);
+                }
+            }
+
+            try
+            {
                 await db.SaveChangesAsync();
-
-                // back to list
+                TempData["msg"] = $"Task {task.Id} created successfully!";
                 return RedirectToAction("TaskList");
             }
-            // ======================
-            // CREATE POST SAVE
-            // ======================
-            [HttpPost]
+            catch (Exception ex)
+            {
+                // Log error and return to view
+                ModelState.AddModelError("", "Database error: " + ex.Message);
+                ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+                ViewBag.Materials = db.Materials.ToList();
+                return View(task);
+            }
+        }
+        // ======================
+        // CREATE POST SAVE
+        // ======================
+        [HttpPost]
             [ValidateAntiForgeryToken]
             public IActionResult Create(CourseTask task)
             {
@@ -1788,20 +1815,33 @@
 
             return Json(new { success = true }); // Return JSON 
         }
+        //grade
         [HttpPost]
-            public async Task<IActionResult> GradeSubmission(string SubmissionId, decimal Grade, string Feedback)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GradeSubmission(string SubmissionId, decimal? Grade, string Feedback)
+        {
+            try
             {
                 var submission = await db.Submissions.FindAsync(SubmissionId);
-                if (submission != null)
-                {
-                    submission.Grade = Grade;
-                    submission.Feedback = Feedback;
-                    await db.SaveChangesAsync();
-                }
-                return RedirectToAction("ViewSubmissions", new { id = submission.CourseTaskId });
+
+                if (submission == null)
+                    return Json(new { success = false, message = "Submission not found." });
+
+                // Update values
+                submission.Grade = Grade;
+                submission.Feedback = Feedback;
+
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true });
             }
-            // track typing users: <ClassId, <UserId, LastTime>>
-            private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, DateTime>>
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+        // track typing users: <ClassId, <UserId, LastTime>>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, DateTime>>
                 TypingTrack = new();
 
             [HttpPost]
