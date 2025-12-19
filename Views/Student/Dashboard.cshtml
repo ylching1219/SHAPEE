@@ -7,6 +7,100 @@
 @section Styles {
     <link href="~/css/student-dashboard.css" rel="stylesheet" />
     <style>
+        .announcement-author {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+
+        .announcement-item {
+            border-left: 3px solid #dee2e6;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+            .announcement-item:hover {
+                transform: translateX(3px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .announcement-item:last-child {
+                margin-bottom: 0;
+            }
+
+            .announcement-item.important {
+                border-left-color: #dc3545;
+                background-color: #fff5f5;
+            }
+
+            .announcement-item.info {
+                border-left-color: #17a2b8;
+                background-color: #f0f9fa;
+            }
+
+            .announcement-item.warning {
+                border-left-color: #ffc107;
+                background-color: #fffbf0;
+            }
+
+        .announcement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .announcement-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+            flex: 1;
+        }
+
+        .announcement-date {
+            font-size: 0.75rem;
+            color: #718096;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .announcement-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 12px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+
+            .announcement-badge.important {
+                background-color: #dc3545;
+                color: white;
+            }
+
+            .announcement-badge.info {
+                background-color: #17a2b8;
+                color: white;
+            }
+
+            .announcement-badge.warning {
+                background-color: #ffc107;
+                color: #212529;
+            }
+
+        .announcement-content {
+            font-size: 0.9rem;
+            color: #4a5568;
+            line-height: 1.6;
+            margin: 0;
+        }
+
         .subject-attendance-item {
             cursor: pointer;
             transition: all 0.2s ease;
@@ -209,58 +303,63 @@
             <div class="card-body">
                 <h4 class="font-weight-bold mb-4">Latest Announcements</h4>
 
-                <!-- Announcement Items -->
-                <div class="announcement-item important">
-                    <div class="announcement-header">
-                        <h6 class="announcement-title">
-                            Final Examination Schedule Released
-                            <span class="announcement-badge important">Important</span>
-                        </h6>
-                        <span class="announcement-date">20 Nov 2025</span>
+                @if (Model.LatestAnnouncements == null || !Model.LatestAnnouncements.Any())
+                {
+                    <!-- No Announcements State -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No announcements available</p>
                     </div>
-                    <p class="announcement-content">
-                        The final examination schedule for Semester 1, 2025/2026 has been released. Please check your student portal for your exam timetable. All exams will be conducted from 2nd to 15th December 2025.
-                    </p>
-                </div>
+                }
+                else
+                {
+                    <!-- Announcement Items -->
+                    @foreach (var announcement in Model.LatestAnnouncements)
+                    {
+                        var daysAgo = (DateTime.Now - announcement.CreatedAt).TotalDays;
+                        var badgeClass = daysAgo <= 1 ? "important" :
+                        daysAgo <= 3 ? "warning" :
+                        daysAgo <= 7 ? "info" : "";
 
-                <div class="announcement-item info">
-                    <div class="announcement-header">
-                        <h6 class="announcement-title">
-                            Library Extended Hours
-                            <span class="announcement-badge info">Info</span>
-                        </h6>
-                        <span class="announcement-date">18 Nov 2025</span>
-                    </div>
-                    <p class="announcement-content">
-                        The main library will have extended operating hours during the examination period. The library will be open from 7:00 AM to 11:00 PM from Monday to Sunday, starting from 1st December.
-                    </p>
-                </div>
+                        var badgeText = daysAgo <= 1 ? "New" :
+                        daysAgo <= 3 ? "Recent" : "";
 
-                <div class="announcement-item warning">
-                    <div class="announcement-header">
-                        <h6 class="announcement-title">
-                            Fee Payment Reminder
-                            <span class="announcement-badge warning">Reminder</span>
-                        </h6>
-                        <span class="announcement-date">15 Nov 2025</span>
-                    </div>
-                    <p class="announcement-content">
-                        This is a friendly reminder that the deadline for Semester 2 fee payment is 30th November 2025. Please ensure your payment is made before the deadline to avoid late charges.
-                    </p>
-                </div>
-
-                <div class="announcement-item">
-                    <div class="announcement-header">
-                        <h6 class="announcement-title">Student Portal Maintenance</h6>
-                        <span class="announcement-date">12 Nov 2025</span>
-                    </div>
-                    <p class="announcement-content">
-                        The student portal will undergo scheduled maintenance on 25th November 2025 from 2:00 AM to 6:00 AM. During this time, the portal will be temporarily unavailable. We apologize for any inconvenience caused.
-                    </p>
-                </div>
+                        <div class="announcement-item @badgeClass">
+                            <div class="announcement-header">
+                                <h6 class="announcement-title">
+                                    @announcement.Title
+                                    @if (!string.IsNullOrEmpty(badgeText))
+                                    {
+                                        <span class="announcement-badge @badgeClass">@badgeText</span>
+                                    }
+                                </h6>
+                                <span class="announcement-date">
+                                    @announcement.CreatedAt.ToString("dd MMM yyyy")
+                                </span>
+                            </div>
+                            <p class="announcement-content">
+                                @if (announcement.Content.Length > 200)
+                                {
+                                    @(announcement.Content.Substring(0, 200) + "...")
+                                    ;
+                                }
+                                else
+                                {
+                                    @announcement.Content
+                                }
+                            </p>
+                            @if (!string.IsNullOrEmpty(announcement.Author))
+                            {
+                                <p class="announcement-author">
+                                    <i class="fas fa-user-tie mr-1"></i>@announcement.Author
+                                </p>
+                            }
+                        </div>
+                    }
+                }
 
                 <div class="text-right mt-3">
-                    <a href="#" class="small text-primary">View All Announcements</a>
+                    <a href="@Url.Action("Announcements", "Student")" class="small text-primary">View All Announcements</a>
                 </div>
             </div>
         </div>
