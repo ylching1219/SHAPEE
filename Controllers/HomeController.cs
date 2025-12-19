@@ -452,11 +452,11 @@ public class HomeController(DB db) : Controller
     // GET: Home/GetLatestNotifications (AJAX)
     [HttpGet]
     [Authorize]
-    public IActionResult GetLatestNotifications(int count = 10, string filter = "all")
+    public IActionResult GetLatestNotifications(int count = 5, string filter = "all")
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-            return Json(new { notifications = new List<object>() });
+            return Json(new { notifications = new List<object>(), totalCount = 0 });
 
         var query = db.Notification
             .Where(n => n.UserId == userId)
@@ -464,6 +464,9 @@ public class HomeController(DB db) : Controller
 
         if (filter == "unread")
             query = query.Where(n => !n.IsRead);
+
+        // Get total count before limiting
+        var totalCount = query.Count();
 
         var notifications = query
             .OrderByDescending(n => n.CreatedAt)
@@ -481,7 +484,7 @@ public class HomeController(DB db) : Controller
             createdAt = n.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")
         }).ToList();
 
-        return Json(new { notifications = result });
+        return Json(new { notifications = result, totalCount = totalCount });
     }
 
     // POST: Home/MarkAsRead (AJAX)
@@ -527,6 +530,83 @@ public class HomeController(DB db) : Controller
         return Json(new { success = true });
     }
 
+    // GET: Home/GetFilteredNotifications (AJAX)
+    [HttpGet]
+    [Authorize]
+    public IActionResult GetFilteredNotifications(string filter = "all", string? type = null, string? search = null, string? sort = null)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Json(new { success = false, message = "Unauthorized" });
+
+        var query = db.Notification
+            .Where(n => n.UserId == userId)
+            .AsQueryable();
+
+        // Status filter
+        if (filter == "unread")
+            query = query.Where(n => !n.IsRead);
+        else if (filter == "read")
+            query = query.Where(n => n.IsRead);
+
+        // Type filter
+        if (!string.IsNullOrEmpty(type))
+            query = query.Where(n => n.Type == type);
+
+        // Search filter
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(n =>
+                n.Title.ToLower().Contains(searchLower) ||
+                n.Message.ToLower().Contains(searchLower));
+        }
+
+        // Sort
+        if (sort == "oldest")
+            query = query.OrderBy(n => n.CreatedAt);
+        else
+            query = query.OrderByDescending(n => n.CreatedAt);
+
+        var notifications = query.ToList();
+        var unreadCount = db.Notification.Count(n => n.UserId == userId && !n.IsRead);
+
+        var result = notifications.Select(n => new
+        {
+            notificationId = n.NotificationId,
+            title = n.Title,
+            message = n.Message,
+            type = n.Type,
+            isRead = n.IsRead,
+            actionUrl = n.ActionUrl ?? "#",
+            createdAt = n.CreatedAt,
+            timeAgo = GetRelativeTime(n.CreatedAt)
+        }).ToList();
+
+        return Json(new
+        {
+            success = true,
+            notifications = result,
+            totalCount = notifications.Count,
+            unreadCount = unreadCount
+        });
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.Now;
+        var diff = now - dateTime;
+        var diffSec = (int)diff.TotalSeconds;
+        var diffMin = (int)diff.TotalMinutes;
+        var diffHour = (int)diff.TotalHours;
+        var diffDay = (int)diff.TotalDays;
+
+        if (diffSec < 60) return "just now";
+        if (diffMin < 60) return $"{diffMin}m ago";
+        if (diffHour < 24) return $"{diffHour}h ago";
+        if (diffDay < 7) return $"{diffDay}d ago";
+        return dateTime.ToString("MMM dd, yyyy");
+    }
 
     //model for marking a notification as read
     public class MarkAsReadRequest
