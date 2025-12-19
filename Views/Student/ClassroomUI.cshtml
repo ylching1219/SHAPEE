@@ -156,8 +156,12 @@
                     </div>
 
                     <div class="card-footer">
+                        <a href="@Url.Action("Chat", "Student", new { classId = course.Id })" style="background-color: #28a745; margin-right: 8px;">
+                            <i class="fas fa-comments"></i> Chat
+                        </a>
+
                         <a href="@Url.Action("StudentClasswork", "Student", new { courseId = course.Id })">
-                            Detail
+                            Classwork
                         </a>
                     </div>
                 </div>

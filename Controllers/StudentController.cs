@@ -1414,11 +1414,29 @@ namespace SHAPEE.Controllers
         // =======================
         public IActionResult ClassroomUI()
         {
-            var courses = db.Courses
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students
+         .Where(s => s.Id == studentId)
+         .Select(s => new { s.TutorialGroupId })
+         .FirstOrDefault();
+            if (student == null || student.TutorialGroupId == null)
+            {
+                // Return empty list if student has no group assigned
+                return View(new List<Course>());
+            }
+
+            // find all class
+            var enrolledCourses = db.ClassSections
+                .Where(cs => cs.TutorialGroupId == student.TutorialGroupId)
+                .Include(cs => cs.Course)
+                .Select(cs => cs.Course)
+                .Distinct() // Ensures a course only shows once even if there are multiple sessions
                 .OrderBy(c => c.Id)
                 .ToList();
 
-            return View("~/Views/Student/ClassroomUI.cshtml", courses);
+            return View(enrolledCourses);
+
+           
         }
 
         // =======================
@@ -1811,6 +1829,68 @@ namespace SHAPEE.Controllers
 
             return Content(report.ToString());
         }
+        public IActionResult Chat(string classId)
+        {
+            if (string.IsNullOrEmpty(classId)) return Content("No class selected.");
+            ViewBag.ClassId = classId;
+            ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return View();
+        }
 
+        [HttpGet]
+        public IActionResult GetMessages(string? search)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Logic: Get messages where I am sender or I am receiver (with STF0002)
+            var query = db.ChatMessages
+                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == "STF0002") ||
+                            (x.SenderId == "STF0002" && x.ReceiverId == currentUserId));
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(m => m.Content.ToLower().Contains(s));
+            }
+
+            var messages = query.OrderBy(x => x.SentAt)
+                .Select(m => new {
+                    sender = m.SenderId,
+                    content = m.Content,
+                    time = m.SentAt.ToString("HH:mm"),
+                    isMe = m.SenderId == currentUserId
+                }).ToList();
+
+            return Json(messages);
+        }
+
+        [HttpPost]
+        public IActionResult Send(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
+            int nextNum = 1;
+            if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
+            {
+                if (int.TryParse(lastMsg.Id.Substring(2), out int num))
+                    nextNum = num + 1;
+            }
+
+            var msg = new ChatMessage
+            {
+                Id = $"CM{nextNum:D3}",
+                SenderId = userId,
+                ReceiverId = "STF0002", // Reply goes to Staff
+                Content = content,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            db.ChatMessages.Add(msg);
+            db.SaveChanges();
+            return Json(new { success = true });
+        }
     }
 }
