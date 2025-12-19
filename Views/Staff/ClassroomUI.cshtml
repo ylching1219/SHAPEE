@@ -156,7 +156,9 @@
                         <div class="course-credithour">Credit Hours: @course.CreditHours</div>
                     </div>
                     <div class="card-footer">
-                        <a href="@Url.Action("Classwork", "Staff", new { id = course.Id })">Manage Classwork</a>
+                        <a href="@Url.Action("Classwork", "Staff", new { id = course.Id })" style="margin-right: 8px;">Manage Classwork</a>
+
+                        <a href="@Url.Action("Chat", "Staff", new { classId = course.Id })" style="background-color: #28a745;">Class Chat</a>
                     </div>
 
                 </div>
