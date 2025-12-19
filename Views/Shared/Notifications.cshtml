@@ -1,0 +1,181 @@
+@{
+    ViewData["Title"] = "Notifications";
+    var filter = ViewBag.Filter as string ?? "all";
+}
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Notifications</h1>
+        <p class="text-muted small mt-2">View and manage your notifications</p>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card shadow mb-4">
+    <div class="card-body bg-light border-bottom">
+        <form id="filterForm">
+            <div class="row g-3">
+                <!-- Status Filter -->
+                <div class="col-12 col-md-2">
+                    <select id="statusFilter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="all" selected="@(filter == "all" ? "selected" : null)">All</option>
+                        <option value="unread" selected="@(filter == "unread" ? "selected" : null)">Unread</option>
+                        <option value="read">Read</option>
+                    </select>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="col-12 col-md-2">
+                    <select id="typeFilter" class="form-control">
+                        <option value="">All Types</option>
+                        <option value="info">Info</option>
+                        <option value="success">Success</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+
+                <!-- Sort Filter -->
+                <div class="col-12 col-md-2">
+                    <select id="sortFilter" class="form-control">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
+
+                <!-- Search Box -->
+                <div class="col-12 col-md-5">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                        <input type="text"
+                               id="notificationSearch"
+                               class="form-control"
+                               placeholder="Search notifications..." />
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="col-12 col-md-1">
+                    <button type="button" class="btn btn-secondary w-100" id="resetFilters" title="Reset filters">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Action Bar -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted small" id="notificationCount">0 notifications</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="markAllReadBtn">
+                <i class="fas fa-check-double"></i> Mark All as Read
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification List -->
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div id="notificationListContainer" class="notification-list">
+            <!-- AJAX-loaded notifications will appear here -->
+            
+            <!-- Sample notifications (remove when implementing AJAX) -->
+            <div class="notification-item unread">
+                <div class="icon info">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="content">
+                    <div class="title-row">
+                        <span class="title">new features arrived!</span>
+                        <span class="time">10m</span>
+                    </div>
+                    <div class="message">
+                        inventory tracking now includes expiration alerts.
+                    </div>
+                </div>
+                <span class="unread-dot"></span>
+            </div>
+
+            <div class="notification-item unread">
+                <div class="icon success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="content">
+                    <div class="title-row">
+                        <span class="title">payment successful</span>
+                        <span class="time">30m</span>
+                    </div>
+                    <div class="message">
+                        your semester 2 payment has been received.
+                    </div>
+                </div>
+                <span class="unread-dot"></span>
+            </div>
+
+            <div class="notification-item read">
+                <div class="icon info">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="content">
+                    <div class="title-row">
+                        <span class="title">system updated</span>
+                        <span class="time">2h</span>
+                    </div>
+                    <div class="message">
+                        the system was updated successfully on jan 1, 2024.
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-item read">
+                <div class="icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="content">
+                    <div class="title-row">
+                        <span class="title">attendance warning</span>
+                        <span class="time">yesterday</span>
+                    </div>
+                    <div class="message">
+                        your attendance for web systems is below 80%.
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-item read">
+                <div class="icon error">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="content">
+                    <div class="title-row">
+                        <span class="title">password changed</span>
+                        <span class="time">3 days ago</span>
+                    </div>
+                    <div class="message">
+                        your account password was updated successfully.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Empty State (hidden by default) -->
+<div id="emptyState" class="card shadow mb-4" style="display: none;">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+        <p class="text-muted mb-0">No notifications found</p>
+    </div>
+</div>

@@ -468,26 +468,46 @@ else
 
             //update selected count and show/hide bulk update button
             function updateSelectedCount() {
-                const selectedCount = $('.attendance-checkbox:checked').length;
+                // count ONLY non-Leave rows
+                const selectedCount = $('.attendance-checkbox:checked').filter(function () {
+                    const $row = $(this).closest('tr');
+                    const status = $row.find('.attendance-status-select').data('original-status');
+                    return status !== 'Leave';
+                }).length;
+
                 $('#selectedCount').text(selectedCount);
                 
                 if (selectedCount > 0) {
                     $('#bulkUpdateContainer').show();
-                    //disable status dropdowns for selected rows
+
+                    // disable status dropdowns for selected, non-Leave rows
                     $('.attendance-checkbox:checked').each(function() {
                         const $row = $(this).closest('tr');
-                        $row.find('.attendance-status-select').prop('disabled', true);
+                        const status = $row.find('.attendance-status-select').data('original-status');
+                        if (status !== 'Leave') {
+                            $row.find('.attendance-status-select').prop('disabled', true);
+                        }
                     });
-                    //enable status dropdowns for unselected rows
+
+                    // enable status dropdowns for unselected, non-Leave rows
                     $('.attendance-checkbox:not(:checked)').each(function() {
                         const $row = $(this).closest('tr');
-                        $row.find('.attendance-status-select').prop('disabled', false);
+                        const status = $row.find('.attendance-status-select').data('original-status');
+                        if (status !== 'Leave') {
+                            $row.find('.attendance-status-select').prop('disabled', false);
+                        }
                     });
                 } else {
                     $('#bulkUpdateContainer').hide();
                     $('#bulkStatusSelect').val('');
-                    //enable all status dropdowns
-                    $('.attendance-status-select').prop('disabled', false);
+                    // enable only non-Leave status dropdowns
+                    $('.attendance-status-select').each(function () {
+                        const originalStatus = $(this).data('original-status');
+                        if (originalStatus !== 'Leave') {
+                            $(this).prop('disabled', false);
+                        }
+                        // Leave rows stay disabled
+                    });
                 }
             }
 
@@ -511,7 +531,7 @@ else
 
                 //status select change -- show save/cancel buttons (only if not disabled)
                 $(document).off('change', '.attendance-status-select').on('change', '.attendance-status-select', function() {
-                    //ignore if disabled (selected for bulk update)
+                    // ignore if disabled (bulk selection, or Leave row)
                     if ($(this).prop('disabled')) {
                         return;
                     }
@@ -520,6 +540,12 @@ else
                     const attendanceId = $(this).data('attendance-id');
                     const newStatus = $(this).val();
                     const originalStatus = $(this).data('original-status');
+
+                    // extra safety: never allow editing original Leave records
+                    if (originalStatus === 'Leave') {
+                        $(this).val(originalStatus); // snap back
+                        return;
+                    }
                     
                     if (newStatus !== originalStatus) {
                         //show save and cancel buttons
@@ -608,8 +634,11 @@ else
             //bulk attendance status update
             $(document).on('click', '#bulkUpdateBtn', function() {
                 const selectedIds = $('.attendance-checkbox:checked').map(function() {
-                    return $(this).val();
-                }).get();
+                    const $row = $(this).closest('tr');
+                    const status = $row.find('.attendance-status-select').data('original-status');
+                    // exclude Leave rows from bulk update
+                    return status === 'Leave' ? null : $(this).val();
+                }).get().filter(id => id !== null);
                 
                 if (selectedIds.length === 0) {
                     SweetAlert.warning('No Selection', 'Please select at least one record to update.');

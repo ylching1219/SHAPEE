@@ -2,47 +2,57 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Assignment Management</h2>
+        <div>
+            <h2 class="mb-0">Assignment Management</h2>
+            <p class="text-muted small">Manage student assignments and grading</p>
+        </div>
         <a href="/Staff/TaskCreate" class="btn btn-primary">
             <i class="bi bi-plus-lg"></i> Create New Task
         </a>
     </div>
 
     <div class="table-responsive shadow-sm">
-        <table class="table table-hover bg-white border">
+        <table class="table align-middle bg-white border">
             <thead class="table-dark">
                 <tr>
                     <th>Task Title</th>
                     <th>Class Section</th>
                     <th>Due Date</th>
-                    <th>Materials</th>
                     <th>Submissions</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="table-hover">
                 @foreach (var task in Model)
                 {
                     <tr>
-                        <td><strong>@task.Title</strong></td>
-                        <td>@task.ClassSectionId</td>
                         <td>
-                            <span class="@(task.DueDate < DateTime.Now ? "text-danger" : "text-dark")">
-                                @task.DueDate.ToString("dd MMM yyyy, hh:mm tt")
+                            <strong>@task.Title</strong><br />
+                            <small class="text-muted">ID: @task.Id</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">@task.ClassSectionId</span></td>
+                        <td>
+                            <span class="@(task.DueDate < DateTime.Now ? "text-danger fw-bold" : "text-dark")">
+                                <i class="bi bi-calendar-event"></i> @task.DueDate.ToString("dd MMM yyyy, hh:mm tt")
                             </span>
                         </td>
                         <td>
-                            <span class="badge bg-info text-dark">
-                                @task.Materials.Count() Files
+                            @{
+                                var subCount = task.Submissions?.Count() ?? 0;
+                            }
+                            <span class="badge @(subCount > 0 ? "bg-success" : "bg-secondary") text-white">
+                                @subCount Students Submitted
                             </span>
                         </td>
                         <td>
-                            <a href="/Staff/ViewSubmissions/@task.Id" class="btn btn-sm btn-outline-success">
-                                View (@task.Submissions.Count())
-                            </a>
-                        </td>
-                        <td>
-                            <a href="/Staff/TaskEdit/@task.Id" class="btn btn-sm btn-light border">Edit</a>
+                            <div class="btn-group">
+                                <a href="@Url.Action("TaskDetails", "Staff", new { id = task.Id })" class="btn btn-sm btn-info text-white">
+                                    <i class="bi bi-eye"></i> View & Grade
+                                </a>
+                                <a href="/Staff/TaskEdit/@task.Id" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 }
