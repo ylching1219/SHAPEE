@@ -1865,21 +1865,9 @@ namespace SHAPEE.Controllers
             if (vm.GroupList == null || vm.GroupList.Count == 0)
                 return Json(new { success = false, message = "No groups selected." });
 
-            var possibleStartTimes = new List<TimeSpan>
-            {
-                new TimeSpan(8, 0, 0),
-                new TimeSpan(9, 30, 0),
-                new TimeSpan(11, 0, 0),
-                new TimeSpan(13, 0, 0),
-                new TimeSpan(14, 30, 0),
-                new TimeSpan(16, 0, 0),
-                new TimeSpan(18, 0, 0),
-            };
-            var possibleDays = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            
             //get random start time and day
-            var random = new Random();
-            var randomDay = possibleDays[random.Next(possibleDays.Count)];
-            var startTime = possibleStartTimes[random.Next(possibleStartTimes.Count)];
+           
 
             Console.WriteLine("tier1");
             //loop each group id to create class
@@ -1917,9 +1905,9 @@ namespace SHAPEE.Controllers
                         
                   
                         var staff = db.Staffs
-                        .Where(s => s.FacultyId == group.Program.FacultyId)
-                        .OrderBy(s => EF.Functions.Random()) // EF Core 7+ for SQL Server or SQLite
-                        .FirstOrDefault();
+                            .Where(s => s.FacultyId == group.Program.FacultyId)
+                            .OrderBy(s => EF.Functions.Random()) // EF Core 7+ for SQL Server or SQLite
+                            .FirstOrDefault();
                         Console.WriteLine("Assigned Staff to Lecture Class: " + (staff != null ? staff.FullName : "No staff available"));
                         
                       
@@ -1927,7 +1915,7 @@ namespace SHAPEE.Controllers
                         if (!LectureExists)
                         {
                             //create lecture class
-                            CreateClassSection();
+                            CreateClassSection(staff!,group,pc,"Lecture");
                         }
                         else
                         {
@@ -1975,9 +1963,29 @@ namespace SHAPEE.Controllers
             return Json(new { success = true, message = "Class created successfully." });
         }
 
-        public void CreateClassSection()
+        public ClassSection CreateClassSection(Staff staff,TutorialGroup group,ProgramCourse pc,string sectionType)
         {
-            // Method intentionally left empty.
+            var possibleStartTimes = new List<TimeSpan>
+            {
+                new TimeSpan(8, 0, 0),
+                new TimeSpan(9, 30, 0),
+                new TimeSpan(11, 0, 0),
+                new TimeSpan(13, 0, 0),
+                new TimeSpan(14, 30, 0),
+                new TimeSpan(16, 0, 0),
+                new TimeSpan(18, 0, 0),
+            };
+            var possibleDays = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+
+            var random = new Random();
+            var randomDay = possibleDays[random.Next(possibleDays.Count)];
+            var startTime = possibleStartTimes[random.Next(possibleStartTimes.Count)];
+            ClassSection cs = new ClassSection
+            {
+              
+            };
+
+            return cs;
         }
         //JS
         // Add this method to your AdminController.cs
