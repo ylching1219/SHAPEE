@@ -1852,11 +1852,10 @@ namespace SHAPEE.Controllers
             if (vm.GroupList == null || vm.GroupList.Count == 0)
                 return Json(new { success = false, message = "No groups selected." });
 
-            Console.WriteLine("Number of Groups to Process: " + vm.GroupList.Count);
+ 
             //loop each group id to create class
             foreach (var groupId in vm.GroupList!)
             {
-                Console.WriteLine("Processing Group ID: " + groupId);
                 //check if class already exists for the group
                 var group = db.TutorialGroups
                             .FirstOrDefault(g => g.Id == groupId);
@@ -1869,7 +1868,6 @@ namespace SHAPEE.Controllers
                          && pc.Semester == group.Semester)
                          .ToList();
 
-                    Console.WriteLine("Program Courses Count: " + programCourses.Count);
                     foreach (var pc in programCourses)
                     {
                         var classExists = db.ClassSections.Any(c =>
@@ -1882,9 +1880,14 @@ namespace SHAPEE.Controllers
                             continue; 
                         }
 
-                        
-                        
-                         Console.WriteLine("Creating class for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
+                        var staff = db.Staffs
+                                    .Where(s => s.FacultyId == group.Program.FacultyId)
+                                    .OrderBy(s => Guid.NewGuid())
+                                    .FirstOrDefault();
+
+
+
+                        Console.WriteLine("Creating class for CourseId: " + pc.CourseId + ", GroupId: " + group.GroupName);
                     }
                 }
             }

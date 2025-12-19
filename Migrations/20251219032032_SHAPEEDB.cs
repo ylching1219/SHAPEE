@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SHAPEE.Migrations
 {
     /// <inheritdoc />
-    public partial class shapeeDB : Migration
+    public partial class SHAPEEDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -270,7 +270,7 @@ namespace SHAPEE.Migrations
                 {
                     SectionId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CourseId = table.Column<string>(type: "nvarchar(10)", nullable: false),
-                    StaffId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    StaffId = table.Column<string>(type: "nvarchar(50)", nullable: true),
                     SemesterId = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     YearLevel = table.Column<int>(type: "int", nullable: false),
                     Sem = table.Column<int>(type: "int", nullable: false),
@@ -278,7 +278,7 @@ namespace SHAPEE.Migrations
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     SectionType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TutorialGroupId = table.Column<int>(type: "int", nullable: false),
+                    TutorialGroupId = table.Column<int>(type: "int", nullable: true),
                     RoomId = table.Column<string>(type: "nvarchar(50)", nullable: false),
                     AttendanceCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     JoinCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
@@ -311,14 +311,12 @@ namespace SHAPEE.Migrations
                         name: "FK_ClassSections_TutorialGroups_TutorialGroupId",
                         column: x => x.TutorialGroupId,
                         principalTable: "TutorialGroups",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ClassSections_Users_StaffId",
                         column: x => x.StaffId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(

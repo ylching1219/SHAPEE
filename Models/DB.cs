@@ -222,7 +222,7 @@ public class ClassSection
     public Course Course { get; set; }
 
     //FK to Staff -- 1 class section belong to 1 staff
-    public string StaffId { get; set; }
+    public string? StaffId { get; set; }
     public Staff Staff { get; set; }
 
     //FK to Semester -- 1 class section belong to 1 semester
@@ -243,7 +243,7 @@ public class ClassSection
     public string SectionType { get; set; } //Lecture, Practical, Tutorial
 
     //FK to TutorialGroup -- 1 class section belong to 1 tutorial group
-    public int TutorialGroupId { get; set; }
+    public int? TutorialGroupId { get; set; }
     public TutorialGroup TutorialGroup { get; set; }
 
     //FK to Room -- 1 class section belong to 1 room

@@ -12,8 +12,8 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251219015609_shapeeDB")]
-    partial class shapeeDB
+    [Migration("20251219032032_SHAPEEDB")]
+    partial class SHAPEEDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -221,13 +221,12 @@ namespace SHAPEE.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("StaffId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
 
-                    b.Property<int>("TutorialGroupId")
+                    b.Property<int?>("TutorialGroupId")
                         .HasColumnType("int");
 
                     b.Property<int>("YearLevel")
@@ -956,15 +955,11 @@ namespace SHAPEE.Migrations
 
                     b.HasOne("SHAPEE.Models.Staff", "Staff")
                         .WithMany()
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StaffId");
 
                     b.HasOne("SHAPEE.Models.TutorialGroup", "TutorialGroup")
                         .WithMany()
-                        .HasForeignKey("TutorialGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TutorialGroupId");
 
                     b.Navigation("Course");
 
