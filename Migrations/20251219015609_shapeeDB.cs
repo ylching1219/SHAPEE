@@ -548,7 +548,7 @@ namespace SHAPEE.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TaskMaterial",
+                name: "TaskMaterials",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
@@ -557,14 +557,14 @@ namespace SHAPEE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TaskMaterial", x => x.Id);
+                    table.PrimaryKey("PK_TaskMaterials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TaskMaterial_CourseTasks_CourseTaskId",
+                        name: "FK_TaskMaterials_CourseTasks_CourseTaskId",
                         column: x => x.CourseTaskId,
                         principalTable: "CourseTasks",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_TaskMaterial_Materials_MaterialId",
+                        name: "FK_TaskMaterials_Materials_MaterialId",
                         column: x => x.MaterialId,
                         principalTable: "Materials",
                         principalColumn: "Id");
@@ -681,13 +681,13 @@ namespace SHAPEE.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskMaterial_CourseTaskId",
-                table: "TaskMaterial",
+                name: "IX_TaskMaterials_CourseTaskId",
+                table: "TaskMaterials",
                 column: "CourseTaskId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaskMaterial_MaterialId",
-                table: "TaskMaterial",
+                name: "IX_TaskMaterials_MaterialId",
+                table: "TaskMaterials",
                 column: "MaterialId");
 
             migrationBuilder.CreateIndex(
@@ -752,7 +752,7 @@ namespace SHAPEE.Migrations
                 name: "Submissions");
 
             migrationBuilder.DropTable(
-                name: "TaskMaterial");
+                name: "TaskMaterials");
 
             migrationBuilder.DropTable(
                 name: "TicketMessages");

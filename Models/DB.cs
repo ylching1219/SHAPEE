@@ -29,8 +29,9 @@ public class DB(DbContextOptions options) : DbContext(options)
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
     public DbSet<Attendance> Attendances { get; set; }
     public DbSet<CalendarEvent> CalendarEvents { get; set; }
-
+    
     public DbSet<Material> Materials { get; set; }
+    public DbSet<TaskMaterial> TaskMaterials { get; set; }
     public DbSet<CourseTask> CourseTasks { get; set; }
     public DbSet<Submission> Submissions { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }

@@ -328,6 +328,8 @@ INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VA
 ('DCS', 'PR102', 1, 2),
 ('DFT', 'PR101', 1, 1),
 ('DFT', 'IT302', 2, 2),
-('DFT', 'IT303', 2, 1);
-
+('DCH', 'SC202', 3, 2),
+('DCH', 'SC203', 3, 2),
+('DCH', 'GS101', 3, 2),
+('DFI', 'BF202', 1, 1);
 

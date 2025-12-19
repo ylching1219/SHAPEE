@@ -700,7 +700,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("MaterialId");
 
-                    b.ToTable("TaskMaterial");
+                    b.ToTable("TaskMaterials");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>

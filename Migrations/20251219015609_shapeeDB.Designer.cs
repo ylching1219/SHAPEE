@@ -12,7 +12,7 @@ using SHAPEE.Models;
 namespace SHAPEE.Migrations
 {
     [DbContext(typeof(DB))]
-    [Migration("20251218144610_shapeeDB")]
+    [Migration("20251219015609_shapeeDB")]
     partial class shapeeDB
     {
         /// <inheritdoc />
@@ -703,7 +703,7 @@ namespace SHAPEE.Migrations
 
                     b.HasIndex("MaterialId");
 
-                    b.ToTable("TaskMaterial");
+                    b.ToTable("TaskMaterials");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.TicketMessage", b =>
