@@ -1868,7 +1868,11 @@ namespace SHAPEE.Controllers
             if (vm.GroupList == null || vm.GroupList.Count == 0)
                 return Json(new { success = false, message = "No groups selected." });
 
-            
+            Console.WriteLine("Number of Groups to Process: " + vm.GroupList.Count);
+            List<ClassSection> successClass = new List<ClassSection>();
+            List<string> failedClass = new List<string>();
+            ClassSection classCreated = new ClassSection();
+
 
             //get random start time and day
             var random = new Random();
@@ -1907,27 +1911,45 @@ namespace SHAPEE.Controllers
 
                     foreach (var pc in programCourses)
                     {
-                        
-                        // check if lecture class exists for the course in the year level and semester
-                        bool LectureExists = db.ClassSections.Any(c =>
-                            c.CourseId == pc.CourseId &&
-                            c.TutorialGroupId == null &&
-                            c.YearLevel == group!.YearLevel &&
-                            c.Sem == group.Semester &&
-                            c.SectionType == "Lecture");
 
-                        
-                  
+                        // check if lecture class exists for the course in the year level and semester
+                        bool lectureExists = db.ClassSections
+                                                .Join(db.TutorialGroups,
+                                                      c => c.TutorialGroupId,
+                                                      g => g.Id,
+                                                      (c, g) => new { c, g })
+                                                .Where(x => x.c.CourseId == pc.CourseId &&
+                                                            x.c.YearLevel == group.YearLevel &&
+                                                            x.c.Sem == group.Semester &&
+                                                            x.c.SectionType == "Lecture" &&
+                                                            x.g != null &&
+                                                            x.g.Program.FacultyId == group.Program.FacultyId)
+                                                .Any();
+
+
                         var staff = db.Staffs
                             .Where(s => s.FacultyId == group.Program.FacultyId)
-                            .OrderBy(s => EF.Functions.Random()) 
+                            .OrderBy(s => EF.Functions.Random())
                             .FirstOrDefault();
-                        
-                      
-                        if (!LectureExists)
+
+
+                        if (!lectureExists)
                         {
                             //create lecture class
-                            CreateAndSaveClassSection(group, pc, staff!, "Lecture", possibleDays, possibleStartTimes);
+                            classCreated = CreateAndSaveClassSection(group, pc, staff!, "Lecture", possibleDays, possibleStartTimes);
+
+                            if (classCreated != null)
+                            {
+                                successClass.Add(classCreated);
+                            }
+                            else
+                            {
+                                failedClass.Add($"Lecture for Course {pc.CourseId} - {pc.Course.Name} could not be scheduled.");
+                            }
+                        }
+                        else
+                        {
+                            failedClass.Add($"Lecture for Course {pc.CourseId} - {pc.Course.Name} already be scheduled.");
                         }
 
 
@@ -1941,7 +1963,16 @@ namespace SHAPEE.Controllers
 
                             if (!PclassExists)
                             {
-                                CreateAndSaveClassSection(group, pc, staff!, "Practical", possibleDays, possibleStartTimes);
+                                classCreated = CreateAndSaveClassSection(group, pc, staff!, "Practical", possibleDays, possibleStartTimes);
+
+                                if (classCreated != null)
+                                {
+                                    successClass.Add(classCreated);
+                                }
+                                else
+                                {
+                                    failedClass.Add($"Practical for Course {pc.CourseId} - {pc.Course.Name} could not be scheduled.");
+                                }
                             }
                         }
 
@@ -1952,16 +1983,40 @@ namespace SHAPEE.Controllers
 
                         if (!TclassExists)
                         {
-                            CreateAndSaveClassSection(group, pc, staff!, "Tutorial", possibleDays, possibleStartTimes);
+                            classCreated = CreateAndSaveClassSection(group, pc, staff!, "Tutorial", possibleDays, possibleStartTimes);
+                            if (classCreated != null)
+                            {
+                                successClass.Add(classCreated);
+                            }
+                            else
+                            {
+                                failedClass.Add($"Tutorial for Course {pc.CourseId} - {pc.Course?.Name} could not be scheduled.");
+                            }
                         }
                     }
                 }
             }
 
-            return Json(new { success = true, message = "Class created successfully." });
+            var successClassDto = successClass.Select(c => new
+            {
+                c.SectionId,
+                c.CourseId,
+                c.StaffId,
+                c.SemesterId,
+                c.YearLevel
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                message = "Class created successfully.",
+                groupCnt = vm.GroupList.Count,
+                successClass = successClassDto,
+                failedClass = failedClass
+            });
         }
 
-        private void CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
+        private ClassSection CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
         {
             int maxAttempts = 20;
             int attempts = 0;
@@ -1990,14 +2045,24 @@ namespace SHAPEE.Controllers
                     .OrderBy(r => EF.Functions.Random())
                     .FirstOrDefault();
 
+                var sectionTypeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Lecture", "L" },
+                    { "Tutorial", "T" },
+                    { "Practical", "P" }
+                };
+
+                string typeCode = sectionTypeMap.ContainsKey(sectionType)
+                                    ? sectionTypeMap[sectionType]
+                                    : sectionType[..1].ToUpper();
 
                 cs = new ClassSection
                 {
-                    SectionId = $"{pc.CourseId}-{semester}-{group.Id}-{Guid.NewGuid().ToString("N")[..8]}",
+                    SectionId = $"{pc.CourseId}-G{group.GroupNumber}-{typeCode}-{Guid.NewGuid().ToString("N")[..4]}",
                     CourseId = pc.CourseId,
                     StaffId = staff.Id,
                     SemesterId = semester!,
-                    TutorialGroupId = sectionType == "Lecture" ? null : group.Id,
+                    TutorialGroupId = group.Id,
                     SectionType = sectionType,
                     YearLevel = group.YearLevel,
                     Sem = group.Semester,
@@ -2021,6 +2086,8 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
                 Console.WriteLine($"Created {sectionType} for course {pc.CourseId}, group {group.GroupName}, staff {staff.FullName} on {cs.Day} at {cs.StartTime}");
             }
+
+            return cs;
         }
 
         public bool IsScheduleConflict(ClassSection cs)

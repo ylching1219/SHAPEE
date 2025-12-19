@@ -70,6 +70,9 @@ public class User
 
     [NotMapped]
     public string FullName => $"{LastName} {FirstName} ";
+
+    //1 user have many notifications
+    public List<Notification> Notifications { get; set; } = [];
 }
 
 public class Admin : User
@@ -375,6 +378,31 @@ public class Semester
 
     //1 semester have many invoices
     public List<Invoice> Invoices { get; set; } = [];
+}
+
+public class Notification
+{
+    public int NotificationId { get; set; }
+
+    [MaxLength(50)]
+    public string? UserId { get; set; }
+    public User User { get; set; }
+
+    [MaxLength(100)]
+    public string Title { get; set; } = "";
+
+    [MaxLength(500)]
+    public string Message { get; set; } = "";
+
+    [MaxLength(20)]
+    public string Type { get; set; } = "";
+
+    public bool IsRead { get; set; } = false;
+
+    [MaxLength(200)]
+    public string? ActionUrl { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 }
 
 public class Invoice
