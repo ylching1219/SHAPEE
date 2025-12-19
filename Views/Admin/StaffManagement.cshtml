@@ -233,7 +233,6 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Modal elements
             const modalTitle = document.getElementById('addEditStaffModalLabel');
             const form = document.getElementById('staffForm');
             const statusGroup = document.getElementById('staffStatusGroup');
@@ -259,7 +258,6 @@
             this.value = numbersOnly;
             });
 
-            // Prepare Add Staff Modal
             window.prepareAddStaffModal = function() {
                 modalTitle.innerText = 'Add New Staff';
                 form.setAttribute('action', '@Url.Action("CreateStaff", "Admin")');
@@ -274,7 +272,6 @@
                 });
             };
 
-            // Form validation
             form.addEventListener('submit', function(e) {
                 if (!form.checkValidity()) {
                     e.preventDefault();
@@ -283,45 +280,39 @@
                 form.classList.add('was-validated');
             }, false);
 
-            // Prepare Edit Modal - UPDATED to use data attributes instead of JSON
-            window.prepareEditModal = function(element) {
-                const row = element.closest('tr');
+        window.prepareEditModal = function(element) {
+            const row = element.closest('tr');
 
-                // Get data from individual data attributes
-                const staffId = row.getAttribute('data-staff-id');
-                const firstName = row.getAttribute('data-first-name');
-                const lastName = row.getAttribute('data-last-name');
-                const gender = row.getAttribute('data-gender');
-                const email = row.getAttribute('data-email');
-                const contact = row.getAttribute('data-contact');
-                const facultyId = row.getAttribute('data-faculty-id');
-                const status = row.getAttribute('data-status');
+            const staffId = row.getAttribute('data-staff-id');
+            const firstName = row.getAttribute('data-first-name');
+            const lastName = row.getAttribute('data-last-name');
+            const gender = row.getAttribute('data-gender');
+            const email = row.getAttribute('data-email');
+            const contact = row.getAttribute('data-contact');
+            const facultyId = row.getAttribute('data-faculty-id');
+            const status = row.getAttribute('data-status');
 
-                modalTitle.innerText = 'Edit Staff: ' + firstName + ' ' + lastName;
-                form.setAttribute('action', '@Url.Action("EditStaff", "Admin")');
+            modalTitle.innerText = 'Edit Staff: ' + firstName + ' ' + lastName;
+            form.setAttribute('action', '@Url.Action("EditStaff", "Admin")');
 
-                // Populate form fields
-                document.getElementById('staffId').value = staffId;
-                document.getElementById('staffFirstName').value = firstName;
-                document.getElementById('staffLastName').value = lastName;
-                document.getElementById('staffGender').value = gender || '';
-                document.getElementById('staffEmail').value = email;
-                document.getElementById('staffContact').value = contact || '';
-                document.getElementById('staffFaculty').value = facultyId || '';
-                document.getElementById('staffStatus').value = (status || '').trim();
+            document.getElementById('staffId').value = staffId;
+            document.getElementById('staffFirstName').value = firstName;
+            document.getElementById('staffLastName').value = lastName;
+            document.getElementById('staffGender').value = gender || '';
+            document.getElementById('staffEmail').value = email;
+            document.getElementById('contactNumber').value = contact || '';
+            document.getElementById('staffFaculty').value = facultyId || '';
+            document.getElementById('staffStatus').value = (status || '').trim();
 
-                // Show status field for edit
-                statusGroup.style.display = 'block';
+            statusGroup.style.display = 'block';
 
-                // Remove validation states
-                form.classList.remove('was-validated');
-                document.querySelectorAll('.form-control').forEach(input => {
-                    input.classList.remove('is-invalid');
-                    input.classList.remove('is-valid');
-                });
-            };
+            form.classList.remove('was-validated');
+            document.querySelectorAll('.form-control').forEach(input => {
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+            });
+        };
 
-            // Prepare Delete Modal - UPDATED to use data attributes instead of JSON
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
                 const staffName = row.getAttribute('data-staff-name');
@@ -331,7 +322,6 @@
                 document.getElementById('deleteStaffId').value = staffId;
             };
 
-            // Toggle Suspend/Activate
             window.toggleSuspend = function(staffId, element) {
                 if (confirm('Are you sure you want to change this staff\'s status?')) {
                     const formData = new FormData();
@@ -356,7 +346,6 @@
                 }
             };
 
-            // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(alert => {
@@ -367,7 +356,6 @@
                 });
             }, 5000);
 
-            // Export CSV functionality
             document.getElementById('exportStaffCsvBtn').addEventListener('click', function() {
                 alert('Export CSV functionality to be implemented');
             });
