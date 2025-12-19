@@ -348,11 +348,34 @@
                 if (section == null)
                     return RedirectToAction("ClassSelection", new { mode = "take" });
 
-                // Get all students in the same tutorial group as this section
-                var enrolledStudents = db.Students
-                    .Where(s => s.TutorialGroupId.HasValue
-                        && s.TutorialGroupId.Value == section.TutorialGroupId)
-                    .ToList();
+               IQueryable<Student> enrolledStudentsQuery;
+
+                if (section.TutorialGroupId.HasValue)
+                {
+                    //tutorial and practical
+                    var tgId = section.TutorialGroupId.Value;
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
+                }
+                else if (section.SectionType == "Lecture")
+                {
+                    // lecture: all students in the same program
+                    var programIds = db.ProgramCourses
+                        .Where(pc => pc.CourseId == section.CourseId)
+                        .Select(pc => pc.ProgramId)
+                        .Distinct()
+                        .ToList();
+
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
+                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
+                }
+                else
+                {
+                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
+                }
+
+                var enrolledStudents = enrolledStudentsQuery.ToList();
 
                 // Get attendance records for today
                 var todayAttendances = db.Attendances
@@ -411,10 +434,32 @@
                 if (section.Semester == null || !section.Semester.IsActive)
                 return;
 
-                var enrolledStudents = db.Students
-                    .Where(s => s.TutorialGroupId.HasValue
-                        && s.TutorialGroupId.Value == section.TutorialGroupId)
-                    .ToList();
+                IQueryable<Student> enrolledStudentsQuery;
+
+                if (section.TutorialGroupId.HasValue)
+                {
+                    var tgId = section.TutorialGroupId.Value;
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
+                }
+                else if (section.SectionType == "Lecture")
+                {
+                    var programIds = db.ProgramCourses
+                        .Where(pc => pc.CourseId == section.CourseId)
+                        .Select(pc => pc.ProgramId)
+                        .Distinct()
+                        .ToList();
+
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
+                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
+                }
+                else
+                {
+                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
+                }
+
+                var enrolledStudents = enrolledStudentsQuery.ToList();
                 if (!enrolledStudents.Any()) return;
 
                 var existingIds = db.Attendances
@@ -502,12 +547,32 @@
                     return Json(new { success = false, message = "Section not found." });
                 }
 
-                //get all students in the same tutorial group as this section
-                var enrolledStudents = db.Students
-                    .Where(s => s.TutorialGroupId.HasValue
-                        && s.TutorialGroupId.Value == section.TutorialGroupId)
-                    .ToList();
+                IQueryable<Student> enrolledStudentsQuery;
 
+                if (section.TutorialGroupId.HasValue)
+                {
+                    var tgId = section.TutorialGroupId.Value;
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
+                }
+                else if (section.SectionType == "Lecture")
+                {
+                    var programIds = db.ProgramCourses
+                        .Where(pc => pc.CourseId == section.CourseId)
+                        .Select(pc => pc.ProgramId)
+                        .Distinct()
+                        .ToList();
+
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
+                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
+                }
+                else
+                {
+                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
+                }
+
+                var enrolledStudents = enrolledStudentsQuery.ToList();
                 var totalStudents = enrolledStudents.Count;
 
                 //get all attendance records for this class section
@@ -573,12 +638,32 @@
                     AutoMarkAbsents(sectionId, today, staffId);
                 }
 
-                //get all students in the same tutorial group as this section
-                var enrolledStudents = db.Students
-                    .Where(s => s.TutorialGroupId.HasValue
-                        && s.TutorialGroupId.Value == section.TutorialGroupId)
-                    .ToList();
+                IQueryable<Student> enrolledStudentsQuery;
 
+                if (section.TutorialGroupId.HasValue)
+                {
+                    var tgId = section.TutorialGroupId.Value;
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
+                }
+                else if (section.SectionType == "Lecture")
+                {
+                    var programIds = db.ProgramCourses
+                        .Where(pc => pc.CourseId == section.CourseId)
+                        .Select(pc => pc.ProgramId)
+                        .Distinct()
+                        .ToList();
+
+                    enrolledStudentsQuery = db.Students
+                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
+                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
+                }
+                else
+                {
+                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
+                }
+
+                var enrolledStudents = enrolledStudentsQuery.ToList();
                 var totalStudents = enrolledStudents.Count;
 
                 //get all attendance records for this class section with filters

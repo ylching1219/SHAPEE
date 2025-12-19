@@ -335,7 +335,7 @@ namespace SHAPEE.Controllers
 
             // get student and verify tutorial group match
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-            if (student == null || !student.TutorialGroupId.HasValue)
+            if (student == null)
                 return PartialView("_AttendanceDetails", null);
 
             var classSection = db.ClassSections
@@ -343,10 +343,17 @@ namespace SHAPEE.Controllers
                 .Include(cs => cs.Semester)
                 .Include(cs => cs.Staff)
                 .Include(cs => cs.Room)
-                .FirstOrDefault(cs => cs.SectionId == sectionId
-                    && cs.TutorialGroupId == student.TutorialGroupId.Value);
+                .FirstOrDefault(cs => cs.SectionId == sectionId);
 
             if (classSection == null)
+                return PartialView("_AttendanceDetails", null);
+
+            //only show details if the student has any attendance for this section
+            bool hasAttendance = db.Attendances.Any(a =>
+                a.ClassSectionId == sectionId &&
+                a.StudentId == studentId);
+
+            if (!hasAttendance)
                 return PartialView("_AttendanceDetails", null);
 
             var attendances = db.Attendances
@@ -430,20 +437,45 @@ namespace SHAPEE.Controllers
                 return BadRequest("This class belongs to an inactive semester. Attendance cannot be taken.");
             }
 
-            //check tutorial group match
+            // check student exists
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-            if (student == null || !student.TutorialGroupId.HasValue)
+            if (student == null)
             {
                 if (Request.IsAjax())
-                    return Json(new { success = false, message = "You are not assigned to a tutorial group." });
-                return BadRequest("You are not assigned to a tutorial group.");
+                    return Json(new { success = false, message = "Student not found." });
+                return BadRequest("Student not found.");
             }
 
-            if (student.TutorialGroupId.Value != section.TutorialGroupId)
+            if (section.TutorialGroupId.HasValue)
+            {
+                // Tutorial and practical
+                if (!student.TutorialGroupId.HasValue || student.TutorialGroupId.Value != section.TutorialGroupId.Value)
+                {
+                    if (Request.IsAjax())
+                        return Json(new { success = false, message = "Your tutorial group does not match this class section's tutorial group." });
+                    return BadRequest("Your tutorial group does not match this class section's tutorial group.");
+                }
+            }
+            else if (section.SectionType == "Lecture")
+            {
+                bool inCohort = db.ProgramCourses.Any(pc =>
+                    pc.CourseId == section.CourseId &&
+                    pc.ProgramId == student.ProgramId &&
+                    pc.YearLevel == student.YearLevel &&
+                    pc.Semester == student.Semester);
+
+                if (!inCohort)
+                {
+                    if (Request.IsAjax())
+                        return Json(new { success = false, message = "You are not enrolled for this lecture." });
+                    return BadRequest("You are not enrolled for this lecture.");
+                }
+            }
+            else
             {
                 if (Request.IsAjax())
-                    return Json(new { success = false, message = "Your tutorial group does not match this class section's tutorial group." });
-                return BadRequest("Your tutorial group does not match this class section's tutorial group.");
+                    return Json(new { success = false, message = "You are not allowed to take attendance for this class." });
+                return BadRequest("You are not allowed to take attendance for this class.");
             }
 
             //check session is active
