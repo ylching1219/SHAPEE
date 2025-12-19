@@ -38,10 +38,16 @@
                         </td>
                         <td>
                             @{
-                                var subCount = task.Submissions?.Count() ?? 0;
+                                // Reaches into the Section -> Group -> Students to get the class size
+                                var totalInClass = task.ClassSection?.TutorialGroup?.Students?.Count ?? 0;
+                                // Counts actual records in the Submissions table for this task
+                                var subCount = task.Submissions?.Count ?? 0;
+
+                                // Logic: If everyone submitted, green. Otherwise, yellow.
+                                bool allSubmitted = subCount >= totalInClass && totalInClass > 0;
                             }
-                            <span class="badge @(subCount > 0 ? "bg-success" : "bg-secondary") text-white">
-                                @subCount Students Submitted
+                            <span class="badge @(allSubmitted ? "bg-success" : "bg-warning") text-white">
+                                @subCount / @totalInClass Submitted
                             </span>
                         </td>
                         <td>
@@ -49,7 +55,7 @@
                                 <a href="@Url.Action("TaskDetails", "Staff", new { id = task.Id })" class="btn btn-sm btn-info text-white">
                                     <i class="bi bi-eye"></i> View & Grade
                                 </a>
-                                <a href="/Staff/TaskEdit/@task.Id" class="btn btn-sm btn-outline-secondary">
+                                <a href="@Url.Action("TaskEdit", "Staff", new { id = task.Id })" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil"></i> Edit
                                 </a>
                             </div>

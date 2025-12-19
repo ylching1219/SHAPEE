@@ -1638,25 +1638,40 @@
             }
 
 
-            //task section
-            public IActionResult TaskList()
-            {
-                var tasks = db.CourseTasks
-                    .Include(x => x.Submissions)
-                    .OrderByDescending(x => x.DueDate)
-                    .ToList();
-
-                return View(tasks);
-            }
-        //taskdetails
-        public IActionResult TaskDetails(string id) 
+        //task section
+        public IActionResult TaskList()
         {
+            
+            var tasks = db.CourseTasks
+                .Include(t => t.Submissions)                  //  'subCount'
+                .Include(t => t.ClassSection)
+                    .ThenInclude(cs => cs.TutorialGroup)
+                        .ThenInclude(tg => tg.Students)       //'totalInClass'
+                .OrderByDescending(t => t.DueDate)
+                .ToList();
+
+            return View(tasks);
+        }
+        //taskdetails
+        public IActionResult TaskDetails(string id)
+        {
+            // Fetch Task + Submissions
             var task = db.CourseTasks
-                .Include(x => x.Submissions)
-                    .ThenInclude(x => x.Student) //  displaying @sub.Student.FullName
-                .FirstOrDefault(x => x.Id == id); 
+                .Include(t => t.Submissions)
+                .Include(t => t.ClassSection)
+                    .ThenInclude(cs => cs.TutorialGroup)
+                .FirstOrDefault(t => t.Id == id);
 
             if (task == null) return NotFound();
+
+            // Fetch ALL students belonging to this section's Tutorial Group
+    
+            var studentsInClass = db.Students
+                .Where(s => s.TutorialGroupId == task.ClassSection.TutorialGroupId)
+                .ToList();
+
+            ViewBag.AllStudents = studentsInClass;//pass
+            ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
 
             return View(task);
         }
@@ -1962,5 +1977,63 @@
                 }
                 return Json(new { isTyping = false });
             }
+
+        // GET: Staff/TaskEdit/CT001
+        [HttpGet]
+        public async Task<IActionResult> TaskEdit(string id)
+        {
+            var task = await db.CourseTasks
+                .Include(t => t.Materials) 
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (task == null) return NotFound();
+
+            ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+            ViewBag.Materials = db.Materials.ToList();
+
+            // pass the existing Selected IDs to the view
+            ViewBag.SelectedIds = db.Set<TaskMaterial>()
+                .Where(tm => tm.CourseTaskId == id)
+                .Select(tm => tm.MaterialId)
+                .ToList();
+
+            return View("TaskCreate", task); // Reuse the TaskCreate view
         }
+
+        // POST: Staff/TaskEdit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TaskEdit(CourseTask task, string[] SelectedMaterialIds)
+        {
+            var existing = await db.CourseTasks.FindAsync(task.Id);
+            if (existing == null) return NotFound();
+
+            // Update basic info
+            existing.Title = task.Title;
+            existing.Description = task.Description;
+            existing.DueDate = task.DueDate;
+            existing.ClassSectionId = task.ClassSectionId;
+
+            // Update Materials (Clear old ones, add new ones)
+            var oldLinks = db.Set<TaskMaterial>().Where(tm => tm.CourseTaskId == task.Id);
+            db.Set<TaskMaterial>().RemoveRange(oldLinks);
+
+            if (SelectedMaterialIds != null)
+            {
+                foreach (var matId in SelectedMaterialIds)
+                {
+                    db.Set<TaskMaterial>().Add(new TaskMaterial
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        CourseTaskId = task.Id,
+                        MaterialId = matId
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync();
+            TempData["msg"] = "Task updated successfully!";
+            return RedirectToAction("TaskList");
+        }
+    }
     }

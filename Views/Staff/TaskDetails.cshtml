@@ -17,18 +17,25 @@
         background-color: transparent !important;
     }
 
-    /*  only body rows show the hover color */
+    /* only body rows show the hover color */
     tbody tr:hover {
         background-color: rgba(0, 0, 0, 0.075); /* Bootstrap hover color */
     }
 </style>
+
+@{
+    // Determine if we are editing or creating (from your layout logic)
+    bool isEdit = !string.IsNullOrEmpty(Model?.Id);
+    ViewData["Title"] = isEdit ? "Edit Assignment" : "Create Assignment";
+}
 
 <div class="container mt-4">
     @Html.AntiForgeryToken()
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h2 class="mb-0">@Model.Title</h2>
-            <p class="text-muted">Total Submissions: @Model.Submissions.Count</p>
+            @* Update the count to show actual total students in the class *@
+            <p class="text-muted">Class Roster: @(((IEnumerable<SHAPEE.Models.Student>)ViewBag.AllStudents).Count()) Students</p>
         </div>
         <a href="/Staff/TaskList" class="btn btn-outline-secondary btn-sm">Back to Tasks</a>
     </div>
@@ -36,46 +43,77 @@
     <table class="table align-middle shadow-sm bg-white border">
         <thead class="table-light">
             <tr>
-                <th style="width: 15%">Student</th>
+                <th style="width: 20%">Student</th>
                 <th style="width: 10%">File</th>
                 <th style="width: 15%">Submitted</th>
                 <th style="width: 15%">Grade (/100)</th>
-                <th style="width: 35%">Feedback</th>
+                <th style="width: 30%">Feedback</th>
                 <th style="width: 10%">Action</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var s in Model.Submissions)
+            @foreach (var student in (IEnumerable<SHAPEE.Models.Student>)ViewBag.AllStudents)
             {
-                <tr id="row-@s.Id">
+                // Logic: Find the submission record for this specific student in the Task's submission list
+                var sub = Model.Submissions.FirstOrDefault(s => s.StudentId == student.Id);
+                bool hasSubmitted = sub != null;
+
+                <tr id="row-@(hasSubmitted? sub.Id: "pending-" + student.Id)">
                     <td>
-                        <div class="fw-bold">@s.StudentId</div>
-                        <span id="badge-@s.Id" class="badge @(s.Grade != null ? "bg-success" : "bg-warning text-dark")">
-                            @(s.Grade != null ? "Graded" : "Pending")
-                        </span>
+                        <div class="fw-bold">@student.FullName</div>
+                        <small class="text-muted">@student.Id</small><br />
+
+                        @if (hasSubmitted)
+                        {
+                            <span id="badge-@sub.Id" class="badge @(sub.Grade != null ? "bg-success" : "bg-warning text-dark")">
+                                @(sub.Grade != null ? "Graded" : "Submitted")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Not Submitted</span>
+                        }
                     </td>
                     <td>
-                        <a href="@s.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-file-download"></i> View
-                        </a>
+                        @if (hasSubmitted)
+                        {
+                            <a href="@sub.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-file-download"></i> View
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small italic">N/A</span>
+                        }
                     </td>
-                    <td><small class="text-muted">@s.SubmittedAt.ToString("dd MMM, HH:mm")</small></td>
+                    <td><small class="text-muted">@(hasSubmitted? sub.SubmittedAt.ToString("dd MMM, HH:mm") : "-")</small></td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" id="grade-@s.Id" class="form-control"
-                                   value="@s.Grade" step="0.01" min="0" max="100" placeholder="0.00" />
+                            <input type="number" id="grade-@(hasSubmitted? sub.Id: "")" class="form-control"
+                                   value="@sub?.Grade" step="0.01" min="0" max="100" placeholder="0.00"
+                                   @(hasSubmitted ? "" : "disabled") />
                             <span class="input-group-text">/100</span>
                         </div>
                     </td>
                     <td>
-                        <textarea id="feedback-@s.Id" class="form-control form-control-sm auto-expand"
-                              rows="1" placeholder="Add comments..."
-                              oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">@s.Feedback</textarea>
+                        <textarea id="feedback-@(hasSubmitted? sub.Id: "")" class="form-control form-control-sm auto-expand"
+                              rows="1" placeholder="@(hasSubmitted ? "Add comments..." : "Awaiting student...")"
+                              @(hasSubmitted ? "" : "disabled")
+                              oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">@sub?.Feedback</textarea>
                     </td>
                     <td>
-                        <button type="button" onclick="saveGrade('@s.Id')" class="btn btn-success btn-sm w-100">
-                            Save
-                        </button>
+                        @if (hasSubmitted)
+                        {
+                            <button type="button" onclick="saveGrade('@sub.Id')" class="btn btn-success btn-sm w-100">
+                                Save
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                Save
+                            </button>
+                        }
                     </td>
                 </tr>
             }
@@ -103,7 +141,6 @@
         var btn = $('#row-' + submissionId + ' button');
         var badge = $('#badge-' + submissionId);
 
-        // Validation check
         if (gradeVal > 100 || gradeVal < 0) {
             alert("Please enter a grade between 0 and 100.");
             return;
@@ -122,23 +159,18 @@
             },
             success: function (res) {
                 if (res.success) {
-                    // Update Badge and Format Grade
                     badge.removeClass('bg-warning text-dark').addClass('bg-success').text('Graded');
                     if(gradeVal) {
                         gradeInput.val(parseFloat(gradeVal).toFixed(2));
                     }
-
-                    // Visual Feedback (Flash Row Green)
                     $('#row-' + submissionId).css('background-color', '#e8f5e9');
                     setTimeout(function() {
                         $('#row-' + submissionId).css('background-color', 'transparent');
                     }, 1500);
 
-                    // SHOW POPUP TOAST
                     var toastEl = document.getElementById('saveToast');
                     var toast = new bootstrap.Toast(toastEl);
                     toast.show();
-
                 } else {
                     alert("Error: " + res.message);
                 }
@@ -153,19 +185,17 @@
     }
 
     $(document).ready(function() {
-        // Initial auto-expand for textareas with content
         $('.auto-expand').each(function() {
             if (this.scrollHeight > 38) {
                 this.style.height = (this.scrollHeight) + 'px';
             }
         });
 
-        // Save when pressing Enter in the feedback box
         $('.auto-expand').on('keypress', function (e) {
             if (e.which == 13 && !e.shiftKey) {
                 e.preventDefault();
                 var id = $(this).attr('id').replace('feedback-', '');
-                saveGrade(id);
+                if(id !== "") saveGrade(id);
             }
         });
     });
