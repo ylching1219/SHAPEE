@@ -436,6 +436,50 @@ namespace SHAPEE.Migrations
                     b.ToTable("Materials");
                 });
 
+            modelBuilder.Entity("SHAPEE.Models.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notification");
+                });
+
             modelBuilder.Entity("SHAPEE.Models.PaymentTransaction", b =>
                 {
                     b.Property<string>("Id")
@@ -1013,6 +1057,15 @@ namespace SHAPEE.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("SHAPEE.Models.Notification", b =>
+                {
+                    b.HasOne("SHAPEE.Models.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SHAPEE.Models.PaymentTransaction", b =>
                 {
                     b.HasOne("SHAPEE.Models.Invoice", "Invoice")
@@ -1211,6 +1264,11 @@ namespace SHAPEE.Migrations
             modelBuilder.Entity("SHAPEE.Models.TutorialGroup", b =>
                 {
                     b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("SHAPEE.Models.User", b =>
+                {
+                    b.Navigation("Notifications");
                 });
 
             modelBuilder.Entity("SHAPEE.Models.Student", b =>
