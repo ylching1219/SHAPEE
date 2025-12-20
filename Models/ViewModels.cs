@@ -489,6 +489,48 @@ namespace SHAPEE.Models
         [Display(Name = "Amount Paid")]
         public decimal AmountPaid { get; set; }
     }
+
+    //Staff Dashboard VM
+    public class StaffDashboardVM
+    {
+        public int TotalClasses { get; set; }
+        public int TotalStudents { get; set; }
+        public double AverageAttendance { get; set; }
+        public List<ClassSummaryVM> MyClasses { get; set; } = new List<ClassSummaryVM>();
+        public List<ScheduleItemVM> TodaySchedule { get; set; } = new List<ScheduleItemVM>();
+        public List<PendingAttendanceVM> PendingAttendance { get; set; } = new List<PendingAttendanceVM>();
+        public DateOnly TodayDate { get; set; }
+    }
+
+    public class ClassSummaryVM
+    {
+        public string SectionId { get; set; }
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+        public string SectionType { get; set; }
+        public string Room { get; set; }
+        public string Days { get; set; }
+        public string Time { get; set; }
+        public int StudentCount { get; set; }
+        public double AttendancePercentage { get; set; }
+    }
+
+    public class ScheduleItemVM
+    {
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public string CourseName { get; set; }
+        public string Room { get; set; }
+    }
+
+    public class PendingAttendanceVM
+    {
+        public string SectionId { get; set; }
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public DateOnly Date { get; set; }
+    }
         
     // JS
     public class RoomManageVM
@@ -541,6 +583,18 @@ namespace SHAPEE.Models
         public List<Announcement> Announcements { get; set; } = [];
         public Announcement? EditAnnouncement { get; set; }
         public Staff? Staff { get; set; }
+    }
+    public class StudentTimetableVM
+    {
+        public Student Student { get; set; }
+        public List<ClassSection> ClassSections { get; set; } = new List<ClassSection>();
+        public List<Semester> Semesters { get; set; } = new List<Semester>();
+        public string? SelectedSemesterId { get; set; }
+        public Semester? SelectedSemester { get; set; }
+        public int TotalWeeks { get; set; }
+        public int SelectedWeekNumber { get; set; }
+        public DateTime? WeekStartDate { get; set; }
+        public DateTime? WeekEndDate { get; set; }
     }
 
 

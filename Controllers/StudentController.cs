@@ -2144,5 +2144,256 @@ namespace SHAPEE.Controllers
 
             return PartialView("_AnnouncementDetails", announcement);
         }
+
+        // Timetable
+        public IActionResult Timetable(string? semesterId = null, int? weekNumber = null)
+        {
+            ViewData["Title"] = "My Timetable";
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.Program)
+                .Include(s => s.TutorialGroup)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+            {
+                TempData["ErrorMessage"] = "Student not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Get available semesters
+            var semesters = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .ToList();
+
+            // Use active semester if no semester selected
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = semesters.FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            var selectedSemester = semesters.FirstOrDefault(s => s.Id == semesterId);
+
+            // Calculate weeks
+            int totalWeeks = 0;
+            DateTime? weekStartDate = null;
+            DateTime? weekEndDate = null;
+
+            if (selectedSemester != null)
+            {
+                var semesterDuration = (selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                       selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+                totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+                // Default to week 1 if not specified
+                if (!weekNumber.HasValue || weekNumber < 1 || weekNumber > totalWeeks)
+                {
+                    weekNumber = 1;
+                }
+
+                // Calculate week date range
+                weekStartDate = selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)
+                    .AddDays((weekNumber.Value - 1) * 7);
+                weekEndDate = weekStartDate.Value.AddDays(6);
+
+                // Ensure we don't exceed semester end date
+                if (weekEndDate > selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue))
+                {
+                    weekEndDate = selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue);
+                }
+            }
+
+            // Get class sections for the student
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // Get sections for student's tutorial group (Tutorial & Practical)
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // Get lecture sections for student's program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => cs.Day)
+                .ThenBy(cs => cs.StartTime)
+                .ToList();
+
+            var viewModel = new StudentTimetableVM
+            {
+                Student = student,
+                ClassSections = classSections,
+                Semesters = semesters,
+                SelectedSemesterId = semesterId,
+                SelectedSemester = selectedSemester,
+                TotalWeeks = totalWeeks,
+                SelectedWeekNumber = weekNumber ?? 1,
+                WeekStartDate = weekStartDate,
+                WeekEndDate = weekEndDate
+            };
+
+            return View(viewModel);
+        }
+
+        // Add these methods to your StudentController
+
+        [HttpGet]
+        public IActionResult GetTimetableData(string? semesterId = null, int? weekNumber = null)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .Include(s => s.Program)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+                return PartialView("_TimetableGrid", new List<ClassSection>());
+
+            // Use active semester if none specified
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = db.Semesters
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            if (string.IsNullOrEmpty(semesterId))
+                return PartialView("_TimetableGrid", new List<ClassSection>());
+
+            // Get class sections for this semester
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // 1. Get Tutorial and Practical sections for student's tutorial group
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value
+                              && (cs.SectionType == "Tutorial" || cs.SectionType == "Practical"))
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // 2. Get courses this student should be enrolled in based on their program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                // 3. Get Lecture sections for those courses
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates and sort by day and time
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => GetDayOrder(cs.Day))
+                .ThenBy(cs => cs.StartTime)
+                .ToList();
+
+            // Return the partial view with the class sections
+            return PartialView("_TimetableGrid", classSections);
+        }
+
+        // Helper method to get day order for sorting
+        private int GetDayOrder(string day)
+        {
+            return day switch
+            {
+                "Monday" => 1,
+                "Tuesday" => 2,
+                "Wednesday" => 3,
+                "Thursday" => 4,
+                "Friday" => 5,
+                "Saturday" => 6,
+                "Sunday" => 7,
+                _ => 8
+            };
+        }
+
+        [HttpGet]
+        public IActionResult GetSemesterWeeks(string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var semesterDuration = (semester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                   semester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+            var totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+            return Json(new { success = true, totalWeeks = totalWeeks });
+        }
+
+        [HttpGet]
+        public IActionResult GetWeekDateRange(string semesterId, int weekNumber)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var weekStartDate = semester.StartDate.ToDateTime(TimeOnly.MinValue)
+                .AddDays((weekNumber - 1) * 7);
+            var weekEndDate = weekStartDate.AddDays(6);
+
+            // Ensure we don't exceed semester end date
+            if (weekEndDate > semester.EndDate.ToDateTime(TimeOnly.MaxValue))
+            {
+                weekEndDate = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
+            }
+
+            return Json(new
+            {
+                success = true,
+                startDate = weekStartDate.ToString("dd MMM yyyy"),
+                endDate = weekEndDate.ToString("dd MMM yyyy")
+            });
+        }
     }
 }
