@@ -529,6 +529,15 @@ public class HomeController(DB db) : Controller
             db.Announcements.Add(announcement);
             await db.SaveChangesAsync();
 
+            //notify all students about the new announcement
+            CreateNotificationForAllStudents(
+                db,
+                "New Announcement",
+                $"New announcement: {title}",
+                "info",
+                "/Student/Announcements"
+            );
+
             return Json(new { success = true, message = "Announcement created successfully!" });
         }
         catch (Exception ex)
@@ -897,6 +906,114 @@ public class HomeController(DB db) : Controller
 
         dbContext.Notification.Add(notification);
         dbContext.SaveChanges();
+    }
+
+    //method to create notifications for all students in tutorial groups associated with a course
+    //Uses bulk insert for better performance
+    public static void CreateNotificationForCourseStudents(DB dbContext, string courseId, string title, string message, string type, string? actionUrl = null)
+    {
+        if (string.IsNullOrEmpty(courseId) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            return;
+
+        try
+        {
+            //get all class sections for this course that have tutorial groups
+            var tutorialGroupIds = dbContext.ClassSections
+                .Where(cs => cs.CourseId == courseId && cs.TutorialGroupId.HasValue)
+                .Select(cs => cs.TutorialGroupId.Value)
+                .Distinct()
+                .ToList();
+
+            if (!tutorialGroupIds.Any())
+                return; //no tutorial groups found for this course
+
+            //get all students in these tutorial groups
+            var studentIds = dbContext.Students
+                .Where(s => s.TutorialGroupId.HasValue && tutorialGroupIds.Contains(s.TutorialGroupId.Value))
+                .Select(s => s.Id)
+                .ToList();
+
+            if (!studentIds.Any())
+                return; //no students found in these tutorial groups
+
+            //use transaction for data integrity
+            using var transaction = dbContext.Database.BeginTransaction();
+            try
+            {
+                //create notifications for all students in bulk
+                var notifications = studentIds.Select(studentId => new Notification
+                {
+                    UserId = studentId,
+                    Title = title,
+                    Message = message,
+                    Type = type,
+                    ActionUrl = actionUrl,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                }).ToList();
+
+                //bulk insert - much more efficient than individual inserts
+                dbContext.Notification.AddRange(notifications);
+                dbContext.SaveChanges();
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw; 
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating notifications: {ex.Message}");
+        }
+    }
+
+    //method to create notifications for ALL students in the system
+    public static void CreateNotificationForAllStudents(DB dbContext, string title, string message, string type, string? actionUrl = null)
+    {
+        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            return;
+
+        try
+        {
+            //get all active students
+            var studentIds = dbContext.Students
+                .Select(s => s.Id)
+                .ToList();
+
+            if (!studentIds.Any())
+                return;
+
+            using var transaction = dbContext.Database.BeginTransaction();
+            try
+            {
+                var notifications = studentIds.Select(studentId => new Notification
+                {
+                    UserId = studentId,
+                    Title = title,
+                    Message = message,
+                    Type = type,
+                    ActionUrl = actionUrl,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                }).ToList();
+
+                dbContext.Notification.AddRange(notifications);
+                dbContext.SaveChanges();
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating notifications for all students: {ex.Message}");
+        }
     }
 
 

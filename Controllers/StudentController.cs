@@ -1764,6 +1764,23 @@ namespace SHAPEE.Controllers
             db.ChatMessages.Add(msg);
             db.SaveChanges();
 
+            //get student name
+            var studentName = student.FullName?.Trim() ?? studentId;
+
+            //get course name
+            var course = db.Courses.FirstOrDefault(c => c.Id == classId);
+            var courseName = course?.Name ?? classId;
+
+            //notify the staff who received the message
+            HomeController.CreateNotificationForUser(
+                db,
+                lecturerId,
+                "New Message from Student",
+                $"New message from {studentName} in {courseName}",
+                "info",
+                $"/Staff/Chat?classId={classId}&studentId={studentId}"
+            );
+
             return Json(new { success = true });
         }
         //// SEND MESSAGE

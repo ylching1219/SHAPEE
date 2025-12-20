@@ -1936,6 +1936,39 @@
             db.ChatMessages.Add(msg);
             db.SaveChanges();
 
+            //get staff/teacher name
+            var staff = db.Staffs.FirstOrDefault(s => s.Id == userId);
+            var teacherName = staff?.FullName?.Trim() ?? "Staff";
+
+            //get courseId from ClassSection (staff teaches this course, student is in tutorial group)
+            var student = db.Students.FirstOrDefault(s => s.Id == receiverId);
+            string? courseId = null;
+            string courseName = "your course";
+
+            if (student != null && student.TutorialGroupId.HasValue)
+            {
+                var classSection = db.ClassSections
+                    .Include(cs => cs.Course)
+                    .FirstOrDefault(cs => cs.StaffId == userId && 
+                                         cs.TutorialGroupId == student.TutorialGroupId.Value);
+                
+                if (classSection != null)
+                {
+                    courseId = classSection.CourseId;
+                    courseName = classSection.Course?.Name ?? courseId;
+                }
+            }
+
+            //notify the student who received the message
+            HomeController.CreateNotificationForUser(
+                db,
+                receiverId,
+                "New Message from Teacher",
+                $"New message from {teacherName} in {courseName}",
+                "info",
+                courseId != null ? $"/Student/Chat?classId={courseId}" : "/Student/Chat"
+            );
+
             return Json(new { success = true }); // Return JSON 
         }
         //grade

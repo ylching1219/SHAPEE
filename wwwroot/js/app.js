@@ -260,7 +260,7 @@ $(document).ready(function() {
     }
 
     let currentFilter = 'all';
-    let pollInterval = 20000; // 20 seconds
+    let pollInterval = 5000; // 20 seconds
     let pollTimer = null;
 
     //icon mapping for notification types
