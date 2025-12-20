@@ -1754,14 +1754,20 @@ namespace SHAPEE.Controllers
         }
 
         //task section
+        //task list
         public IActionResult TaskList()
         {
-            var userId = User.Identity.Name;
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
+            if (student == null || student.TutorialGroupId == null) return View(new List<CourseTask>());
+
+            // Get tasks for the student's specific tutorial group sections
             var tasks = db.CourseTasks
-                .Include(x => x.Submissions)
-                .Where(x => x.ClassSectionId == "SEC001") // adjust
-                .OrderBy(x => x.DueDate)
+                .Include(t => t.ClassSection)
+                .Include(t => t.Submissions.Where(s => s.StudentId == studentId))
+                .Where(t => t.ClassSection.TutorialGroupId == student.TutorialGroupId)
+                .OrderBy(t => t.DueDate)
                 .ToList();
 
             return View(tasks);
@@ -2018,7 +2024,7 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
-            // 5. Handle AJAX response
+            // Handle AJAX response
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new
