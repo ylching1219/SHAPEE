@@ -249,6 +249,39 @@
             background-color: #6c757d;
             color: white;
         }
+
+        .quick-action-btn {
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+            .quick-action-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+
+            .quick-action-btn i {
+                font-size: 1.5rem;
+                margin-bottom: 4px;
+            }
+
+            .quick-action-btn span {
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+        /* Remove bottom margin from last row */
+        .quick-actions-container .row > [class*="col-"]:nth-last-child(-n+2) {
+            margin-bottom: 0 !important;
+        }
     </style>
 }
 
@@ -455,38 +488,38 @@
                 <h4 class="font-weight-bold mb-4">Quick Actions</h4>
 
                 <div class="quick-actions-container">
-                    <div class="row g-3">
-                        <div class="col-6">
+                    <div class="row">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-primary w-100 quick-action-btn" onclick="location.href='@Url.Action("CurrentBilling", "Student")'">
                                 <i class="fas fa-dollar-sign"></i>
                                 <span>Pay Fees</span>
                             </button>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-success w-100 quick-action-btn" onclick="location.href='@Url.Action("ViewAttendance", "Student")'">
                                 <i class="fas fa-calendar-check"></i>
                                 <span>Attendance</span>
                             </button>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-info w-100 quick-action-btn" onclick="location.href='@Url.Action("ClassroomUI", "Student")'">
                                 <i class="fas fa-chalkboard-teacher"></i>
                                 <span>Classroom</span>
                             </button>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-warning w-100 quick-action-btn" onclick="location.href='@Url.Action("CreateTicket", "Student")'">
-                                <i class="fas fa-life-ring"></i>
+                                <i class="fas fa-fw fa-ticket-alt"></i>
                                 <span>Submit Ticket</span>
                             </button>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-secondary w-100 quick-action-btn" onclick="location.href='@Url.Action("LeaveApplication", "Home")'">
                                 <i class="fas fa-file-medical"></i>
                                 <span>Apply Leave</span>
                             </button>
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mb-3">
                             <button class="btn btn-dark w-100 quick-action-btn" onclick="location.href='@Url.Action("ViewCalendar", "Student")'">
                                 <i class="fas fa-calendar-alt"></i>
                                 <span>Academic Calendar</span>
