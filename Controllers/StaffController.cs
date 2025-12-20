@@ -1774,19 +1774,27 @@
             }
 
         // ======================
-        // task
+        // Task Create POST
         // ======================
         [HttpGet]
         public IActionResult TaskCreate(string? sectionId)
         {
-            ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // If sectionId is null, a blank model so the "Select" placeholder shows
+            // 1. Fetch only sections taught by THIS lecturer
+            var sections = db.ClassSections
+                .Include(s => s.Course)
+                .Where(s => s.StaffId == staffId)
+                .ToList();
+
+            ViewBag.Sections = sections;
+
             var model = new CourseTask { ClassSectionId = sectionId };
 
+            // 2. If a section is selected, fetch materials belonging to that Course
             if (!string.IsNullOrEmpty(sectionId))
             {
-                var section = db.ClassSections.FirstOrDefault(s => s.SectionId == sectionId);
+                var section = sections.FirstOrDefault(s => s.SectionId == sectionId);
                 if (section != null)
                 {
                     ViewBag.Materials = db.Materials.Where(m => m.CourseId == section.CourseId).ToList();
@@ -1794,7 +1802,6 @@
             }
             else
             {
-                // No section chosen yet
                 ViewBag.Materials = new List<Material>();
             }
 
@@ -1807,57 +1814,49 @@
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> TaskCreate(CourseTask task, string[] SelectedMaterialIds)
         {
-            // generate id
-            var lastTask = await db.CourseTasks
-                .OrderByDescending(t => t.Id)
-                .FirstOrDefaultAsync();
-
-            int nextNum = 1;
+            //  Sequential ID for Task (CTxxx)
+            var lastTask = await db.CourseTasks.OrderByDescending(t => t.Id).FirstOrDefaultAsync();
+            int nextTaskNum = 1;
             if (lastTask != null && lastTask.Id.StartsWith("CT"))
             {
-                //id
                 if (int.TryParse(lastTask.Id.Substring(2), out int currentMax))
-                {
-                    nextNum = currentMax + 1;
-                }
+                    nextTaskNum = currentMax + 1;
             }
+            task.Id = $"CT{nextTaskNum:D3}";
 
-            //assign new id
-            task.Id = $"CT{nextNum:D3}";
-
-            // add to db
             db.CourseTasks.Add(task);
 
-            //link selected material
+            //  Sequential ID for TaskMaterials (TMSxxx)
             if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
             {
+                // Find the absolute highest TMS ID in the whole table
+                var lastTM = await db.TaskMaterials
+                    .Where(x => x.Id.StartsWith("TMS"))
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefaultAsync();
+
+                int tmCount = 1;
+                if (lastTM != null)
+                {
+                    if (int.TryParse(lastTM.Id.Substring(3), out int lastTmNum))
+                        tmCount = lastTmNum + 1;
+                }
+
                 foreach (var matId in SelectedMaterialIds)
                 {
-                    var tm = new TaskMaterial
+                    db.TaskMaterials.Add(new TaskMaterial
                     {
-                        Id = Guid.NewGuid().ToString("N"), // Unique ID for the link itself
-                        CourseTaskId = task.Id,           
+                        Id = $"TMS{tmCount:D3}",
+                        CourseTaskId = task.Id,
                         MaterialId = matId
-                    };
-                 
-                    db.Set<TaskMaterial>().Add(tm);
+                    });
+                    tmCount++; // Increment for the next material
                 }
             }
 
-            try
-            {
-                await db.SaveChangesAsync();
-                TempData["msg"] = $"Task {task.Id} created successfully!";
-                return RedirectToAction("TaskList");
-            }
-            catch (Exception ex)
-            {
-                // Log error and return to view
-                ModelState.AddModelError("", "Database error: " + ex.Message);
-                ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
-                ViewBag.Materials = db.Materials.ToList();
-                return View(task);
-            }
+            await db.SaveChangesAsync();
+            TempData["msg"] = $"Task {task.Id} created successfully!";
+            return RedirectToAction("TaskList");
         }
         // ======================
         // CREATE POST SAVE
@@ -2081,14 +2080,17 @@
         [HttpGet]
         public async Task<IActionResult> TaskEdit(string id)
         {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var task = await db.CourseTasks.Include(t => t.ClassSection).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null) return NotFound();
 
-            ViewBag.Sections = db.ClassSections.Include(s => s.Course).ToList();
+            // Load sections for current staff
+            ViewBag.Sections = db.ClassSections.Include(s => s.Course).Where(s => s.StaffId == staffId).ToList();
 
-            // Filter materials by the course assigned to this task
+            // Load materials for the specific course linked to this task
             ViewBag.Materials = db.Materials.Where(m => m.CourseId == task.ClassSection.CourseId).ToList();
 
+            // Mark currently selected materials
             ViewBag.SelectedIds = db.TaskMaterials
                 .Where(tm => tm.CourseTaskId == id)
                 .Select(tm => tm.MaterialId)
@@ -2111,25 +2113,41 @@
             existing.DueDate = task.DueDate;
             existing.ClassSectionId = task.ClassSectionId;
 
-            // Update Materials (Clear old ones, add new ones)
-            var oldLinks = db.Set<TaskMaterial>().Where(tm => tm.CourseTaskId == task.Id);
-            db.Set<TaskMaterial>().RemoveRange(oldLinks);
+            //  Wipe existing material links (Junction cleanup)
+            var oldLinks = db.TaskMaterials.Where(tm => tm.CourseTaskId == task.Id);
+            db.TaskMaterials.RemoveRange(oldLinks);
 
-            if (SelectedMaterialIds != null)
+            //  Re-insert with new sequential TMS IDs
+            if (SelectedMaterialIds != null && SelectedMaterialIds.Length > 0)
             {
+                var lastTM = await db.TaskMaterials
+                    .Where(x => x.Id.StartsWith("TMS"))
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefaultAsync();
+
+                int tmCount = 1;
+                if (lastTM != null)
+                {
+                    if (int.TryParse(lastTM.Id.Substring(3), out int lastTmNum))
+                        tmCount = lastTmNum + 1;
+                }
+
                 foreach (var matId in SelectedMaterialIds)
                 {
-                    db.Set<TaskMaterial>().Add(new TaskMaterial
+                    db.TaskMaterials.Add(new TaskMaterial
                     {
-                        Id = Guid.NewGuid().ToString(),
+                        Id = $"TMS{tmCount:D3}",
                         CourseTaskId = task.Id,
                         MaterialId = matId
                     });
+                    tmCount++;
                 }
             }
 
             await db.SaveChangesAsync();
             TempData["msg"] = "Task updated successfully!";
+
+           
             return RedirectToAction("TaskList");
         }
     }

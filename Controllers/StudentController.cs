@@ -1709,9 +1709,11 @@ namespace SHAPEE.Controllers
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
-            if (student == null || student.TutorialGroupId == null) return View(new List<CourseTask>());
+            // If student has no TutorialGroupId, they have no tasks
+            if (student == null || !student.TutorialGroupId.HasValue)
+                return View(new List<CourseTask>());
 
-            // Get tasks for the student's specific tutorial group sections
+            // Filter tasks where the Task's ClassSection matches the Student's TutorialGroup
             var tasks = db.CourseTasks
                 .Include(t => t.ClassSection)
                 .Include(t => t.Submissions.Where(s => s.StudentId == studentId))
@@ -1933,7 +1935,7 @@ namespace SHAPEE.Controllers
         }
 
         // =======================
-        // STUDENT FILTER (AJAX)
+        // TICKET FILTER (AJAX)
         // =======================
         [HttpGet]
         public IActionResult GetTickets(string search = "", string status = "")
@@ -1941,8 +1943,8 @@ namespace SHAPEE.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var tickets = db.SupportTickets
-                .Where(t => t.Id == userId)
-                .AsQueryable();
+            .Where(t => t.UserId == userId)
+            .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 tickets = tickets.Where(t => t.Id.Contains(search) || t.Subject.Contains(search));
