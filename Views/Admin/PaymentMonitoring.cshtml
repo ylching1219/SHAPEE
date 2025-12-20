@@ -82,12 +82,12 @@
             });
         }
 
-               // Send payment reminders
+        //send payment reminders
         $('#sendRemindersBtn').on('click', function() {
             const btn = $(this);
             const originalText = btn.html();
             
-            // Disable button and show loading
+            //disable button and show loading
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
 
             $.ajax({
@@ -127,7 +127,58 @@
                     });
                 },
                 complete: function() {
-                    // Re-enable button
+                    //re-enable button
+                    btn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
+        //send overdue payment reminders
+        $(document).on('click', '#sendOverdueRemindersBtn', function() {
+            const btn = $(this);
+            const originalText = btn.html();
+            
+            //disable button and show loading
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+
+            $.ajax({
+                url: '@Url.Action("SendOverdueReminders", "Admin")',
+                type: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Overdue Reminders Sent!',
+                            text: `${response.successCount} reminder${response.successCount !== 1 ? 's' : ''} sent successfully.`,
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Failed to send overdue reminders',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = 'An error occurred while sending overdue reminders';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    //re-enable button
                     btn.prop('disabled', false).html(originalText);
                 }
             });

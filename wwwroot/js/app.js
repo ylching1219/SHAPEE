@@ -172,6 +172,27 @@ $("#facultyFilter").on("change", function () {
     $("#filterForm").submit();
 });
 
+// Disable sidebar toggle on desktop (≥768px)
+$(document).ready(function() {
+    // Remove toggle functionality on desktop
+    if ($(window).width() >= 768) {
+        $('#sidebarToggle, #sidebarToggleTop').off('click');
+        
+        // Ensure sidebar is always expanded on desktop
+        $('body').removeClass('sidebar-toggled');
+        $('.sidebar').removeClass('toggled');
+    }
+    
+    // Handle window resize
+    $(window).resize(function() {
+        if ($(window).width() >= 768) {
+            $('#sidebarToggle, #sidebarToggleTop').off('click');
+            $('body').removeClass('sidebar-toggled');
+            $('.sidebar').removeClass('toggled');
+        }
+    });
+});
+
 //global search AJAX request
 $(function () {
     var $input = $('#globalSearchInput');
@@ -302,23 +323,24 @@ $(document).ready(function() {
     };
 
     //icon mapping for specific notification titles
-    const titleIcons = {
-        'Password Reset Successful': 'fas fa-lock',
-        'Password Changed': 'fas fa-lock',
-        'New Invoice Generated': 'fas fa-receipt',
-        'Account Unlocked': 'fas fa-unlock',
-        'Payment Successful': 'fas fa-wallet',
-        'Payment Reminder': 'fas fa-exclamation-triangle',
-        'Account Locked - Payment Overdue': 'fas fa-lock',
-        'New Message from Student': 'fas fa-comments',
-        'New Message from Teacher': 'fas fa-comments',
-        'New Classwork Posted': 'fas fa-file-alt', // Keep default for classwork
-        'New Announcement': 'fas fa-bullhorn',
-        'Leave Application Approved': 'fas fa-check-circle', // Keep success icon
-        'Leave Application Rejected': 'fas fa-times-circle' // Keep error icon
-    };
+        const titleIcons = {
+            'Password Reset Successful': 'fas fa-lock',
+            'Password Changed': 'fas fa-lock',
+            'New Invoice Generated': 'fas fa-receipt',
+            'Account Unlocked': 'fas fa-unlock',
+            'Payment Successful': 'fas fa-wallet',
+            'Payment Reminder': 'fas fa-exclamation-triangle',
+            'Overdue Payment Reminder': 'fas fa-exclamation-circle',
+            'Account Locked - Payment Overdue': 'fas fa-lock',
+            'New Message from Student': 'fas fa-comments',
+            'New Message from Teacher': 'fas fa-comments',
+            'New Classwork Posted': 'fas fa-file-alt', 
+            'New Announcement': 'fas fa-bullhorn',
+            'Leave Application Approved': 'fas fa-check-circle', 
+            'Leave Application Rejected': 'fas fa-times-circle'
+        };
 
-    // Get icon for notification based on title, fallback to type
+    //get icon for notification based on title, fallback to type
     function getNotificationIcon(notification) {
         const title = notification.title || '';
         // Check if we have a specific icon for this title

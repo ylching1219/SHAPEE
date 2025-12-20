@@ -261,6 +261,31 @@ public class HomeController(DB db) : Controller
             db.LeaveApplications.Add(leaveApplication);
             await db.SaveChangesAsync();
 
+            //notify all admins when a student or staff submits a leave application
+            var user = db.Users.FirstOrDefault(u => u.Id == userId);
+            if (user is Student student)
+            {
+                var studentName = student.FullName?.Trim() ?? student.Id;
+                CreateNotificationForAllAdmins(
+                    db,
+                    "New Leave Application",
+                    $"Student {studentName} ({student.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
+                    "info",
+                    "/Admin/LeaveApplications"
+                );
+            }
+            else if (user is Staff staff)
+            {
+                var staffName = staff.FullName?.Trim() ?? staff.Id;
+                CreateNotificationForAllAdmins(
+                    db,
+                    "New Leave Application",
+                    $"Staff {staffName} ({staff.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
+                    "info",
+                    "/Admin/LeaveApplications"
+                );
+            }
+
             TempData["SuccessMessage"] = $"Leave application for {duration} day{(duration != 1 ? "s" : "")} submitted successfully. You will be notified once reviewed.";
 
             // Redirect to same action to prevent URL change and form resubmission
@@ -1013,6 +1038,52 @@ public class HomeController(DB db) : Controller
         catch (Exception ex)
         {
             Console.WriteLine($"Error creating notifications for all students: {ex.Message}");
+        }
+    }
+
+    //method to create notifications for ALL admins in the system
+    public static void CreateNotificationForAllAdmins(DB dbContext, string title, string message, string type, string? actionUrl = null)
+    {
+        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            return;
+
+        try
+        {
+            //get all admins
+            var adminIds = dbContext.Admins
+                .Select(a => a.Id)
+                .ToList();
+
+            if (!adminIds.Any())
+                return;
+
+            using var transaction = dbContext.Database.BeginTransaction();
+            try
+            {
+                var notifications = adminIds.Select(adminId => new Notification
+                {
+                    UserId = adminId,
+                    Title = title,
+                    Message = message,
+                    Type = type,
+                    ActionUrl = actionUrl,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                }).ToList();
+
+                dbContext.Notification.AddRange(notifications);
+                dbContext.SaveChanges();
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating notifications for all admins: {ex.Message}");
         }
     }
 

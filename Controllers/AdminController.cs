@@ -3772,5 +3772,110 @@ namespace SHAPEE.Controllers
             }
         }
 
+        //send overdue payment reminders for invoices that are already overdue
+        [HttpPost]
+        public async Task<IActionResult> SendOverdueReminders()
+        {
+            try
+            {
+                var today = DateTime.Today;
+
+                //find unpaid invoices that are overdue (due date < today)
+                var overdueInvoices = db.Invoices
+                    .Include(i => i.Student)
+                    .Where(i => !i.IsPaid 
+                        && i.DueDate.Date < today  //overdue
+                        && i.Student != null
+                        && !string.IsNullOrEmpty(i.Student.Email))
+                    .ToList();
+
+                int successCount = 0;
+                int failCount = 0;
+                int skippedCount = 0;
+
+                foreach (var invoice in overdueInvoices)
+                {
+                    var daysOverdue = (today - invoice.DueDate.Date).Days;
+                    
+                    //check if overdue reminder notification was already sent today
+                    var reminderSentToday = db.Notification
+                        .Any(n => n.UserId == invoice.StudentId
+                            && n.Title == "Overdue Payment Reminder"
+                            && n.Message.Contains(invoice.Id)
+                            && n.CreatedAt.Date == today);
+
+                    if (reminderSentToday)
+                    {
+                        skippedCount++;
+                        continue; //skip if already sent today
+                    }
+
+                    var student = invoice.Student;
+                    var studentName = student.FullName?.Trim() ?? student.Id;
+                    
+                    var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
+
+                    //send email
+                    var emailSent = await hp.SendOverdueReminderEmail(
+                        student.Email,
+                        studentName,
+                        invoice.Id,
+                        invoice.TotalAmount,
+                        invoice.DueDate,
+                        daysOverdue
+                    );
+
+                    //send notification regardless of email success
+                    HomeController.CreateNotificationForUser(
+                        db,
+                        invoice.StudentId,
+                        "Overdue Payment Reminder",
+                        $"⚠️ URGENT: Your invoice {invoice.Id} (RM {invoice.TotalAmount:N2}) is {daysText} overdue. Please make payment immediately to unlock your account.",
+                        "danger",
+                        "/Student/CurrentBilling"
+                    );
+
+                    if (emailSent)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+
+                var message = $"Processed {overdueInvoices.Count} overdue invoices: {successCount} reminders sent, {failCount} email failures, {skippedCount} already sent today.";
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = message,
+                        successCount = successCount,
+                        failCount = failCount,
+                        skippedCount = skippedCount,
+                        totalProcessed = overdueInvoices.Count
+                    });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("PaymentMonitoring");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error sending overdue reminders: {ex.Message}";
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new { success = false, message = errorMessage });
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("PaymentMonitoring");
+            }
+        }
+
     }
 }

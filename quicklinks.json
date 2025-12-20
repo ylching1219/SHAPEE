@@ -1,173 +1,359 @@
 [
-
-    {
-        "role": "Admin",
-        "group": "Account",
-        "title": "Profile",
-        "url": "/Admin/Profile",
-        "keywords": [ "profile", "account", "admin" ]
-    },
-    {
+  {
+      "role": "Admin",
+      "group": "Account",
+      "title": "Profile",
+      "url": "/Admin/Profile",
+      "keywords": [ "profile", "account", "admin" ]
+  },
+  {
       "role": "Admin",
       "group": "Dashboard",
       "title": "Admin Dashboard",
       "url": "/Admin/Dashboard",
       "keywords": [ "dashboard", "home", "admin" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Users",
       "title": "Manage Students",
       "url": "/Admin/StudentManagement",
       "keywords": [ "students", "user management", "student management" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Users",
       "title": "Manage Staff",
       "url": "/Admin/StaffManagement",
       "keywords": [ "staff", "user management", "staff management" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Users",
       "title": "Manage Admins",
       "url": "/Admin/AdminManagement",
       "keywords": [ "admins", "user management", "admin management" ]
-    },
-    {
+  },
+  {
+      "role": "Admin",
+      "group": "Class Management",
+      "title": "Create Class",
+      "url": "/Admin/ClassSection",
+      "keywords": [ "class", "class section", "create class", "schedule" ]
+  },
+  {
       "role": "Admin",
       "group": "Academic Management",
       "title": "Manage Faculty",
       "url": "/Admin/FacultyManagement",
       "keywords": [ "faculty", "academic", "faculty management" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Academic Management",
       "title": "Manage Program",
       "url": "/Admin/ProgramManagement",
       "keywords": [ "program", "academic", "program management" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Academic Management",
       "title": "Manage Course",
       "url": "/Admin/CourseManagement",
       "keywords": [ "course", "courses", "course management" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Academic Management",
       "title": "Program Course",
       "url": "/Admin/ProgramCourse",
       "keywords": [ "program course", "mapping", "academic" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Academic Management",
       "title": "Academic Calendar",
       "url": "/Admin/EventManagement",
       "keywords": [ "calendar", "academic calendar", "events" ]
-    },
-    {
+  },
+  {
+      "role": "Admin",
+      "group": "Academic Management",
+      "title": "Semester Configuration",
+      "url": "/Admin/SemesterConfig",
+      "keywords": [ "semester", "semester config", "academic", "configuration" ]
+  },
+  {
       "role": "Admin",
       "group": "Group Management",
       "title": "Manage Group",
       "url": "/Admin/GroupManagement",
       "keywords": [ "group", "group management", "tutorial group" ]
-    },
-    {
+  },
+  {
       "role": "Admin",
       "group": "Group Management",
       "title": "Assign Group",
       "url": "/Admin/AssignGroup",
       "keywords": [ "assign group", "students", "tutorial group" ]
-    },
-  
-    {
-        "role": "Staff",
-        "group": "Account",
-        "title": "Profile",
-        "url": "/Staff/Profile",
-        "keywords": [ "profile", "account", "staff", "teacher" ]
-    },
-    {
+  },
+  {
+      "role": "Admin",
+      "group": "Facilities",
+      "title": "Room Management",
+      "url": "/Admin/RoomManagement",
+      "keywords": [ "room", "room management", "facilities", "building" ]
+  },
+  {
+      "role": "Admin",
+      "group": "Applications",
+      "title": "Leave Applications",
+      "url": "/Admin/LeaveManagement",
+      "keywords": [ "leave", "leave applications", "leave management" ]
+  },
+  {
+      "role": "Admin",
+      "group": "Payment Management",
+      "title": "Payment Transactions",
+      "url": "/Admin/PaymentTransactions",
+      "keywords": [ "payment", "transactions", "payment transactions", "receipts" ]
+  },
+  {
+      "role": "Admin",
+      "group": "Payment Management",
+      "title": "Payment Monitoring",
+      "url": "/Admin/PaymentMonitoring",
+      "keywords": [ "payment monitoring", "reports", "overdue", "billing" ]
+  },
+  {
+      "role": "Admin",
+      "group": "Announcements",
+      "title": "Announcement Management",
+      "url": "/Home/AnnouncementManagement",
+      "keywords": [ "announcement", "announcements", "news", "notices" ]
+  },
+  {
+      "role": "Admin",
+      "group": "Notifications",
+      "title": "Notifications",
+      "url": "/Home/Notifications",
+      "keywords": [ "notifications", "alerts", "messages" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Account",
+      "title": "Profile",
+      "url": "/Staff/Profile",
+      "keywords": [ "profile", "account", "staff", "teacher" ]
+  },
+  {
       "role": "Staff",
       "group": "Dashboard",
       "title": "Staff Dashboard",
       "url": "/Staff/Dashboard",
       "keywords": [ "dashboard", "home", "staff" ]
-    },
-    {
+  },
+  {
       "role": "Staff",
       "group": "Attendance",
       "title": "Take Attendance",
       "url": "/Staff/ClassSelection?mode=take",
       "keywords": [ "attendance", "take attendance", "qr", "scan", "class selection" ]
-    },
-    {
+  },
+  {
       "role": "Staff",
       "group": "Attendance",
       "title": "View Attendance",
       "url": "/Staff/ClassSelection?mode=view",
       "keywords": [ "attendance", "view attendance", "class attendance" ]
-    },
-    {
+  },
+  {
+      "role": "Staff",
+      "group": "Attendance",
+      "title": "Attendance Management",
+      "url": "/Staff/AttendanceManagement",
+      "keywords": [ "attendance management", "attendance history", "attendance records" ]
+  },
+  {
       "role": "Staff",
       "group": "Calendar",
       "title": "Academic Calendar",
       "url": "/Staff/ViewCalendar",
       "keywords": [ "calendar", "academic calendar" ]
-    },
-    {
+  },
+  {
       "role": "Staff",
       "group": "Resources",
       "title": "Course Materials",
       "url": "/Staff/StaffClassroomUI",
       "keywords": [ "materials", "course materials", "classroom", "resources" ]
-    },
-  
-    {
-        "role": "Student",
-        "group": "Account",
-        "title": "Profile",
-        "url": "/Student/Profile",
-        "keywords": [ "profile", "account", "student" ]
-    },
-    {
+  },
+  {
+      "role": "Staff",
+      "group": "Resources",
+      "title": "Assignments & Grading",
+      "url": "/Staff/TaskList",
+      "keywords": [ "assignments", "grading", "tasks", "grade" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Communication",
+      "title": "Chat",
+      "url": "/Staff/Chat",
+      "keywords": [ "chat", "messages", "communication", "student chat" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Applications",
+      "title": "Leave Application",
+      "url": "/Home/LeaveApplication",
+      "keywords": [ "leave", "leave application", "attendance leave" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Applications",
+      "title": "Leave History",
+      "url": "/Home/LeaveHistory",
+      "keywords": [ "leave history", "leave applications", "my leaves" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Support",
+      "title": "Support Tickets",
+      "url": "/Staff/StaffTicketList",
+      "keywords": [ "support", "tickets", "help", "support tickets" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Announcements",
+      "title": "Announcement Management",
+      "url": "/Home/AnnouncementManagement",
+      "keywords": [ "announcement", "announcements", "news", "notices" ]
+  },
+  {
+      "role": "Staff",
+      "group": "Notifications",
+      "title": "Notifications",
+      "url": "/Home/Notifications",
+      "keywords": [ "notifications", "alerts", "messages" ]
+  },
+  {
+      "role": "Student",
+      "group": "Account",
+      "title": "Profile",
+      "url": "/Student/Profile",
+      "keywords": [ "profile", "account", "student" ]
+  },
+  {
       "role": "Student",
       "group": "Dashboard",
       "title": "Student Dashboard",
       "url": "/Student/Dashboard",
       "keywords": [ "dashboard", "home", "student" ]
-    },
-    {
+  },
+  {
       "role": "Student",
       "group": "Attendance",
       "title": "View Attendance",
       "url": "/Student/ViewAttendance",
       "keywords": [ "attendance", "view attendance" ]
-    },
-    {
+  },
+  {
       "role": "Student",
-      "group": "Billing",
-      "title": "Current Billing",
-      "url": "/Student/CurrentBilling",
-      "keywords": [ "billing", "fees", "current billing", "payment" ]
-    },
-    {
+      "group": "Attendance",
+      "title": "Attendance Leave",
+      "url": "/Home/LeaveApplication",
+      "keywords": [ "leave", "leave application", "attendance leave" ]
+  },
+  {
       "role": "Student",
-      "group": "Billing",
-      "title": "Payment History",
-      "url": "/Student/PaymentHistory",
-      "keywords": [ "payment history", "transactions", "payments", "billing" ]
-    },
-    {
+      "group": "Attendance",
+      "title": "Leave History",
+      "url": "/Home/LeaveHistory",
+      "keywords": [ "leave history", "leave applications", "my leaves" ]
+  },
+  {
+      "role": "Student",
+      "group": "Academic",
+      "title": "My Grades",
+      "url": "/Student/TaskList",
+      "keywords": [ "grades", "my grades", "results", "assignments" ]
+  },
+  {
+      "role": "Student",
+      "group": "Academic",
+      "title": "Assignments",
+      "url": "/Student/TaskList",
+      "keywords": [ "assignments", "tasks", "homework", "submissions" ]
+  },
+  {
+      "role": "Student",
+      "group": "Academic",
+      "title": "View Program Course",
+      "url": "/Student/ViewProgramCourse",
+      "keywords": [ "program course", "courses", "curriculum", "subjects" ]
+  },
+  {
+      "role": "Student",
+      "group": "Academic",
+      "title": "Classroom",
+      "url": "/Student/ClassroomUI",
+      "keywords": [ "classroom", "materials", "course materials", "resources" ]
+  },
+  {
       "role": "Student",
       "group": "Calendar",
       "title": "Academic Calendar",
       "url": "/Student/ViewCalendar",
       "keywords": [ "calendar", "academic calendar" ]
-    }
-  ]
+  },
+  {
+      "role": "Student",
+      "group": "Billing",
+      "title": "Current Billing",
+      "url": "/Student/CurrentBilling",
+      "keywords": [ "billing", "fees", "current billing", "payment" ]
+  },
+  {
+      "role": "Student",
+      "group": "Billing",
+      "title": "Payment History",
+      "url": "/Student/PaymentHistory",
+      "keywords": [ "payment history", "transactions", "payments", "billing" ]
+  },
+  {
+      "role": "Student",
+      "group": "Communication",
+      "title": "Chat",
+      "url": "/Student/Chat",
+      "keywords": [ "chat", "messages", "communication", "teacher chat" ]
+  },
+  {
+      "role": "Student",
+      "group": "Support",
+      "title": "FAQ",
+      "url": "/Student/FAQ",
+      "keywords": [ "faq", "frequently asked questions", "help", "questions" ]
+  },
+  {
+      "role": "Student",
+      "group": "Support",
+      "title": "Support Tickets",
+      "url": "/Student/TicketList",
+      "keywords": [ "support", "tickets", "help", "support tickets" ]
+  },
+  {
+      "role": "Student",
+      "group": "Announcements",
+      "title": "Announcements",
+      "url": "/Student/Announcements",
+      "keywords": [ "announcement", "announcements", "news", "notices" ]
+  },
+  {
+      "role": "Student",
+      "group": "Notifications",
+      "title": "Notifications",
+      "url": "/Home/Notifications",
+      "keywords": [ "notifications", "alerts", "messages" ]
+  }
+]
