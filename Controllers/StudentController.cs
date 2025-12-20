@@ -99,7 +99,12 @@ namespace SHAPEE.Controllers
 
                     var present = subjectAtts.Count(a => a.Status == "Present");
                     var absent = subjectAtts.Count(a => a.Status == "Absent");
-                    var leave = subjectAtts.Count(a => a.Status == "Leave");
+                    // Count unique dates with Leave status, not total leave records
+                    var leave = subjectAtts
+                        .Where(a => a.Status == "Leave")
+                        .Select(a => a.Date)
+                        .Distinct()
+                        .Count();
 
                     var consideredTotal = present + absent;
                     var percentage = consideredTotal > 0
@@ -118,6 +123,7 @@ namespace SHAPEE.Controllers
                 })
                 .OrderBy(s => s.CourseId)
                 .ToList();
+
 
             // Get latest announcements (top 4)
             var latestAnnouncements = db.Announcements
@@ -280,7 +286,12 @@ namespace SHAPEE.Controllers
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
             var overallAbsent = attendances.Count(a => a.Status == "Absent");
-            var overallLeave = attendances.Count(a => a.Status == "Leave");
+            //count unique dates with Leave status, not total leave records
+            var overallLeave = attendances
+                .Where(a => a.Status == "Leave")
+                .Select(a => a.Date)
+                .Distinct()
+                .Count();
             var overallTotal = attendances.Count;
 
             var consideredTotal = overallPresent + overallAbsent;
