@@ -3,6 +3,7 @@
     ViewData["Title"] = "My Timetable";
 }
 
+<!-- [Previous style section remains the same - keeping it as is] -->
 <style>
     .timetable-container {
         overflow-x: auto;
@@ -527,104 +528,14 @@
     <!-- End of Printable Area -->
 </div>
 
-<!-- Course Materials Section (Not printed) -->
+<!-- Course Materials Section (Not printed) - NOW WITH DYNAMIC LOADING -->
 <div class="course-materials-section">
     <div class="card shadow mb-4">
         <div class="card-header py-2">
             <h6 class="m-0 font-weight-bold text-primary">Semester Timetable By Course</h6>
         </div>
-        <div class="card-body">
-            @if (!Model.ClassSections.Any())
-            {
-                <p class="text-muted text-center">No course materials available.</p>
-            }
-            else
-            {
-                var groupedCourses = Model.ClassSections
-                .GroupBy(cs => cs.Course.Id)
-                .Select(g => new
-                {
-                    Course = g.First().Course,
-                    Sessions = g.ToList()
-                })
-                .OrderBy(x => x.Course.Id)
-                .ToList();
-
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
-                        <thead class="bg-light">
-                            <tr>
-                                <th style="width: 5%;">No</th>
-                                <th style="width: 30%;">Course</th>
-                                <th style="width: 35%;">Day & Time (Duration)</th>
-                                <th style="width: 15%;">Venue</th>
-                                <th style="width: 15%;">Lecturer/Instructor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (int i = 0; i < groupedCourses.Count; i++)
-                            {
-                                var item = groupedCourses[i];
-                                var course = item.Course;
-                                var sessions = item.Sessions;
-
-                                // Calculate average attendance percentage for this course
-                                var courseSectionIds = sessions.Select(s => s.SectionId).ToList();
-                                var coursePercentages = courseSectionIds
-                                    .Where(id => Model.AttendancePercentages.ContainsKey(id))
-                                    .Select(id => Model.AttendancePercentages[id])
-                                    .ToList();
-                                
-                                var avgAttendance = coursePercentages.Any() 
-                                    ? Math.Round(coursePercentages.Average(), 1) 
-                                    : 0;
-                                
-                                var attendanceClass = avgAttendance >= 80 ? "badge-success" : 
-                                                    avgAttendance >= 60 ? "badge-warning" : "badge-danger";
-                                
-                                var colors = new[] { "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c" };
-                                var courseColor = colors[i % colors.Length];
-
-                                <tr>
-                                    <td class="text-center">@(i + 1)</td>
-                                    <td>
-                                            <span class="badge course-badge @attendanceClass">
-                                                @avgAttendance%
-                                            </span>
-                                        <strong>@course.Id</strong> @course.Name
-                                    </td>
-                                    <td>
-                                        @foreach (var session in sessions.OrderBy(s => s.Day))
-                                        {
-                                            var duration = (session.EndTime.ToTimeSpan() - session.StartTime.ToTimeSpan()).TotalHours;
-                                                <div class="mb-1">
-                                                    <strong>@session.Day</strong>,
-                                                    @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
-                                                    ( @session.SectionType: @duration.ToString("0.0") hours )
-                                                </div>
-                                        }
-                                    </td>
-                                    <td>
-                                        @foreach (var session in sessions.OrderBy(s => s.Day))
-                                        {
-                                            <div class="mb-1">@(session.Room?.Id ?? "TBA")</div>
-                                        }
-                                    </td>
-                                    <td>
-                                        @foreach (var session in sessions.OrderBy(s => s.Day))
-                                        {
-                                            var staffName = session.Staff != null
-                                            ? $"{session.Staff.FirstName} {session.Staff.LastName}"
-                                            : "TBA";
-                                                <div class="mb-1">@staffName (Weekly)</div>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+        <div class="card-body" id="courseMaterialsContainer">
+            @await Html.PartialAsync("_TimetableAtt", Model)
         </div>
     </div>
 </div>
@@ -659,6 +570,9 @@
 
                 // Update week options
                 updateWeekOptions(semesterId);
+
+                // Update course materials table
+                updateCourseMaterials(semesterId);
             });
 
             // Handle week change
@@ -756,6 +670,36 @@
                     },
                     error: function() {
                         console.error('Error loading date range');
+                    }
+                });
+            }
+
+            // NEW: Update course materials table
+            function updateCourseMaterials(semesterId) {
+                $('#courseMaterialsContainer').html(
+                    '<div class="text-center py-5">' +
+                    '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="sr-only">Loading...</span>' +
+                    '</div>' +
+                    '<p class="mt-2 text-muted">Loading course materials...</p>' +
+                    '</div>'
+                );
+
+                $.ajax({
+                    url: '@Url.Action("GetCourseMaterialsData", "Student")',
+                    type: 'GET',
+                    data: { semesterId: semesterId },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        $('#courseMaterialsContainer').html(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading course materials:', error);
+                        $('#courseMaterialsContainer').html(
+                            '<p class="text-muted text-center">Error loading course materials. Please try again.</p>'
+                        );
                     }
                 });
             }

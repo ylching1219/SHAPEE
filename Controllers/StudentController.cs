@@ -2530,6 +2530,118 @@ namespace SHAPEE.Controllers
             return PartialView("_TimetableGrid", classSections);
         }
 
+        [HttpGet]
+        public IActionResult GetTimetableAttData(string? semesterId = null)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .Include(s => s.Program)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+                return PartialView("_TimetableAtt", new StudentTimetableVM
+                {
+                    ClassSections = new List<ClassSection>(),
+                    AttendancePercentages = new Dictionary<string, double>()
+                });
+
+            // Use active semester if none specified
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = db.Semesters
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            if (string.IsNullOrEmpty(semesterId))
+                return PartialView("_TimetableAtt", new StudentTimetableVM
+                {
+                    ClassSections = new List<ClassSection>(),
+                    AttendancePercentages = new Dictionary<string, double>()
+                });
+
+            // Get class sections for this semester
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // 1. Get Tutorial and Practical sections for student's tutorial group
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value
+                              && (cs.SectionType == "Tutorial" || cs.SectionType == "Practical"))
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // 2. Get courses this student should be enrolled in based on their program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                // 3. Get Lecture sections for those courses
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => cs.Course.Id)
+                .ToList();
+
+            // Calculate attendance percentages
+            var sectionIds = classSections.Select(cs => cs.SectionId).ToList();
+            var attendances = db.Attendances
+                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .ToList();
+
+            var attendancePercentages = classSections
+                .Select(section =>
+                {
+                    var sectionAttendances = attendances
+                        .Where(a => a.ClassSectionId == section.SectionId)
+                        .ToList();
+
+                    var presentCount = sectionAttendances.Count(x => x.Status == "Present");
+                    var absentCount = sectionAttendances.Count(x => x.Status == "Absent");
+                    var consideredTotal = presentCount + absentCount;
+
+                    var percentage = consideredTotal > 0
+                        ? Math.Round((double)presentCount / consideredTotal * 100, 1)
+                        : 0;
+
+                    return new { SectionId = section.SectionId, Percentage = percentage };
+                })
+                .ToDictionary(x => x.SectionId, x => x.Percentage);
+
+            var viewModel = new StudentTimetableVM
+            {
+                ClassSections = classSections,
+                AttendancePercentages = attendancePercentages,
+                Student = student
+            };
+
+            return PartialView("_TimetableAtt", viewModel);
+        }
+
         // Helper method to get day order for sorting
         private int GetDayOrder(string day)
         {
