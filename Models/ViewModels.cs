@@ -608,6 +608,7 @@ namespace SHAPEE.Models
         public int SelectedWeekNumber { get; set; }
         public DateTime? WeekStartDate { get; set; }
         public DateTime? WeekEndDate { get; set; }
+        public Dictionary<string, double> AttendancePercentages { get; set; } = new();
     }
 
 

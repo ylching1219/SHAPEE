@@ -580,26 +580,40 @@
                                 var course = item.Course;
                                 var sessions = item.Sessions;
 
+                                // Calculate average attendance percentage for this course
+                                var courseSectionIds = sessions.Select(s => s.SectionId).ToList();
+                                var coursePercentages = courseSectionIds
+                                    .Where(id => Model.AttendancePercentages.ContainsKey(id))
+                                    .Select(id => Model.AttendancePercentages[id])
+                                    .ToList();
+                                
+                                var avgAttendance = coursePercentages.Any() 
+                                    ? Math.Round(coursePercentages.Average(), 1) 
+                                    : 0;
+                                
+                                var attendanceClass = avgAttendance >= 80 ? "badge-success" : 
+                                                    avgAttendance >= 60 ? "badge-warning" : "badge-danger";
+                                
                                 var colors = new[] { "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c" };
                                 var courseColor = colors[i % colors.Length];
 
                                 <tr>
                                     <td class="text-center">@(i + 1)</td>
                                     <td>
-                                        <span class="badge course-badge" style="background: @courseColor;">
-                                            @((course.CreditHours * 100.0 / 20).ToString("0"))%
-                                        </span>
+                                            <span class="badge course-badge @attendanceClass">
+                                                @avgAttendance%
+                                            </span>
                                         <strong>@course.Id</strong> @course.Name
                                     </td>
                                     <td>
                                         @foreach (var session in sessions.OrderBy(s => s.Day))
                                         {
                                             var duration = (session.EndTime.ToTimeSpan() - session.StartTime.ToTimeSpan()).TotalHours;
-                                            <div class="mb-1">
-                                                <strong>@session.Day</strong>,
-                                                @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
-                                                ( @session.SectionType: @duration.ToString("0.0") hours )
-                                            </div>
+                                                <div class="mb-1">
+                                                    <strong>@session.Day</strong>,
+                                                    @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
+                                                    ( @session.SectionType: @duration.ToString("0.0") hours )
+                                                </div>
                                         }
                                     </td>
                                     <td>
@@ -614,7 +628,7 @@
                                             var staffName = session.Staff != null
                                             ? $"{session.Staff.FirstName} {session.Staff.LastName}"
                                             : "TBA";
-                                            <div class="mb-1">@staffName (Weekly)</div>
+                                                <div class="mb-1">@staffName (Weekly)</div>
                                         }
                                     </td>
                                 </tr>
