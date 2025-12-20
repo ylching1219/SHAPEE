@@ -55,6 +55,7 @@ namespace SHAPEE.Controllers
             base.OnActionExecuting(context);
         }
         // GET: /Student
+        // GET: /Student Dashboard - Updated with Leave Status
         public async Task<IActionResult> Dashboard()
         {
             await LoadProfilePicture();
@@ -99,7 +100,12 @@ namespace SHAPEE.Controllers
 
                     var present = subjectAtts.Count(a => a.Status == "Present");
                     var absent = subjectAtts.Count(a => a.Status == "Absent");
-                    var leave = subjectAtts.Count(a => a.Status == "Leave");
+                    // Count unique dates with Leave status, not total leave records
+                    var leave = subjectAtts
+                        .Where(a => a.Status == "Leave")
+                        .Select(a => a.Date)
+                        .Distinct()
+                        .Count();
 
                     var consideredTotal = present + absent;
                     var percentage = consideredTotal > 0
@@ -119,16 +125,117 @@ namespace SHAPEE.Controllers
                 .OrderBy(s => s.CourseId)
                 .ToList();
 
+
             // Get latest announcements (top 4)
             var latestAnnouncements = db.Announcements
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(4)
                 .ToList();
 
+            // Get today's schedule
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            var today = DateTime.Now.DayOfWeek.ToString();
+            var currentTime = TimeOnly.FromDateTime(DateTime.Now);
+            var todayDate = DateOnly.FromDateTime(DateTime.Now);
+
+            // Check if student has approved leave for today
+            var hasLeaveToday = db.LeaveApplications
+                .Any(l => l.UserId == studentId
+                       && l.Status == "Approved"
+                       && l.StartDate <= todayDate
+                       && l.EndDate >= todayDate);
+
+            List<TodayScheduleItemVM> todaySchedule = new List<TodayScheduleItemVM>();
+
+            if (student != null && activeSemester != null)
+            {
+                var todayClassSections = db.ClassSections
+                    .Include(cs => cs.Course)
+                    .Include(cs => cs.Room)
+                    .Where(cs => cs.SemesterId == activeSemester.Id && cs.Day == today)
+                    .AsQueryable();
+
+                // Filter by tutorial group for tutorial/practical or by program enrollment for lectures
+                List<ClassSection> relevantSections = new List<ClassSection>();
+
+                if (student.TutorialGroupId.HasValue)
+                {
+                    // Get tutorial/practical sections
+                    var tutorialSections = todayClassSections
+                        .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
+                        .ToList();
+                    relevantSections.AddRange(tutorialSections);
+
+                    // Get lecture sections for enrolled courses
+                    var enrolledCourses = db.ProgramCourses
+                        .Where(pc => pc.ProgramId == student.ProgramId
+                                  && pc.YearLevel == student.YearLevel
+                                  && pc.Semester == student.Semester)
+                        .Select(pc => pc.CourseId)
+                        .ToList();
+
+                    var lectureSections = todayClassSections
+                        .Where(cs => cs.SectionType == "Lecture"
+                                  && enrolledCourses.Contains(cs.CourseId))
+                        .ToList();
+                    relevantSections.AddRange(lectureSections);
+                }
+
+                // Process schedule items
+                todaySchedule = relevantSections
+                    .OrderBy(cs => cs.StartTime)
+                    .Select(cs =>
+                    {
+                        string status;
+
+                        // If student has approved leave for today, all classes show "Leave"
+                        if (hasLeaveToday)
+                        {
+                            status = "Leave";
+                        }
+                        else
+                        {
+                            // Check attendance status
+                            var hasAttendance = db.Attendances.Any(a =>
+                                a.StudentId == studentId
+                                && a.ClassSectionId == cs.SectionId
+                                && a.Date == todayDate);
+
+                            if (currentTime < cs.StartTime)
+                            {
+                                status = "Upcoming";
+                            }
+                            else if (currentTime >= cs.StartTime && currentTime <= cs.EndTime)
+                            {
+                                status = hasAttendance ? "Completed" : "Inprogress";
+                            }
+                            else // currentTime > cs.EndTime
+                            {
+                                status = hasAttendance ? "Completed" : "Absent";
+                            }
+                        }
+
+                        return new TodayScheduleItemVM
+                        {
+                            CourseId = cs.Course.Id,
+                            CourseName = cs.Course.Name,
+                            RoomLocation = $"{cs.Room?.Block ?? "N/A"} – {cs.Room?.Id ?? "N/A"}",
+                            StartTime = cs.StartTime,
+                            EndTime = cs.EndTime,
+                            Status = status
+                        };
+                    })
+                    .ToList();
+            }
+
             var vm = new StudentDashboardVM
             {
                 SubjectAttendances = subjectSummaries,
-                LatestAnnouncements = latestAnnouncements
+                LatestAnnouncements = latestAnnouncements,
+                TodaySchedule = todaySchedule
             };
 
             return View(vm);
@@ -280,7 +387,12 @@ namespace SHAPEE.Controllers
             //get overall stats
             var overallPresent = attendances.Count(a => a.Status == "Present");
             var overallAbsent = attendances.Count(a => a.Status == "Absent");
-            var overallLeave = attendances.Count(a => a.Status == "Leave");
+            //count unique dates with Leave status, not total leave records
+            var overallLeave = attendances
+                .Where(a => a.Status == "Leave")
+                .Select(a => a.Date)
+                .Distinct()
+                .Count();
             var overallTotal = attendances.Count;
 
             var consideredTotal = overallPresent + overallAbsent;
@@ -362,7 +474,7 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             var presentCount = attendances.Count(a => a.Status == "Present");
-            var absentCount  = attendances.Count(a => a.Status == "Absent");
+            var absentCount = attendances.Count(a => a.Status == "Absent");
             var totalSessions = attendances.Count;
             var consideredTotal = presentCount + absentCount;
             var attendancePercentage = consideredTotal > 0
@@ -586,7 +698,8 @@ namespace SHAPEE.Controllers
 
             if (Request.IsAjax())
             {
-                return Json(new {
+                return Json(new
+                {
                     success = true,
                     message = isFlagged
                         ? "Attendance recorded (flagged for review)."
@@ -1048,7 +1161,7 @@ namespace SHAPEE.Controllers
                     page.Content().PaddingTop(20).Column(col =>
                     {
                         // Buyer and Invoice Details Section
-                                                // Buyer and Invoice Details Section
+                        // Buyer and Invoice Details Section
                         col.Item().Row(row =>
                         {
                             // Left Column - Buyer Details
@@ -1602,7 +1715,7 @@ namespace SHAPEE.Controllers
 
             return View(enrolledCourses);
 
-           
+
         }
 
         // =======================
@@ -1840,9 +1953,9 @@ namespace SHAPEE.Controllers
             var userId = User.Identity.Name;
 
             var messages = db.ChatMessages;
-                //.Where(x => x.ClassSectionId == classId)
-                //.OrderBy(x => x.SentAt)
-                //.ToList();
+            //.Where(x => x.ClassSectionId == classId)
+            //.OrderBy(x => x.SentAt)
+            //.ToList();
 
             ViewBag.ClassId = classId;
             ViewBag.UserId = userId;
@@ -1895,7 +2008,7 @@ namespace SHAPEE.Controllers
 
             //get student name
             var studentName = student.FullName?.Trim() ?? student.Id;
-            
+
             //get course name
             var course = db.Courses.FirstOrDefault(c => c.Id == classId);
             var courseName = course?.Name ?? classId;
@@ -1964,7 +2077,7 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
-           
+
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -2417,6 +2530,118 @@ namespace SHAPEE.Controllers
 
             //return the partial view with the class sections
             return PartialView("_TimetableGrid", classSections);
+        }
+
+        [HttpGet]
+        public IActionResult GetTimetableAttData(string? semesterId = null)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .Include(s => s.Program)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+                return PartialView("_TimetableAtt", new StudentTimetableVM
+                {
+                    ClassSections = new List<ClassSection>(),
+                    AttendancePercentages = new Dictionary<string, double>()
+                });
+
+            // Use active semester if none specified
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = db.Semesters
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            if (string.IsNullOrEmpty(semesterId))
+                return PartialView("_TimetableAtt", new StudentTimetableVM
+                {
+                    ClassSections = new List<ClassSection>(),
+                    AttendancePercentages = new Dictionary<string, double>()
+                });
+
+            // Get class sections for this semester
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // 1. Get Tutorial and Practical sections for student's tutorial group
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value
+                              && (cs.SectionType == "Tutorial" || cs.SectionType == "Practical"))
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // 2. Get courses this student should be enrolled in based on their program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                // 3. Get Lecture sections for those courses
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => cs.Course.Id)
+                .ToList();
+
+            // Calculate attendance percentages
+            var sectionIds = classSections.Select(cs => cs.SectionId).ToList();
+            var attendances = db.Attendances
+                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .ToList();
+
+            var attendancePercentages = classSections
+                .Select(section =>
+                {
+                    var sectionAttendances = attendances
+                        .Where(a => a.ClassSectionId == section.SectionId)
+                        .ToList();
+
+                    var presentCount = sectionAttendances.Count(x => x.Status == "Present");
+                    var absentCount = sectionAttendances.Count(x => x.Status == "Absent");
+                    var consideredTotal = presentCount + absentCount;
+
+                    var percentage = consideredTotal > 0
+                        ? Math.Round((double)presentCount / consideredTotal * 100, 1)
+                        : 0;
+
+                    return new { SectionId = section.SectionId, Percentage = percentage };
+                })
+                .ToDictionary(x => x.SectionId, x => x.Percentage);
+
+            var viewModel = new StudentTimetableVM
+            {
+                ClassSections = classSections,
+                AttendancePercentages = attendancePercentages,
+                Student = student
+            };
+
+            return PartialView("_TimetableAtt", viewModel);
         }
 
         // Helper method to get day order for sorting

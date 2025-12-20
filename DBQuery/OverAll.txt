@@ -1,9 +1,9 @@
 ﻿--Faculty
 INSERT INTO [dbo].[Faculties] (Id, Name, CostPerCreditHour) VALUES
-('FOCS', 'Faculty of Computing & Information Technology', 20.00),
-('FAFB', 'Faculty of Accountancy, Finance & Business', 30.00),
-('FAS', 'Faculty of Applied Sciences', 60.00),
-('FOET', 'Faculty of Engineering & Technology', 50.00);
+('FOCS', 'Faculty of Computing & Information Technology', 158.00),
+('FAFB', 'Faculty of Accountancy, Finance & Business', 140.00),
+('FAS', 'Faculty of Applied Sciences', 185.00),
+('FOET', 'Faculty of Engineering & Technology', 170.00);
 
 --Program
 INSERT INTO [dbo].[Programs] (Id, Name, FacultyId) VALUES
