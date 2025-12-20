@@ -1,5 +1,9 @@
 ﻿@model SHAPEE.Models.CourseTask
 
+@{
+    ViewData["Title"] = "Submit Assignment";
+}
+
 <div class="container mt-4">
     <div class="mb-3">
         <a href="@Url.Action("TaskList", "Student")" class="btn btn-outline-secondary btn-sm">
@@ -47,20 +51,20 @@
 
             <hr />
 
-            @* ---  Submission Logic --- *@
+            @* --- Submission Logic --- *@
             @if (ViewBag.Submitted != null)
             {
                 <div class="alert alert-success">
                     <h5 class="alert-heading"><i class="fas fa-check-circle"></i> Assignment Submitted</h5>
                     <p>Submitted on: @ViewBag.Submitted.SubmittedAt.ToString("g")</p>
-                    <a href="@Url.Content(ViewBag.Submitted.FileUrl)" target="_blank" class="btn btn-sm btn-outline-primary btn-sm">
+                    <a href="@Url.Content(ViewBag.Submitted.FileUrl)" target="_blank" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-download"></i> Download My Submission
                     </a>
 
                     @if (ViewBag.Submitted.Grade != null)
                     {
-                        <div class="mt-3 p-3 bg-white rounded border">
-                            <span class="badge badge-info">Grade: @ViewBag.Submitted.Grade/100</span>
+                        <div class="mt-3 p-3 bg-white rounded border text-dark">
+                            <span class="badge bg-info text-dark">Grade: @ViewBag.Submitted.Grade/100</span>
                             <p class="mt-2 mb-0"><strong>Feedback:</strong> @ViewBag.Submitted.Feedback</p>
                         </div>
                     }
@@ -74,12 +78,22 @@
             }
             else
             {
-                <form enctype="multipart/form-data" method="post" action="/Student/Upload/@Model.Id">
-                    <div class="form-group">
-                        <label class="font-weight-bold">Upload Submission (PDF/DOCX):</label>
-                        <input class="form-control-file" type="file" name="file" required />
+                @* Using asp-helpers for secure and accurate routing *@
+                <form enctype="multipart/form-data" method="post"
+                      asp-action="Upload"
+                      asp-controller="Student"
+                      asp-route-id="@Model.Id">
+
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold mb-2">Upload Submission (PDF/DOCX):</label>
+                        <input class="form-control" type="file" name="file" required />
                     </div>
-                    <button type="submit" class="btn btn-success px-5">Submit Assignment</button>
+
+                    <button type="submit" class="btn btn-success px-5">
+                        <i class="fas fa-upload"></i> Submit Assignment
+                    </button>
                 </form>
             }
         </div>
