@@ -82,12 +82,12 @@
             });
         }
 
-                // Send payment reminders
+        //send payment reminders
         $('#sendRemindersBtn').on('click', function() {
             const btn = $(this);
             const originalText = btn.html();
             
-            // Disable button and show loading
+            //disable button and show loading
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
 
             $.ajax({
@@ -127,18 +127,18 @@
                     });
                 },
                 complete: function() {
-                    // Re-enable button
+                    //re-enable button
                     btn.prop('disabled', false).html(originalText);
                 }
             });
         });
 
-        // Send overdue payment reminders (using event delegation for dynamically loaded content)
+        //send overdue payment reminders
         $(document).on('click', '#sendOverdueRemindersBtn', function() {
             const btn = $(this);
             const originalText = btn.html();
             
-            // Disable button and show loading
+            //disable button and show loading
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
 
             $.ajax({
@@ -178,7 +178,7 @@
                     });
                 },
                 complete: function() {
-                    // Re-enable button
+                    //re-enable button
                     btn.prop('disabled', false).html(originalText);
                 }
             });

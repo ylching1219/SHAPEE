@@ -302,7 +302,6 @@ $(document).ready(function() {
     };
 
     //icon mapping for specific notification titles
-        //icon mapping for specific notification titles
         const titleIcons = {
             'Password Reset Successful': 'fas fa-lock',
             'Password Changed': 'fas fa-lock',
@@ -320,7 +319,7 @@ $(document).ready(function() {
             'Leave Application Rejected': 'fas fa-times-circle'
         };
 
-    // Get icon for notification based on title, fallback to type
+    //get icon for notification based on title, fallback to type
     function getNotificationIcon(notification) {
         const title = notification.title || '';
         // Check if we have a specific icon for this title

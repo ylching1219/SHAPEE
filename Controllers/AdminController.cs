@@ -3772,7 +3772,7 @@ namespace SHAPEE.Controllers
             }
         }
 
-        // Send overdue payment reminders for invoices that are already overdue
+        //send overdue payment reminders for invoices that are already overdue
         [HttpPost]
         public async Task<IActionResult> SendOverdueReminders()
         {
@@ -3780,11 +3780,11 @@ namespace SHAPEE.Controllers
             {
                 var today = DateTime.Today;
 
-                // Find unpaid invoices that are overdue (due date < today)
+                //find unpaid invoices that are overdue (due date < today)
                 var overdueInvoices = db.Invoices
                     .Include(i => i.Student)
                     .Where(i => !i.IsPaid 
-                        && i.DueDate.Date < today  // Overdue
+                        && i.DueDate.Date < today  //overdue
                         && i.Student != null
                         && !string.IsNullOrEmpty(i.Student.Email))
                     .ToList();
@@ -3797,7 +3797,7 @@ namespace SHAPEE.Controllers
                 {
                     var daysOverdue = (today - invoice.DueDate.Date).Days;
                     
-                    // Check if overdue reminder notification was already sent today
+                    //check if overdue reminder notification was already sent today
                     var reminderSentToday = db.Notification
                         .Any(n => n.UserId == invoice.StudentId
                             && n.Title == "Overdue Payment Reminder"
@@ -3807,7 +3807,7 @@ namespace SHAPEE.Controllers
                     if (reminderSentToday)
                     {
                         skippedCount++;
-                        continue; // Skip if already sent today
+                        continue; //skip if already sent today
                     }
 
                     var student = invoice.Student;
@@ -3815,7 +3815,7 @@ namespace SHAPEE.Controllers
                     
                     var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
 
-                    // Send email
+                    //send email
                     var emailSent = await hp.SendOverdueReminderEmail(
                         student.Email,
                         studentName,
@@ -3825,7 +3825,7 @@ namespace SHAPEE.Controllers
                         daysOverdue
                     );
 
-                    // Send notification regardless of email success
+                    //send notification regardless of email success
                     HomeController.CreateNotificationForUser(
                         db,
                         invoice.StudentId,
