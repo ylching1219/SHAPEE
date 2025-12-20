@@ -12,6 +12,8 @@
 
     <title>@ViewData["Title"] - TARUMT</title>
 
+    <link rel="icon" type="image/png" href="~/img/applogotarumt.png">
+
     <!--font-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -42,8 +44,8 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="@Url.Action("Dashboard", roles)">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
+                <div class="sidebar-brand-icon">
+                    <img src="~/img/applogotarumt.png" alt="TARUMT Logo" class="sidebar-logo" />
                 </div>
                 <div class="sidebar-brand-text mx-3">TARUMT</div>
             </a>
@@ -154,6 +156,14 @@
                         </a>
                     </li>
 
+                    <!-- Nav Item - Announcement Management -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("AnnouncementManagement", "Home")">
+                            <i class="fas fa-fw fa-bullhorn"></i>
+                            <span>Announcement Management</span>
+                        </a>
+                    </li>
+
                     <!-- Nav Item - Payment Management -->
                     <li class="nav-item">
                         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePayments" aria-expanded="true" aria-controls="collapsePayments">
@@ -164,7 +174,7 @@
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Payments</h6>
                                 <a class="collapse-item" href="@Url.Action("PaymentTransactions", "Admin")">Payment Transactions</a>
-                                <a class="collapse-item" href="@Url.Action("PaymentMonitoring", "Admin")">Payment Monitoring & Reports</a>
+                                <a class="collapse-item" href="@Url.Action("PaymentMonitoring", "Admin")">Payment Monitoring</a>
                             </div>
                         </div>
                     </li>
@@ -178,7 +188,6 @@
                         <div id="collapseReports" class="collapse" aria-labelledby="headingReports" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Reports</h6>
-                                <a class="collapse-item" href="#">Attendance Reports</a>
                                 <a class="collapse-item" href="#">Student Reports</a>
                                 <a class="collapse-item" href="#">System Reports</a>
                             </div>
@@ -283,6 +292,21 @@
                         </a>
                     </li>
 
+                    <!-- Nav Item - Announcement Management -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("AnnouncementManagement", "Home")">
+                            <i class="fas fa-fw fa-bullhorn"></i>
+                            <span>Announcement Management</span>
+                        </a>
+                    </li>
+
+                    <!-- Nav Item - Ticket -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("StaffTicketList", "Staff")">
+                            <i class="fas fa-fw fa-headset"></i>
+                            <span>Support Tickets</span>
+                        </a>
+                    </li>
                     <!-- Nav Item - Grades -->
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("TaskList", "Staff")">
@@ -316,8 +340,8 @@
                         <div id="collapseStudentClasses" class="collapse" aria-labelledby="headingStudentClasses" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Classes</h6>
-                                <a class="collapse-item" href="#">Join Class</a>
                                 <a class="collapse-item" href="#">View My Classes</a>
+                                <a class="collapse-item" href="@Url.Action("Timetable", "Student")">Timetable</a>
                                 <a class="collapse-item" href="#">Class Schedule</a>
                             </div>
                         </div>
@@ -384,22 +408,28 @@
                         </a>
                     </li>
 
-                    <!-- Nav Item - Materials -->
+                    <!-- Nav Item - Classroom -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                         <a class="nav-link" href="@Url.Action("ClassroomUI", "Student")">
                             <i class="fas fa-fw fa-file-alt"></i>
-                            <span>Course Materials</span>
+                            <span>Classroom</span>
                         </a>
                     </li>
 
                     <!-- Nav Item - Assignments -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                    <li class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "TaskList" ? "active" : "")">
+                        <a class="nav-link" href="@Url.Action("TaskList", "Student")">
                             <i class="fas fa-fw fa-tasks"></i>
                             <span>Assignments</span>
                         </a>
                     </li>
-
+                    <!-- Nav Item - ticket -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("TicketList", "Student")">
+                            <i class="fas fa-fw fa-ticket-alt"></i>
+                            <span>My Support Tickets</span>
+                        </a>
+                    </li>
                     <!-- Nav Item - Academic Calendar -->
                     <li class="nav-item">
                         <a class="nav-link" href="/Student/ViewCalendar">
@@ -413,12 +443,6 @@
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
-            <!-- Sidebar Toggler (Sidebar) -->
-            <div class="text-center d-none d-md-inline">
-                <button class="rounded-circle border-0" id="sidebarToggle" style="background-color: rgba(255, 255, 255, 0.2);">
-                    <i class="fas fa-angle-left"></i>
-                </button>
-            </div>
         </ul>
 
         <!--content-->
@@ -607,5 +631,8 @@
 
 
     @RenderSection("Scripts", required: false)
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>

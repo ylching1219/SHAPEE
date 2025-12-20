@@ -92,46 +92,68 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Students with Overdue Payments</h6>
+                <button type="button" class="btn btn-danger btn-sm" id="sendOverdueRemindersBtn">
+                    <i class="fas fa-exclamation-triangle"></i> Send Overdue Reminders
+                </button>
             </div>
-            <div class="card-body">
-                @if (Model.OverdueStudents.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    @if (Model.OverdueStudents.Any())
+                    {
+                        <table class="table table-hover mb-0" id="overduePaymentsTable">
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Student ID</th>
-                                    <th>Student Name</th>
-                                    <th>Invoice ID</th>
-                                    <th>Semester</th>
-                                    <th>Amount</th>
-                                    <th>Due Date</th>
-                                    <th>Days Overdue</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student ID</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Student Name</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Invoice ID</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Semester</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-right">Amount</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Due Date</th>
+                                    <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Days Overdue</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="overduePaymentsTableBody">
                                 @foreach (var student in Model.OverdueStudents)
                                 {
-                                    <tr>
-                                        <td>@student.StudentId</td>
-                                        <td>@student.StudentName</td>
-                                        <td>@student.InvoiceId</td>
-                                        <td>@student.SemesterId</td>
-                                        <td>RM @student.Amount.ToString("N2")</td>
-                                        <td>@student.DueDate.ToString("dd-MM-yyyy")</td>
-                                        <td><span class="badge badge-danger">@student.DaysOverdue days</span></td>
+                                    <tr class="border-bottom">
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.StudentId</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.StudentName</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.InvoiceId</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="font-weight-medium text-gray-900">@student.SemesterId</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <div class="font-weight-bold text-danger">RM @student.Amount.ToString("N2")</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-muted">
+                                            <div>@student.DueDate.ToString("yyyy-MM-dd")</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="badge badge-danger">
+                                                <i class="fas fa-exclamation-circle"></i> @student.DaysOverdue days
+                                            </span>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted">No overdue payments found.</p>
-                }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-0">No overdue payments found</p>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>

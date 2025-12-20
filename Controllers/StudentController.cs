@@ -551,6 +551,24 @@ namespace SHAPEE.Controllers
 
             db.Attendances.Add(att);
 
+            //if flagged, also flag all other attendances with the same IP in the same time window
+            if (isFlagged && !string.IsNullOrEmpty(ip))
+            {
+                var existingAttendancesWithSameIp = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId
+                        && a.Date == today
+                        && a.IpAddress == ip
+                        && a.RegisteredAt >= windowStart
+                        && !a.IsFlaged) //only update those not already flagged
+                    .ToList();
+
+                foreach (var existingAtt in existingAttendancesWithSameIp)
+                {
+                    existingAtt.IsFlaged = true;
+                    existingAtt.FlagReason = "Multiple students using same IP in short time window.";
+                }
+            }
+
             try
             {
                 db.SaveChanges();
@@ -728,65 +746,14 @@ namespace SHAPEE.Controllers
         //export iCal for students
         public IActionResult ExportICal(string? semesterId = null)
         {
-            var eventsQuery = db.CalendarEvents.AsQueryable();
-
-            if (!string.IsNullOrEmpty(semesterId))
-            {
-                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-                if (semester != null)
-                {
-                    eventsQuery = eventsQuery.Where(e =>
-                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
-                        e.EndTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
-                }
-            }
-
-            var events = eventsQuery.ToList();
-
-            var ical = new StringBuilder();
-            ical.AppendLine("BEGIN:VCALENDAR");
-            ical.AppendLine("VERSION:2.0");
-            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
-            ical.AppendLine("CALSCALE:GREGORIAN");
-            ical.AppendLine("METHOD:PUBLISH");
-
-            foreach (var evt in events)
-            {
-                ical.AppendLine("BEGIN:VEVENT");
-                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
-                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"SUMMARY:{evt.Title}");
-                ical.AppendLine($"DESCRIPTION:{evt.Description}");
-                ical.AppendLine($"LOCATION:Academic Calendar");
-                ical.AppendLine($"STATUS:CONFIRMED");
-                ical.AppendLine("END:VEVENT");
-            }
-
-            ical.AppendLine("END:VCALENDAR");
-
-            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
-            return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+            return Helper.ExportICalendar(db, semesterId);
         }
 
         //get semester details for calendar navigation
         [HttpGet]
         public IActionResult GetSemesterDetails(string semesterId)
         {
-            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-            if (semester == null)
-            {
-                return Json(new { success = false, message = "Semester not found." });
-            }
-
-            return Json(new
-            {
-                success = true,
-                id = semester.Id,
-                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
-                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
-                isActive = semester.IsActive
-            });
+            return Helper.GetSemesterDetails(db, semesterId);
         }
 
 
@@ -1034,10 +1001,10 @@ namespace SHAPEE.Controllers
 
         private string CreatePdfReceipt(
             string receiptId,
-            string studentName,
-            string description,
-            decimal billAmount,
-            decimal amountPaid,
+            Invoice invoice,
+            Student student,
+            List<ProgramCourse> programCourses,
+            decimal costPerCreditHour,
             DateTime receiptDate)
         {
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "receipts");
@@ -1045,6 +1012,14 @@ namespace SHAPEE.Controllers
 
             var fileName = $"{receiptId}.pdf";
             var physical = Path.Combine(folder, fileName);
+
+            var studentName = student?.FullName?.Trim() ?? invoice.StudentId;
+            var studentRegNo = student?.Id ?? invoice.StudentId;
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == invoice.SemesterId);
+            var semesterName = semester?.Id ?? invoice.SemesterId;
+            var program = student?.Program;
+            var programName = program?.Name ?? "N/A";
+            var yearLevel = student != null ? $"Year {student.YearLevel} Semester {student.Semester}" : "N/A";
 
             Document.Create(container =>
             {
@@ -1054,46 +1029,142 @@ namespace SHAPEE.Controllers
                     page.Margin(40);
                     page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
 
+                    // Header
                     page.Header().Column(col =>
                     {
                         col.Item().Text("TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY")
                             .FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
-
-                        col.Item().PaddingTop(18).Text("RECEIPT").FontSize(16).Bold();
+                        col.Item().PaddingTop(4).Text("Wholly owned and operated by the TARC Education Foundation")
+                            .FontSize(9).FontColor(Colors.Grey.Darken1);
+                        col.Item().PaddingTop(4).Row(row =>
+                        {
+                            row.RelativeItem().Text("Email: finance@tarc.edu.my").FontSize(9);
+                            row.RelativeItem().AlignRight().Text("SST Number: W10-1812-32000111").FontSize(9);
+                        });
+                        col.Item().PaddingTop(12).Text("E-INVOICE").FontSize(18).Bold().AlignCenter();
                     });
 
-                    page.Content().PaddingTop(18).Element(e =>
+                    // Content
+                    page.Content().PaddingTop(20).Column(col =>
                     {
-                        e.Border(1).BorderColor(Colors.Grey.Medium).Padding(18).Table(table =>
+                        // Buyer and Invoice Details Section
+                                                // Buyer and Invoice Details Section
+                        col.Item().Row(row =>
+                        {
+                            // Left Column - Buyer Details
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(buyerCol =>
+                            {
+                                buyerCol.Item().Text("Buyer Details").FontSize(12).Bold();
+                                buyerCol.Item().PaddingTop(8).Text($"Buyer Name: {studentName}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Reg. No.: {studentRegNo}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Contact No.: {student?.Contact ?? "N/A"}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Email: {student?.Email ?? "N/A"}").FontSize(10);
+                            });
+
+                            // Right Column - Invoice & Student Details
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(invoiceCol =>
+                            {
+                                invoiceCol.Item().Text("Invoice & Student Details").FontSize(12).Bold();
+                                invoiceCol.Item().PaddingTop(8).Text($"Unique Identifier No.: {receiptId}").FontSize(10);
+                                invoiceCol.Item().Text($"E-Invoice Code: {invoice.Id}").FontSize(10);
+                                invoiceCol.Item().Text($"Invoice Date: {receiptDate:yyyy-MM-dd HH:mm:ss}").FontSize(10);
+                                invoiceCol.Item().Text($"Student Name: {studentName}").FontSize(10);
+                                invoiceCol.Item().Text($"Student Reg. No.: {studentRegNo}").FontSize(10);
+                                invoiceCol.Item().Text($"Year of Study: {yearLevel}").FontSize(10);
+                                invoiceCol.Item().Text($"Program/Course: {programName}").FontSize(10);
+                            });
+                        });
+
+                        col.Item().PaddingTop(16);
+
+                        // Items Table
+                        col.Item().Border(1).BorderColor(Colors.Grey.Medium).Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
                             {
-                                columns.RelativeColumn(3);   // label
-                                columns.ConstantColumn(12);  // :
-                                columns.RelativeColumn(6);   // value
+                                columns.RelativeColumn(3);  // Description
+                                columns.RelativeColumn(1);   // Qty (Credit Hours)
+                                columns.RelativeColumn(1.5f); // Price (RM) - per credit hour
+                                columns.RelativeColumn(1);   // Tax %
+                                columns.RelativeColumn(1.5f); // Tax (RM)
+                                columns.RelativeColumn(1.5f); // Excl. Tax (RM)
                             });
 
-                            void Row(string label, string value)
-                            {
-                                table.Cell().PaddingVertical(6).Text(label);
-                                table.Cell().PaddingVertical(6).AlignCenter().Text(":");
-                                table.Cell().PaddingVertical(6).Text(value);
-                            }
+                            // Header Row
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Description").Bold();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Qty").Bold().AlignCenter();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Price (RM)").Bold().AlignRight();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Tax %").Bold().AlignCenter();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Tax (RM)").Bold().AlignRight();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Excl. Tax (RM)").Bold().AlignRight();
 
-                            Row("Receipt Number", receiptId);
-                            Row("Name", studentName);
-                            Row("Description", description); // e.g. Fees 202501 Y1S1
-                            Row("Bill Amount", $"RM {billAmount:N2}");
-                            Row("Amount Paid", $"RM {amountPaid:N2}");
-                            Row("Receipt Date", receiptDate.ToString("dd-MM-yyyy"));
-                            Row("Comment", "");
+                            // Course Items
+                            foreach (var pc in programCourses)
+                            {
+                                var course = pc.Course;
+                                var creditHours = course.CreditHours;
+                                var pricePerCredit = costPerCreditHour;
+                                var totalForCourse = creditHours * pricePerCredit;
+
+                                table.Cell().Padding(8).Text(course.Name ?? course.Id).FontSize(10);
+                                table.Cell().Padding(8).Text(creditHours.ToString()).AlignCenter().FontSize(10);
+                                table.Cell().Padding(8).Text(pricePerCredit.ToString("N2")).AlignRight().FontSize(10);
+                                table.Cell().Padding(8).Text("0.00").AlignCenter().FontSize(10);
+                                table.Cell().Padding(8).Text("0.00").AlignRight().FontSize(10);
+                                table.Cell().Padding(8).Text(totalForCourse.ToString("N2")).AlignRight().FontSize(10);
+                            }
+                        });
+
+                        col.Item().PaddingTop(12);
+
+                        // Payment Summary
+                        col.Item().Row(row =>
+                        {
+                            row.RelativeItem(2);
+                            row.RelativeItem(2).Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(summaryCol =>
+                            {
+                                summaryCol.Item().Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Excluding Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(10).Bold();
+                                });
+                                summaryCol.Item().PaddingTop(4).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Service Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text("RM 0.00").FontSize(10);
+                                });
+                                summaryCol.Item().PaddingTop(4).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Including Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(10).Bold();
+                                });
+                                summaryCol.Item().PaddingTop(8).BorderTop(1).BorderColor(Colors.Grey.Medium).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Payable Amount:").FontSize(11).Bold();
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(11).Bold();
+                                });
+                            });
+                        });
+
+                        col.Item().PaddingTop(16);
+
+                        // Footer
+                        col.Item().Row(footerRow =>
+                        {
+                            footerRow.RelativeItem().Column(footerCol =>
+                            {
+                                footerCol.Item().Text($"Reference No.: {receiptId}").FontSize(9);
+                                footerCol.Item().Text($"Remarks: {invoice.Id}").FontSize(9);
+                            });
+                            // No QR code as requested
                         });
                     });
 
-                    page.Footer().PaddingTop(28).Column(col =>
+                    // Page Footer
+                    page.Footer().PaddingTop(20).Column(footerCol =>
                     {
-                        col.Item().Text("1. This is a computer generated receipt and does not require a signature.").FontSize(9);
-                        col.Item().Text("2. This official receipt is valid subject to clearance.").FontSize(9);
+                        footerCol.Item().Text("1. This is a computer generated receipt and does not require a signature.").FontSize(9);
+                        footerCol.Item().Text("2. This official receipt is valid subject to clearance.").FontSize(9);
                     });
                 });
             })
@@ -1167,19 +1238,37 @@ namespace SHAPEE.Controllers
             // prevent double payment if user refreshes success page
             if (!invoice.IsPaid)
             {
-                var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+                var student = db.Students
+                    .Include(s => s.Program)
+                        .ThenInclude(p => p.Faculty)
+                    .FirstOrDefault(s => s.Id == studentId);
+
+                if (student == null || string.IsNullOrEmpty(student.ProgramId))
+                {
+                    TempData["ErrorMessage"] = "Student program information not found.";
+                    return RedirectToAction("CurrentBilling");
+                }
+
+                // Get program courses for this semester
+                var programCourses = db.ProgramCourses
+                    .Where(pc =>
+                        pc.ProgramId == student.ProgramId &&
+                        pc.YearLevel == student.YearLevel &&
+                        pc.Semester == student.Semester)
+                    .Include(pc => pc.Course)
+                    .ToList();
+
+                var costPerCreditHour = student.Program.Faculty.CostPerCreditHour;
 
                 var receiptId = "RCP-" + DateTime.Now.ToString("yyMMdd-HHmmssfff");
-                var description = student != null
-                    ? $"Fees {invoice.SemesterId} Y{student.YearLevel}S{student.Semester}"
-                    : $"Fees {invoice.SemesterId}";
+                var description = $"Fees {invoice.SemesterId} Y{student.YearLevel}S{student.Semester}";
 
                 var receiptUrl = CreatePdfReceipt(
                     receiptId: receiptId,
-                    studentName: student?.FullName?.Trim() ?? studentId,
-                    description: description,
-                    billAmount: invoice.TotalAmount,
-                    amountPaid: invoice.TotalAmount,
+                    invoice: invoice,
+                    student: student,
+                    programCourses: programCourses,
+                    costPerCreditHour: costPerCreditHour,
                     receiptDate: DateTime.Now
                 );
 
@@ -1614,30 +1703,41 @@ namespace SHAPEE.Controllers
         }
 
         //task section
+        //task list
         public IActionResult TaskList()
         {
-            var userId = User.Identity.Name;
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
+            if (student == null || student.TutorialGroupId == null) return View(new List<CourseTask>());
+
+            // Get tasks for the student's specific tutorial group sections
             var tasks = db.CourseTasks
-                .Include(x => x.Submissions)
-                .Where(x => x.ClassSectionId == "SEC001") // adjust
-                .OrderBy(x => x.DueDate)
+                .Include(t => t.ClassSection)
+                .Include(t => t.Submissions.Where(s => s.StudentId == studentId))
+                .Where(t => t.ClassSection.TutorialGroupId == student.TutorialGroupId)
+                .OrderBy(t => t.DueDate)
                 .ToList();
 
             return View(tasks);
         }
-
         public IActionResult TaskSubmit(string id)
         {
-            var task = db.CourseTasks.FirstOrDefault(x => x.Id == id);
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var userId = User.Identity.Name;
+            // Fetch Task + Class info + Course details
+            var task = db.CourseTasks
+                .Include(t => t.ClassSection)
+                    .ThenInclude(cs => cs.Course)
+                .FirstOrDefault(t => t.Id == id);
 
+            if (task == null) return NotFound();
+
+            // Check for existing submission
             var submission = db.Submissions
-                .FirstOrDefault(x => x.StudentId == userId && x.CourseTaskId == id);
+                .FirstOrDefault(x => x.StudentId == studentId && x.CourseTaskId == id);
 
             ViewBag.Submitted = submission;
-
             ViewBag.IsLate = (DateTime.Now > task.DueDate);
 
             return View(task);
@@ -1724,7 +1824,7 @@ namespace SHAPEE.Controllers
             return View(messages);
         }
 
-
+        //send msg to staff
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Send(string classId, string content)
@@ -1732,17 +1832,20 @@ namespace SHAPEE.Controllers
             if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // 1. Find the actual Lecturer for this course based on the student's group
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-            if (student == null) return Json(new { success = false, message = "Student not found" });
 
+            if (student == null || student.TutorialGroupId == null)
+                return Json(new { success = false, message = "Student enrollment error" });
+
+            // Identify the correct lecturer
             var lecturerId = db.ClassSections
                 .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
                 .Select(cs => cs.StaffId)
-                .FirstOrDefault() ?? "STF0002"; // Fallback if no section found
+                .FirstOrDefault();
 
-            // 2. Generate ID (CM001...)
+            if (string.IsNullOrEmpty(lecturerId)) return Json(new { success = false, message = "No lecturer assigned" });
+
+            // Generate ID (CMxxx)
             var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
             int nextNum = 1;
             if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
@@ -1765,13 +1868,13 @@ namespace SHAPEE.Controllers
             db.SaveChanges();
 
             //get student name
-            var studentName = student.FullName?.Trim() ?? studentId;
-
+            var studentName = student.FullName?.Trim() ?? student.Id;
+            
             //get course name
             var course = db.Courses.FirstOrDefault(c => c.Id == classId);
             var courseName = course?.Name ?? classId;
 
-            //notify the staff who received the message
+            //notify the staff member who received the message
             HomeController.CreateNotificationForUser(
                 db,
                 lecturerId,
@@ -1783,39 +1886,6 @@ namespace SHAPEE.Controllers
 
             return Json(new { success = true });
         }
-        //// SEND MESSAGE
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Send(string classId, string content)
-        //{
-        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
-
-        //    var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //    // 1. Find the actual Lecturer for this course and student group
-        //    var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-        //    var lecturerId = db.ClassSections
-        //        .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
-        //        .Select(cs => cs.StaffId)
-        //        .FirstOrDefault() ?? "STF0002"; // Fallback to test ID
-
-        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-        //    int nextNum = (lastMsg != null && lastMsg.Id.StartsWith("CM") && int.TryParse(lastMsg.Id.Substring(2), out int num)) ? num + 1 : 1;
-
-        //    var msg = new ChatMessage
-        //    {
-        //        Id = $"CM{nextNum:D3}",
-        //        SenderId = studentId,
-        //        ReceiverId = lecturerId, // Dynamic Receiver
-        //        Content = content,
-        //        SentAt = DateTime.Now,
-        //        IsRead = false
-        //    };
-
-        //    db.ChatMessages.Add(msg);
-        //    db.SaveChanges();
-        //    return Json(new { success = true });
-        //}
 
         // =======================
         // STUDENT TICKET DETAILS
@@ -1908,7 +1978,7 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
-            // 5. Handle AJAX response
+            // Handle AJAX response
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new
@@ -1948,7 +2018,7 @@ namespace SHAPEE.Controllers
         {
             string studentId = "2500001";
 
-            // 1. Get the student without Includes to avoid SQL crashes
+            //  Get the student without Includes to avoid SQL crashes
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
             if (student == null) return Content("Student not found.");
@@ -1956,7 +2026,7 @@ namespace SHAPEE.Controllers
             var report = new System.Text.StringBuilder();
             report.AppendLine("====== RAW STUDENT DATA (PROPERTY DUMP) ======");
 
-            // 2. Automatically loop through every property in the class
+            //  Automatically loop through every property in the class
             var properties = student.GetType().GetProperties();
             foreach (var prop in properties)
             {
@@ -1986,14 +2056,26 @@ namespace SHAPEE.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMessages(string? search)
+        public IActionResult GetMessages(string classId, string? search)
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students.FirstOrDefault(s => s.Id == currentUserId);
 
-            // Logic: Get messages where I am sender or I am receiver (with STF0002)
+            if (student == null) return Json(new List<object>());
+
+            // FIND THE CORRECT STAFF: The one teaching THIS student's group in THIS course
+            var lecturerId = db.ClassSections
+                .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
+                .Select(cs => cs.StaffId)
+                .FirstOrDefault();
+
+            // If no lecturer found for this specific class/group combo, return empty
+            if (string.IsNullOrEmpty(lecturerId)) return Json(new List<object>());
+
+            // QUERY: Pull messages between (Student <-> Lecturer)
             var query = db.ChatMessages
-                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == "STF0002") ||
-                            (x.SenderId == "STF0002" && x.ReceiverId == currentUserId));
+                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == lecturerId) ||
+                            (x.SenderId == lecturerId && x.ReceiverId == currentUserId));
 
             if (!string.IsNullOrEmpty(search))
             {
@@ -2006,40 +2088,11 @@ namespace SHAPEE.Controllers
                     sender = m.SenderId,
                     content = m.Content,
                     time = m.SentAt.ToString("HH:mm"),
-                    isMe = m.SenderId == currentUserId
+                    isMe = m.SenderId == currentUserId // Decides if message is Right (blue) or Left (white)
                 }).ToList();
 
             return Json(messages);
         }
-
-        //[HttpPost]
-        //public IActionResult Send(string content)
-        //{
-        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
-
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-        //    int nextNum = 1;
-        //    if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
-        //    {
-        //        if (int.TryParse(lastMsg.Id.Substring(2), out int num))
-        //            nextNum = num + 1;
-        //    }
-
-        //    var msg = new ChatMessage
-        //    {
-        //        Id = $"CM{nextNum:D3}",
-        //        SenderId = userId,
-        //        ReceiverId = "STF0002", // Reply goes to Staff
-        //        Content = content,
-        //        SentAt = DateTime.Now,
-        //        IsRead = false
-        //    };
-
-        //    db.ChatMessages.Add(msg);
-        //    db.SaveChanges();
-        //    return Json(new { success = true });
-        //}
 
         //JS
         public IActionResult Announcements(string? search, string? sort)
@@ -2090,6 +2143,257 @@ namespace SHAPEE.Controllers
                 return PartialView("_AnnouncementDetails", null);
 
             return PartialView("_AnnouncementDetails", announcement);
+        }
+
+        // Timetable
+        public IActionResult Timetable(string? semesterId = null, int? weekNumber = null)
+        {
+            ViewData["Title"] = "My Timetable";
+
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.Program)
+                .Include(s => s.TutorialGroup)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+            {
+                TempData["ErrorMessage"] = "Student not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Get available semesters
+            var semesters = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .ToList();
+
+            // Use active semester if no semester selected
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = semesters.FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            var selectedSemester = semesters.FirstOrDefault(s => s.Id == semesterId);
+
+            // Calculate weeks
+            int totalWeeks = 0;
+            DateTime? weekStartDate = null;
+            DateTime? weekEndDate = null;
+
+            if (selectedSemester != null)
+            {
+                var semesterDuration = (selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                       selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+                totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+                // Default to week 1 if not specified
+                if (!weekNumber.HasValue || weekNumber < 1 || weekNumber > totalWeeks)
+                {
+                    weekNumber = 1;
+                }
+
+                // Calculate week date range
+                weekStartDate = selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)
+                    .AddDays((weekNumber.Value - 1) * 7);
+                weekEndDate = weekStartDate.Value.AddDays(6);
+
+                // Ensure we don't exceed semester end date
+                if (weekEndDate > selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue))
+                {
+                    weekEndDate = selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue);
+                }
+            }
+
+            // Get class sections for the student
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // Get sections for student's tutorial group (Tutorial & Practical)
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // Get lecture sections for student's program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => cs.Day)
+                .ThenBy(cs => cs.StartTime)
+                .ToList();
+
+            var viewModel = new StudentTimetableVM
+            {
+                Student = student,
+                ClassSections = classSections,
+                Semesters = semesters,
+                SelectedSemesterId = semesterId,
+                SelectedSemester = selectedSemester,
+                TotalWeeks = totalWeeks,
+                SelectedWeekNumber = weekNumber ?? 1,
+                WeekStartDate = weekStartDate,
+                WeekEndDate = weekEndDate
+            };
+
+            return View(viewModel);
+        }
+
+        // Add these methods to your StudentController
+
+        [HttpGet]
+        public IActionResult GetTimetableData(string? semesterId = null, int? weekNumber = null)
+        {
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .Include(s => s.Program)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            if (student == null)
+                return PartialView("_TimetableGrid", new List<ClassSection>());
+
+            // Use active semester if none specified
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = db.Semesters
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            if (string.IsNullOrEmpty(semesterId))
+                return PartialView("_TimetableGrid", new List<ClassSection>());
+
+            // Get class sections for this semester
+            var classSectionsQuery = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Where(cs => cs.SemesterId == semesterId)
+                .AsQueryable();
+
+            List<ClassSection> classSections = new List<ClassSection>();
+
+            if (student.TutorialGroupId.HasValue)
+            {
+                // 1. Get Tutorial and Practical sections for student's tutorial group
+                var tutorialSections = classSectionsQuery
+                    .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value
+                              && (cs.SectionType == "Tutorial" || cs.SectionType == "Practical"))
+                    .ToList();
+
+                classSections.AddRange(tutorialSections);
+
+                // 2. Get courses this student should be enrolled in based on their program/year/semester
+                var coursesInProgram = db.ProgramCourses
+                    .Where(pc => pc.ProgramId == student.ProgramId
+                              && pc.YearLevel == student.YearLevel
+                              && pc.Semester == student.Semester)
+                    .Select(pc => pc.CourseId)
+                    .ToList();
+
+                // 3. Get Lecture sections for those courses
+                var lectureSections = classSectionsQuery
+                    .Where(cs => cs.SectionType == "Lecture"
+                              && coursesInProgram.Contains(cs.CourseId))
+                    .ToList();
+
+                classSections.AddRange(lectureSections);
+            }
+
+            // Remove duplicates and sort by day and time
+            classSections = classSections
+                .GroupBy(cs => cs.SectionId)
+                .Select(g => g.First())
+                .OrderBy(cs => GetDayOrder(cs.Day))
+                .ThenBy(cs => cs.StartTime)
+                .ToList();
+
+            // Return the partial view with the class sections
+            return PartialView("_TimetableGrid", classSections);
+        }
+
+        // Helper method to get day order for sorting
+        private int GetDayOrder(string day)
+        {
+            return day switch
+            {
+                "Monday" => 1,
+                "Tuesday" => 2,
+                "Wednesday" => 3,
+                "Thursday" => 4,
+                "Friday" => 5,
+                "Saturday" => 6,
+                "Sunday" => 7,
+                _ => 8
+            };
+        }
+
+        [HttpGet]
+        public IActionResult GetSemesterWeeks(string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var semesterDuration = (semester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                   semester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+            var totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+            return Json(new { success = true, totalWeeks = totalWeeks });
+        }
+
+        [HttpGet]
+        public IActionResult GetWeekDateRange(string semesterId, int weekNumber)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var weekStartDate = semester.StartDate.ToDateTime(TimeOnly.MinValue)
+                .AddDays((weekNumber - 1) * 7);
+            var weekEndDate = weekStartDate.AddDays(6);
+
+            // Ensure we don't exceed semester end date
+            if (weekEndDate > semester.EndDate.ToDateTime(TimeOnly.MaxValue))
+            {
+                weekEndDate = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
+            }
+
+            return Json(new
+            {
+                success = true,
+                startDate = weekStartDate.ToString("dd MMM yyyy"),
+                endDate = weekEndDate.ToString("dd MMM yyyy")
+            });
         }
     }
 }

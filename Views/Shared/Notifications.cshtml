@@ -7,8 +7,41 @@
     var sort = ViewBag.Sort as string ?? "newest";
     var unreadCount = ViewBag.UnreadCount as int? ?? 0;
     var totalCount = ViewBag.TotalCount as int? ?? 0;
-}
 
+    string GetNotificationIcon(string title, string type)
+    {
+                var titleIcons = new Dictionary<string, string>
+        {
+            { "Password Reset Successful", "fas fa-lock" },
+            { "Password Changed", "fas fa-lock" },
+            { "New Invoice Generated", "fas fa-receipt" },
+            { "Account Unlocked", "fas fa-unlock" },
+            { "Payment Successful", "fas fa-wallet" },
+            { "Payment Reminder", "fas fa-exclamation-triangle" },
+            { "Overdue Payment Reminder", "fas fa-exclamation-circle" },
+            { "Account Locked - Payment Overdue", "fas fa-lock" },
+            { "New Message from Student", "fas fa-comments" },
+            { "New Message from Teacher", "fas fa-comments" },
+            { "New Classwork Posted", "fas fa-file-alt" },
+            { "New Announcement", "fas fa-bullhorn" },
+            { "Leave Application Approved", "fas fa-check-circle" },
+            { "Leave Application Rejected", "fas fa-times-circle" }
+        };
+        if (titleIcons.ContainsKey(title))
+        {
+            return titleIcons[title];
+        }
+
+        return type switch
+        {
+            "info" => "fas fa-info-circle",
+            "success" => "fas fa-check-circle",
+            "warning" => "fas fa-exclamation-triangle",
+            "error" => "fas fa-times-circle",
+            _ => "fas fa-bell"
+        };
+    }
+}
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
@@ -107,14 +140,7 @@
                 @foreach (var notification in Model)
                 {
                     var itemClass = notification.IsRead ? "notification-item read" : "notification-item unread";
-                    var iconClass = notification.Type switch
-                    {
-                        "info" => "fas fa-info-circle",
-                        "success" => "fas fa-check-circle",
-                        "warning" => "fas fa-exclamation-triangle",
-                        "error" => "fas fa-times-circle",
-                        _ => "fas fa-bell"
-                    };
+                    var iconClass = GetNotificationIcon(notification.Title, notification.Type); // Changed this line
                     var iconBgClass = $"icon {notification.Type}";
                     var timeAgo = GetRelativeTime(notification.CreatedAt);
                     var clickUrl = !string.IsNullOrEmpty(notification.ActionUrl) 
@@ -213,6 +239,7 @@
             }
 
             //function to render notifications
+            //function to render notifications
             function renderNotifications(notifications) {
                 const container = $('#notificationListContainer');
                 
@@ -229,7 +256,7 @@
                 let html = '';
                 notifications.forEach(function(n) {
                     const itemClass = n.isRead ? 'notification-item read' : 'notification-item unread';
-                    const iconClass = getIconClass(n.type);
+                    const iconClass = getIconClass(n); // Pass the whole notification object
                     const iconBgClass = `icon ${n.type}`;
                     const unreadDot = n.isRead ? '' : '<span class="unread-dot"></span>';
 
@@ -256,14 +283,38 @@
             }
 
             //helper function to get icon class
-            function getIconClass(type) {
-                const icons = {
+            function getIconClass(notification) {
+                //icon mapping for specific notification titles
+                const titleIcons = {
+                    'Password Reset Successful': 'fas fa-lock',
+                    'Password Changed': 'fas fa-lock',
+                    'New Invoice Generated': 'fas fa-receipt',
+                    'Account Unlocked': 'fas fa-unlock',
+                    'Payment Successful': 'fas fa-wallet',
+                    'Payment Reminder': 'fas fa-exclamation-triangle', // Warning icon for reminders
+                    'Account Locked - Payment Overdue': 'fas fa-lock',
+                    'New Message from Student': 'fas fa-comments',
+                    'New Message from Teacher': 'fas fa-comments',
+                    'New Classwork Posted': 'fas fa-file-alt',
+                    'New Announcement': 'fas fa-bullhorn',
+                    'Leave Application Approved': 'fas fa-check-circle',
+                    'Leave Application Rejected': 'fas fa-times-circle'
+                };
+
+                // Check if we have a specific icon for this title
+                if (notification.title && titleIcons[notification.title]) {
+                    return titleIcons[notification.title];
+                }
+
+                // Fallback to type-based icons
+                const type = notification.type || 'info';
+                const typeIcons = {
                     'info': 'fas fa-info-circle',
                     'success': 'fas fa-check-circle',
                     'warning': 'fas fa-exclamation-triangle',
                     'error': 'fas fa-times-circle'
                 };
-                return icons[type] || 'fas fa-bell';
+                return typeIcons[type] || 'fas fa-bell';
             }
 
             //helper function to escape HTML
@@ -310,24 +361,47 @@
                 loadFilteredNotifications();
             });
 
-            //mark all as read
+                        //mark all as read
             $('#markAllReadBtn').on('click', function() {
-                if (confirm('Mark all notifications as read?')) {
-                    $.ajax({
-                        url: '@Url.Action("MarkAllAsRead", "Home")',
-                        type: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function() {
-                            loadFilteredNotifications();
-                        },
-                        error: function() {
-                            alert('Error marking notifications as read');
-                        }
-                    });
-                }
+                Swal.fire({
+                    title: 'Mark All as Read?',
+                    text: 'Are you sure you want to mark all notifications as read?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, mark all as read',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("MarkAllAsRead", "Home")',
+                            type: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function() {
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'All notifications have been marked as read.',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                loadFilteredNotifications();
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: 'Failed to mark notifications as read. Please try again.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        });
+                    }
+                });
             });
 
             //mark single notification as read

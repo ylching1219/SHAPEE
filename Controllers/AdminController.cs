@@ -2982,9 +2982,11 @@ namespace SHAPEE.Controllers
                     });
                 }
 
+                var isNewEvent = string.IsNullOrEmpty(id);
+
                 CalendarEvent calendarEvent;
 
-                if (string.IsNullOrEmpty(id))
+                if (isNewEvent)
                 {
                     calendarEvent = new CalendarEvent
                     {
@@ -3014,10 +3016,38 @@ namespace SHAPEE.Controllers
 
                 db.SaveChanges();
 
+                //notify all students for any event change
+                var eventDateRange = startTime.Date == endTime.Date 
+                    ? startTime.ToString("dd MMM yyyy")
+                    : $"{startTime:dd MMM yyyy} to {endTime:dd MMM yyyy}";
+
+                if (isNewEvent)
+                {
+                    //notify all students when a new event is created
+                    HomeController.CreateNotificationForAllStudents(
+                        db,
+                        "New Academic Calendar Event",
+                        $"A new {type} event '{title}' has been scheduled for {eventDateRange}. Please check the academic calendar for details.",
+                        "info",
+                        "/Student/ViewCalendar"
+                    );
+                }
+                else
+                {
+                    //notify all students when an event is updated
+                    HomeController.CreateNotificationForAllStudents(
+                        db,
+                        "Academic Calendar Event Updated",
+                        $"The {type} event '{title}' has been updated. New schedule: {eventDateRange}. Please check the academic calendar for details.",
+                        "info",
+                        "/Student/ViewCalendar"
+                    );
+                }
+
                 return Json(new
                 {
                     success = true,
-                    message = string.IsNullOrEmpty(id) ? "Event created successfully." : "Event updated successfully.",
+                    message = isNewEvent ? "Event created successfully." : "Event updated successfully.",
                     eventId = calendarEvent.Id
                 });
             }
@@ -3062,6 +3092,19 @@ namespace SHAPEE.Controllers
                 calendarEvent.EndTime = updatedEnd;
 
                 db.SaveChanges();
+
+                //notify all students when event date is changed
+                var eventDateRange = newStart.Date == updatedEnd.Date 
+                    ? newStart.ToString("dd MMM yyyy")
+                    : $"{newStart:dd MMM yyyy} to {updatedEnd:dd MMM yyyy}";
+
+                HomeController.CreateNotificationForAllStudents(
+                    db,
+                    "Academic Calendar Event Rescheduled",
+                    $"The {calendarEvent.Type} event '{calendarEvent.Title}' has been rescheduled to {eventDateRange}. Please check the academic calendar for details.",
+                    "warning",
+                    "/Student/ViewCalendar"
+                );
 
                 return Json(new { success = true, message = "Event rescheduled successfully." });
             }
@@ -3120,68 +3163,16 @@ namespace SHAPEE.Controllers
         }
 
         //ical export
-        [HttpGet]
         public IActionResult ExportICal(string? semesterId = null)
         {
-            var eventsQuery = db.CalendarEvents.AsQueryable();
-
-            if (!string.IsNullOrEmpty(semesterId))
-            {
-                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-                if (semester != null)
-                {
-                    eventsQuery = eventsQuery.Where(e =>
-                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
-                        e.EndTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
-                }
-            }
-
-            var events = eventsQuery.ToList();
-
-            var ical = new StringBuilder();
-            ical.AppendLine("BEGIN:VCALENDAR");
-            ical.AppendLine("VERSION:2.0");
-            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
-            ical.AppendLine("CALSCALE:GREGORIAN");
-            ical.AppendLine("METHOD:PUBLISH");
-
-            foreach (var evt in events)
-            {
-                ical.AppendLine("BEGIN:VEVENT");
-                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
-                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"SUMMARY:{evt.Title}");
-                ical.AppendLine($"DESCRIPTION:{evt.Description}");
-                ical.AppendLine($"LOCATION:Academic Calendar");
-                ical.AppendLine($"STATUS:CONFIRMED");
-                ical.AppendLine("END:VEVENT");
-            }
-
-            ical.AppendLine("END:VCALENDAR");
-
-            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
-            return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+            return Helper.ExportICalendar(db, semesterId);
         }
 
         //get semester details for calendar navigation
         [HttpGet]
         public IActionResult GetSemesterDetails(string semesterId)
         {
-            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-            if (semester == null)
-            {
-                return Json(new { success = false, message = "Semester not found." });
-            }
-
-            return Json(new
-            {
-                success = true,
-                id = semester.Id,
-                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
-                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
-                isActive = semester.IsActive
-            });
+            return Helper.GetSemesterDetails(db, semesterId);
         }
 
 
@@ -3755,6 +3746,221 @@ namespace SHAPEE.Controllers
 
             //return PDF directly for prevewi and download
             return File(pdfBytes, "application/pdf", fileName);
+        }
+
+        //send payment reminders for invoices due in 3 days
+        //can be called manually or scheduled
+        [HttpPost]
+        [HttpGet]
+        public async Task<IActionResult> SendPaymentReminders()
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var threeDaysFromNow = today.AddDays(3);
+
+                // Find unpaid invoices that are due in 3 days or less (not overdue)
+                var invoicesToRemind = db.Invoices
+                    .Include(i => i.Student)
+                    .Where(i => !i.IsPaid 
+                        && i.DueDate.Date >= today  // Not overdue
+                        && i.DueDate.Date <= threeDaysFromNow  // Due in 3 days or less
+                        && i.Student != null
+                        && !string.IsNullOrEmpty(i.Student.Email))
+                    .ToList();
+
+                int successCount = 0;
+                int failCount = 0;
+                int skippedCount = 0;
+
+                foreach (var invoice in invoicesToRemind)
+                {
+                    // Check if reminder notification was already sent today
+                    var reminderSentToday = db.Notification
+                        .Any(n => n.UserId == invoice.StudentId
+                            && n.Title == "Payment Reminder"
+                            && n.Message.Contains(invoice.Id)
+                            && n.CreatedAt.Date == today);
+
+                    if (reminderSentToday)
+                    {
+                        skippedCount++;
+                        continue; // Skip if already sent today
+                    }
+
+                    var student = invoice.Student;
+                    var studentName = student.FullName?.Trim() ?? student.Id;
+                    
+                    // Calculate days until due for the message
+                    var daysUntilDue = (invoice.DueDate.Date - today).Days;
+                    var daysText = daysUntilDue == 0 ? "today" : 
+                                   daysUntilDue == 1 ? "1 day" : 
+                                   $"{daysUntilDue} days";
+
+                    // Send email
+                    var emailSent = await hp.SendPaymentReminderEmail(
+                        student.Email,
+                        studentName,
+                        invoice.Id,
+                        invoice.TotalAmount,
+                        invoice.DueDate
+                    );
+
+                    // Send notification regardless of email success
+                    HomeController.CreateNotificationForUser(
+                        db,
+                        invoice.StudentId,
+                        "Payment Reminder",
+                        $"Your invoice {invoice.Id} (RM {invoice.TotalAmount:N2}) is due in {daysText} on {invoice.DueDate:dd MMM yyyy}. Please make payment to avoid late fees.",
+                        "warning",
+                        "/Student/CurrentBilling"
+                    );
+
+                    if (emailSent)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+
+                var message = $"Processed {invoicesToRemind.Count} invoices: {successCount} reminders sent, {failCount} email failures, {skippedCount} already sent today.";
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = message,
+                        successCount = successCount,
+                        failCount = failCount,
+                        skippedCount = skippedCount,
+                        totalProcessed = invoicesToRemind.Count
+                    });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("Dashboard");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error sending reminders: {ex.Message}";
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new { success = false, message = errorMessage });
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("Dashboard");
+            }
+        }
+
+        //send overdue payment reminders for invoices that are already overdue
+        [HttpPost]
+        public async Task<IActionResult> SendOverdueReminders()
+        {
+            try
+            {
+                var today = DateTime.Today;
+
+                //find unpaid invoices that are overdue (due date < today)
+                var overdueInvoices = db.Invoices
+                    .Include(i => i.Student)
+                    .Where(i => !i.IsPaid 
+                        && i.DueDate.Date < today  //overdue
+                        && i.Student != null
+                        && !string.IsNullOrEmpty(i.Student.Email))
+                    .ToList();
+
+                int successCount = 0;
+                int failCount = 0;
+                int skippedCount = 0;
+
+                foreach (var invoice in overdueInvoices)
+                {
+                    var daysOverdue = (today - invoice.DueDate.Date).Days;
+                    
+                    //check if overdue reminder notification was already sent today
+                    var reminderSentToday = db.Notification
+                        .Any(n => n.UserId == invoice.StudentId
+                            && n.Title == "Overdue Payment Reminder"
+                            && n.Message.Contains(invoice.Id)
+                            && n.CreatedAt.Date == today);
+
+                    if (reminderSentToday)
+                    {
+                        skippedCount++;
+                        continue; //skip if already sent today
+                    }
+
+                    var student = invoice.Student;
+                    var studentName = student.FullName?.Trim() ?? student.Id;
+                    
+                    var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
+
+                    //send email
+                    var emailSent = await hp.SendOverdueReminderEmail(
+                        student.Email,
+                        studentName,
+                        invoice.Id,
+                        invoice.TotalAmount,
+                        invoice.DueDate,
+                        daysOverdue
+                    );
+
+                    //send notification regardless of email success
+                    HomeController.CreateNotificationForUser(
+                        db,
+                        invoice.StudentId,
+                        "Overdue Payment Reminder",
+                        $"⚠️ URGENT: Your invoice {invoice.Id} (RM {invoice.TotalAmount:N2}) is {daysText} overdue. Please make payment immediately to unlock your account.",
+                        "danger",
+                        "/Student/CurrentBilling"
+                    );
+
+                    if (emailSent)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+
+                var message = $"Processed {overdueInvoices.Count} overdue invoices: {successCount} reminders sent, {failCount} email failures, {skippedCount} already sent today.";
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = message,
+                        successCount = successCount,
+                        failCount = failCount,
+                        skippedCount = skippedCount,
+                        totalProcessed = overdueInvoices.Count
+                    });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("PaymentMonitoring");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error sending overdue reminders: {ex.Message}";
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new { success = false, message = errorMessage });
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("PaymentMonitoring");
+            }
         }
 
     }

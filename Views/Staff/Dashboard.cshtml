@@ -1,75 +1,164 @@
+@model SHAPEE.Models.StaffDashboardVM
 @{
     ViewData["Title"] = "Teacher Dashboard";
 }
 
-@section Styles {
-    <link href="~/css/teacher-dashboard.css" rel="stylesheet" />
-}
+<style>
+    .dashboard-kpi .kpi-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    }
+
+    .class-card {
+        padding: 1rem;
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        transition: background 0.2s;
+    }
+
+    .class-card:hover {
+        background: #f8f9fc;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-left: 3px solid #4e73df;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .timeline-item .time {
+        font-size: 0.8rem;
+        color: #858796;
+        min-width: 70px;
+    }
+
+    .pending-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e3e6f0;
+    }
+
+    .pending-row:last-child {
+        border-bottom: none;
+    }
+
+    .pending-row:last-child {
+        border-bottom: none;
+    }
+
+    .my-classes-section {
+        min-height: 500px;
+    }
+
+    .today-schedule-section {
+        min-height: 500px;
+    }
+
+    .pending-row:last-child {
+        border-bottom: none;
+    }
+
+    .class-type-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+        color: #fff;
+    }
+
+    .class-type-icon.lecture {
+        background-color: #4e73df;
+    }
+
+    .class-type-icon.practical {
+        background-color: #1cc88a;
+    }
+
+    .class-type-icon.tutorial {
+        background-color: #f6c23e;
+    }
+
+</style>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Teacher Dashboard</h1>
 </div>
 
 <div class="row">
-    <div class="col-lg-8 mb-4">
-        <div class="card shadow dashboard-card">
+    <!-- total classes -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="font-weight-bold mb-4">My Classes</h4>
-                
-                <div class="class-item">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <h6 class="font-weight-bold mb-1">BMCS2084 - Data Structure and Algorithms</h6>
-                            <p class="text-muted small mb-0">Block K – K103 | Mon, Wed, Fri | 8:00 AM - 10:00 AM</p>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Classes
                         </div>
-                        <span class="badge badge-primary">45 Students</span>
-                    </div>
-                    <div class="class-stats">
-                        <span class="text-muted small">Attendance Rate: <strong class="text-success">88%</strong></span>
-                        <span class="text-muted small ml-3">Upcoming: <strong>2 classes this week</strong></span>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <div class="class-item">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <h6 class="font-weight-bold mb-1">BMCS2068 - Web Design and Development</h6>
-                            <p class="text-muted small mb-0">DK Buildings – DKABA | Tue, Thu | 11:00 AM - 1:00 PM</p>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @Model.TotalClasses
                         </div>
-                        <span class="badge badge-primary">38 Students</span>
                     </div>
-                    <div class="class-stats">
-                        <span class="text-muted small">Attendance Rate: <strong class="text-success">92%</strong></span>
-                        <span class="text-muted small ml-3">Upcoming: <strong>1 class this week</strong></span>
+                    <div class="col-auto">
+                        <i class="fas fa-chalkboard fa-2x text-primary"></i>
                     </div>
-                </div>
-                
-                <div class="text-right mt-3">
-                    <a href="#" class="small text-primary">View All Classes</a>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!--today schedule -->
-    <div class="col-lg-4 mb-4">
-        <div class="card shadow dashboard-card">
+
+    <!-- total students -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="font-weight-bold mb-3">Today's Schedule</h4>
-                <p class="text-muted small mb-4">24 Nov 2025</p>
-                
-                <div class="schedule-item-teacher">
-                    <div class="schedule-time">8:00 AM - 10:00 AM</div>
-                    <h6 class="font-weight-bold mb-1">Data Structure and Algorithms</h6>
-                    <p class="text-muted small mb-0">Block K – K103</p>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Students
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @Model.TotalStudents
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-graduate fa-2x text-success"></i>
+                    </div>
                 </div>
-                
-                <div class="schedule-item-teacher">
-                    <div class="schedule-time">11:00 AM - 1:00 PM</div>
-                    <h6 class="font-weight-bold mb-1">Web Design and Development</h6>
-                    <p class="text-muted small mb-0">DK Buildings – DKABA</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- average attendance -->
+    <div class="col-xl-4 col-md-12 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Average Attendance
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @Model.AverageAttendance.ToString("F1")%
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-info"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,59 +166,124 @@
 </div>
 
 <div class="row">
-    <!--pending attendance-->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow dashboard-card">
-            <div class="card-body">
-                <h4 class="font-weight-bold mb-4">Pending Attendance</h4>
-                
-                <div class="pending-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="font-weight-bold mb-1">BMCS2084 - Data Structure</h6>
-                            <p class="text-muted small mb-0">24 Nov 2025, 8:00 AM</p>
-                        </div>
-                        <button class="btn btn-sm btn-primary">Mark</button>
-                    </div>
+    <!-- my classes -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body my-classes-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-weight-bold mb-0">My Classes</h5>
+                    <a href="@Url.Action("ClassSelection", "Staff", new { mode = "view" })" class="small text-primary">View all</a>
                 </div>
-                
-                <div class="pending-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="font-weight-bold mb-1">BMCS2068 - Web Design</h6>
-                            <p class="text-muted small mb-0">24 Nov 2025, 11:00 AM</p>
+
+                 @if (Model.MyClasses.Any())
+                {
+                    @foreach (var classItem in Model.MyClasses)
+                    {
+                        var typeClass = classItem.SectionType?.ToLower() ?? "";
+                        var typeLetter = typeClass switch
+                        {
+                            "lecture" => "L",
+                            "practical" => "P",
+                            "tutorial" => "T",
+                            _ => ""
+                        };
+                        
+                        <div class="class-card">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1 d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(typeLetter))
+                                        {
+                                            <span class="class-type-icon @typeClass">@typeLetter</span>
+                                        }
+                                        <span>@classItem.CourseId – @classItem.CourseName</span>
+                                    </h6>
+                                    <p class="text-muted small mb-1">
+                                        @classItem.Room · @classItem.Days
+                                    </p>
+                                    <span class="badge badge-light">
+                                        @classItem.Time
+                                    </span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge badge-primary mb-2">@classItem.StudentCount Students</span>
+                                    <div class="text-muted small mb-2">
+                                        Attendance: <strong class="text-success">@classItem.AttendancePercentage.ToString("F1")%</strong>
+                                    </div>
+                                    <a href="@Url.Action("AttendanceManagement", "Staff", new { sectionId = classItem.SectionId })" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-chart-bar"></i> View Attendance
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-primary">Mark</button>
-                    </div>
-                </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No classes found.</p>
+                }
             </div>
         </div>
     </div>
-    
-    <!--quick stats-->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow dashboard-card">
+
+    <!-- today schedule -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body today-schedule-section">
+                <h5 class="font-weight-bold mb-1">Today's Schedule</h5>
+                <p class="text-muted small mb-3">@Model.TodayDate.ToString("dd MMM yyyy")</p>
+
+                @if (Model.TodaySchedule.Any())
+                {
+                    @foreach (var schedule in Model.TodaySchedule)
+                    {
+                        <div class="timeline-item">
+                            <span class="time">@schedule.StartTime.ToString("hh:mm") – @schedule.EndTime.ToString("hh:mm")</span>
+                            <div>
+                                <strong>@schedule.CourseName</strong>
+                                <div class="text-muted small">@schedule.Room</div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small">No classes scheduled for today.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow-sm dashboard-card">
             <div class="card-body">
-                <h4 class="font-weight-bold mb-4">Quick Stats</h4>
-                
-                <div class="stat-item">
-                    <div class="d-flex justify-content-between">
-                        <span>Total Classes</span>
-                        <strong>8</strong>
-                    </div>
-                </div>
-                <div class="stat-item">
-                    <div class="d-flex justify-content-between">
-                        <span>Total Students</span>
-                        <strong>156</strong>
-                    </div>
-                </div>
-                <div class="stat-item">
-                    <div class="d-flex justify-content-between">
-                        <span>Average Attendance</span>
-                        <strong class="text-success">90%</strong>
-                    </div>
-                </div>
+                <h5 class="font-weight-bold mb-3">Pending Attendance</h5>
+
+                @if (Model.PendingAttendance.Any())
+                {
+                    @foreach (var pending in Model.PendingAttendance)
+                    {
+                        <div class="pending-row">
+                            <div>
+                                <strong>@pending.CourseId – @pending.CourseName</strong>
+                                <div class="text-muted small">
+                                    @pending.Date.ToString("dd MMM yyyy") · @pending.StartTime.ToString("hh:mm tt")
+                                </div>
+                            </div>
+                            <a href="@Url.Action("MarkAttendance", "Staff", new { sectionId = pending.SectionId })" 
+                               class="btn btn-sm btn-primary">
+                                Mark Attendance
+                            </a>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No pending attendance to mark.</p>
+                }
             </div>
         </div>
     </div>
