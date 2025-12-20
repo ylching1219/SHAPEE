@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using SHAPEE.Models;
 
 namespace SHAPEE
 {
@@ -366,6 +367,8 @@ namespace SHAPEE
                 ? $"\"{value}\""
                 : value;
         }
+        
+        //Koh Kai Minn
 
         public async Task<bool> SendPaymentReceiptEmail(
             string toEmail,
@@ -607,7 +610,72 @@ namespace SHAPEE
                 return false;
             }
         }
-    
+
+        //helper for iCal export
+        public static IActionResult ExportICalendar(DB db, string? semesterId = null)
+        {
+            var eventsQuery = db.CalendarEvents.AsQueryable();
+
+            if (!string.IsNullOrEmpty(semesterId))
+            {
+                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+                if (semester != null)
+                {
+                    eventsQuery = eventsQuery.Where(e =>
+                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
+                        e.EndTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
+                }
+            }
+
+            var events = eventsQuery.ToList();
+
+            var ical = new StringBuilder();
+            ical.AppendLine("BEGIN:VCALENDAR");
+            ical.AppendLine("VERSION:2.0");
+            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
+            ical.AppendLine("CALSCALE:GREGORIAN");
+            ical.AppendLine("METHOD:PUBLISH");
+
+            foreach (var evt in events)
+            {
+                ical.AppendLine("BEGIN:VEVENT");
+                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
+                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
+                ical.AppendLine($"SUMMARY:{evt.Title}");
+                ical.AppendLine($"DESCRIPTION:{evt.Description}");
+                ical.AppendLine($"LOCATION:Academic Calendar");
+                ical.AppendLine($"STATUS:CONFIRMED");
+                ical.AppendLine("END:VEVENT");
+            }
+
+            ical.AppendLine("END:VCALENDAR");
+
+            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
+            return new FileContentResult(bytes, "text/calendar")
+            {
+                FileDownloadName = $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics"
+            };
+        }
+
+        public static IActionResult GetSemesterDetails(DB db, string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+            {
+                return new JsonResult(new { success = false, message = "Semester not found." });
+            }
+
+            return new JsonResult(new
+            {
+                success = true,
+                id = semester.Id,
+                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
+                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
+                isActive = semester.IsActive
+            });
+        }
+            
     
     
     }
