@@ -1,6 +1,11 @@
 ﻿@model SHAPEE.Models.CourseTask
 
 <div class="container mt-4">
+    <div class="mb-3">
+        <a href="@Url.Action("TaskList", "Student")" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Assignments
+        </a>
+    </div>
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
             <h2 class="mb-0">@Model.Title</h2>

@@ -420,8 +420,8 @@
                     </li>
 
                     <!-- Nav Item - Assignments -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                    <li class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "TaskList" ? "active" : "")">
+                        <a class="nav-link" href="@Url.Action("TaskList", "Student")">
                             <i class="fas fa-fw fa-tasks"></i>
                             <span>Assignments</span>
                         </a>
