@@ -222,10 +222,20 @@ namespace SHAPEE.Models
     public class StudentDashboardVM
     {
         public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
-
         public List<Announcement> LatestAnnouncements { get; set; } = new();
+        public List<TodayScheduleItemVM> TodaySchedule { get; set; } = new();
     }
-    
+
+    public class TodayScheduleItemVM
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+        public string RoomLocation { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public string Status { get; set; } // Upcoming, Inprogress, Completed, Absent
+    }
+
     // student view attendacne
     public class StudentAttendanceVM
     {

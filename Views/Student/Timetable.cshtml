@@ -176,7 +176,6 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-
         /* Hide non-printable elements */
         .no-print,
         .sidebar,
@@ -189,12 +188,10 @@
         #content-wrapper > nav {
             display: none !important;
         }
-
         /* Show print header only when printing */
         .print-header {
             display: block !important;
         }
-
         /* Make printable area full width */
         #printableArea {
             position: relative !important;
@@ -204,7 +201,6 @@
             padding: 0 !important;
             margin: 0 !important;
         }
-
         /* Card styling - remove shadows and borders */
         .card {
             border: none !important;
@@ -221,13 +217,11 @@
         .card-body {
             padding: 0 !important;
         }
-
         /* Timetable container */
         .timetable-container {
             overflow: visible !important;
             width: 100% !important;
         }
-
         /* Timetable styling - match screen exactly */
         .timetable {
             border-collapse: collapse !important;
@@ -237,55 +231,54 @@
             font-size: 0.75rem !important;
         }
 
-        .timetable th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            padding: 8px 5px !important;
-            text-align: center !important;
-            font-weight: 600 !important;
-            border: 1px solid #dee2e6 !important;
-            font-size: 0.7rem !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
+            .timetable th {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+                padding: 8px 5px !important;
+                text-align: center !important;
+                font-weight: 600 !important;
+                border: 1px solid #dee2e6 !important;
+                font-size: 0.7rem !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
 
-        .timetable th.time-column {
-            background: #f8f9fc !important;
-            color: #5a5c69 !important;
-            width: 70px !important;
-        }
+                .timetable th.time-column {
+                    background: #f8f9fc !important;
+                    color: #5a5c69 !important;
+                    width: 70px !important;
+                }
 
-        .timetable th.hour-marker {
-            border-left: 2px solid #d1d3e2 !important;
-        }
+                .timetable th.hour-marker {
+                    border-left: 2px solid #d1d3e2 !important;
+                }
 
-        .timetable td {
-            border: 1px solid #e3e6f0 !important;
-            padding: 2px !important;
-            vertical-align: top !important;
-            background: white !important;
-            height: 60px !important;
-            font-size: 0.7rem !important;
-        }
+            .timetable td {
+                border: 1px solid #e3e6f0 !important;
+                padding: 2px !important;
+                vertical-align: top !important;
+                background: white !important;
+                height: 60px !important;
+                font-size: 0.7rem !important;
+            }
 
-        .timetable td.time-cell {
-            background: #f8f9fc !important;
-            text-align: center !important;
-            font-weight: 600 !important;
-            color: #5a5c69 !important;
-            font-size: 0.65rem !important;
-            padding: 5px 2px !important;
-        }
+                .timetable td.time-cell {
+                    background: #f8f9fc !important;
+                    text-align: center !important;
+                    font-weight: 600 !important;
+                    color: #5a5c69 !important;
+                    font-size: 0.65rem !important;
+                    padding: 5px 2px !important;
+                }
 
-        .timetable td.day-cell {
-            position: relative !important;
-            padding: 3px !important;
-        }
+                .timetable td.day-cell {
+                    position: relative !important;
+                    padding: 3px !important;
+                }
 
-        .timetable td.half-hour-slot {
-            border-left: 1px solid #e3e6f0 !important;
-        }
-
+                .timetable td.half-hour-slot {
+                    border-left: 1px solid #e3e6f0 !important;
+                }
         /* Class blocks - match screen exactly */
         .class-block {
             border-radius: 4px !important;
@@ -336,7 +329,6 @@
             padding-top: 3px !important;
             border-top: 1px solid rgba(255,255,255,0.3) !important;
         }
-
         /* Print header styling */
         .print-header {
             border: 1px solid #dee2e6 !important;
@@ -353,25 +345,21 @@
             border-bottom: 2px solid #000 !important;
             padding-bottom: 10px !important;
         }
-
         /* Hide elements that shouldn't print */
         .legend,
         .course-materials-section,
         .no-print {
             display: none !important;
         }
-
         /* Page settings */
         @@page {
             margin: 1cm;
             size: landscape;
         }
-
         /* Ensure content fits on one page if possible */
         .timetable {
             page-break-inside: avoid !important;
         }
-
         /* Force colors to show */
         * {
             -webkit-print-color-adjust: exact !important;
@@ -795,12 +783,12 @@
         function printTimetable() {
             // Show the print header before printing
             $('.print-header').css('display', 'block');
-            
+
             // Small delay to ensure DOM updates
             setTimeout(function() {
                 window.print();
             }, 100);
-            
+
             // Hide print header after printing (optional)
             window.addEventListener('afterprint', function() {
                 $('.print-header').css('display', 'none');

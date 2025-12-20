@@ -55,6 +55,7 @@ namespace SHAPEE.Controllers
             base.OnActionExecuting(context);
         }
         // GET: /Student
+        // GET: /Student Dashboard - Updated with Leave Status
         public async Task<IActionResult> Dashboard()
         {
             await LoadProfilePicture();
@@ -125,10 +126,110 @@ namespace SHAPEE.Controllers
                 .Take(4)
                 .ToList();
 
+            // Get today's schedule
+            var student = db.Students
+                .Include(s => s.TutorialGroup)
+                .FirstOrDefault(s => s.Id == studentId);
+
+            var today = DateTime.Now.DayOfWeek.ToString();
+            var currentTime = TimeOnly.FromDateTime(DateTime.Now);
+            var todayDate = DateOnly.FromDateTime(DateTime.Now);
+
+            // Check if student has approved leave for today
+            var hasLeaveToday = db.LeaveApplications
+                .Any(l => l.UserId == studentId
+                       && l.Status == "Approved"
+                       && l.StartDate <= todayDate
+                       && l.EndDate >= todayDate);
+
+            List<TodayScheduleItemVM> todaySchedule = new List<TodayScheduleItemVM>();
+
+            if (student != null && activeSemester != null)
+            {
+                var todayClassSections = db.ClassSections
+                    .Include(cs => cs.Course)
+                    .Include(cs => cs.Room)
+                    .Where(cs => cs.SemesterId == activeSemester.Id && cs.Day == today)
+                    .AsQueryable();
+
+                // Filter by tutorial group for tutorial/practical or by program enrollment for lectures
+                List<ClassSection> relevantSections = new List<ClassSection>();
+
+                if (student.TutorialGroupId.HasValue)
+                {
+                    // Get tutorial/practical sections
+                    var tutorialSections = todayClassSections
+                        .Where(cs => cs.TutorialGroupId == student.TutorialGroupId.Value)
+                        .ToList();
+                    relevantSections.AddRange(tutorialSections);
+
+                    // Get lecture sections for enrolled courses
+                    var enrolledCourses = db.ProgramCourses
+                        .Where(pc => pc.ProgramId == student.ProgramId
+                                  && pc.YearLevel == student.YearLevel
+                                  && pc.Semester == student.Semester)
+                        .Select(pc => pc.CourseId)
+                        .ToList();
+
+                    var lectureSections = todayClassSections
+                        .Where(cs => cs.SectionType == "Lecture"
+                                  && enrolledCourses.Contains(cs.CourseId))
+                        .ToList();
+                    relevantSections.AddRange(lectureSections);
+                }
+
+                // Process schedule items
+                todaySchedule = relevantSections
+                    .OrderBy(cs => cs.StartTime)
+                    .Select(cs =>
+                    {
+                        string status;
+
+                        // If student has approved leave for today, all classes show "Leave"
+                        if (hasLeaveToday)
+                        {
+                            status = "Leave";
+                        }
+                        else
+                        {
+                            // Check attendance status
+                            var hasAttendance = db.Attendances.Any(a =>
+                                a.StudentId == studentId
+                                && a.ClassSectionId == cs.SectionId
+                                && a.Date == todayDate);
+
+                            if (currentTime < cs.StartTime)
+                            {
+                                status = "Upcoming";
+                            }
+                            else if (currentTime >= cs.StartTime && currentTime <= cs.EndTime)
+                            {
+                                status = hasAttendance ? "Completed" : "Inprogress";
+                            }
+                            else // currentTime > cs.EndTime
+                            {
+                                status = hasAttendance ? "Completed" : "Absent";
+                            }
+                        }
+
+                        return new TodayScheduleItemVM
+                        {
+                            CourseId = cs.Course.Id,
+                            CourseName = cs.Course.Name,
+                            RoomLocation = $"{cs.Room?.Block ?? "N/A"} – {cs.Room?.Id ?? "N/A"}",
+                            StartTime = cs.StartTime,
+                            EndTime = cs.EndTime,
+                            Status = status
+                        };
+                    })
+                    .ToList();
+            }
+
             var vm = new StudentDashboardVM
             {
                 SubjectAttendances = subjectSummaries,
-                LatestAnnouncements = latestAnnouncements
+                LatestAnnouncements = latestAnnouncements,
+                TodaySchedule = todaySchedule
             };
 
             return View(vm);
@@ -362,7 +463,7 @@ namespace SHAPEE.Controllers
                 .ToList();
 
             var presentCount = attendances.Count(a => a.Status == "Present");
-            var absentCount  = attendances.Count(a => a.Status == "Absent");
+            var absentCount = attendances.Count(a => a.Status == "Absent");
             var totalSessions = attendances.Count;
             var consideredTotal = presentCount + absentCount;
             var attendancePercentage = consideredTotal > 0
@@ -586,7 +687,8 @@ namespace SHAPEE.Controllers
 
             if (Request.IsAjax())
             {
-                return Json(new {
+                return Json(new
+                {
                     success = true,
                     message = isFlagged
                         ? "Attendance recorded (flagged for review)."
@@ -1048,7 +1150,7 @@ namespace SHAPEE.Controllers
                     page.Content().PaddingTop(20).Column(col =>
                     {
                         // Buyer and Invoice Details Section
-                                                // Buyer and Invoice Details Section
+                        // Buyer and Invoice Details Section
                         col.Item().Row(row =>
                         {
                             // Left Column - Buyer Details
@@ -1602,7 +1704,7 @@ namespace SHAPEE.Controllers
 
             return View(enrolledCourses);
 
-           
+
         }
 
         // =======================
@@ -1814,9 +1916,9 @@ namespace SHAPEE.Controllers
             var userId = User.Identity.Name;
 
             var messages = db.ChatMessages;
-                //.Where(x => x.ClassSectionId == classId)
-                //.OrderBy(x => x.SentAt)
-                //.ToList();
+            //.Where(x => x.ClassSectionId == classId)
+            //.OrderBy(x => x.SentAt)
+            //.ToList();
 
             ViewBag.ClassId = classId;
             ViewBag.UserId = userId;
@@ -1869,7 +1971,7 @@ namespace SHAPEE.Controllers
 
             //get student name
             var studentName = student.FullName?.Trim() ?? student.Id;
-            
+
             //get course name
             var course = db.Courses.FirstOrDefault(c => c.Id == classId);
             var courseName = course?.Name ?? classId;
@@ -1938,7 +2040,7 @@ namespace SHAPEE.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Reply(string ticketId, string message)
         {
-           
+
             if (string.IsNullOrEmpty(ticketId) || string.IsNullOrWhiteSpace(message))
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
