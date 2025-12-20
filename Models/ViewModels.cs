@@ -137,6 +137,19 @@ namespace SHAPEE.Models
     {
         public List<Faculty>? Faculties { get; set; } = [];
         public List<int>? GroupList { get; set; } = [];
+        public List<ClassSection>? ClassSections { get; set; } = [];
+        public ClassSection? EditClassSection { get; set; }
+        public string? SectionId { get; set; }
+        public string? SemesterId { get; set; }
+        public string? RoomId { get; set; }
+        public string? FacultyId { get; set; }
+        public string? ProgramId { get; set; } 
+        public string? Day { get; set; }
+
+        public TimeOnly? StartTime { get; set; }
+
+        public int? GroupId { get; set; }
+
     } 
     public class ProgramCsvVM
     {
@@ -605,6 +618,7 @@ namespace SHAPEE.Models
         public int SelectedWeekNumber { get; set; }
         public DateTime? WeekStartDate { get; set; }
         public DateTime? WeekEndDate { get; set; }
+        public Dictionary<string, double> AttendancePercentages { get; set; } = new();
     }
 
 

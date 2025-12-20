@@ -291,7 +291,7 @@ public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, I
                     "New Leave Application",
                     $"Student {studentName} ({student.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
                     "info",
-                    "/Admin/LeaveApplications"
+                    "/Admin/LeaveManagement"
                 );
             }
             else if (user is Staff staff)
@@ -302,7 +302,7 @@ public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, I
                     "New Leave Application",
                     $"Staff {staffName} ({staff.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
                     "info",
-                    "/Admin/LeaveApplications"
+                    "/Admin/LeaveManagement"
                 );
             }
 

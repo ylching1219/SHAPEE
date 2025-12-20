@@ -1,0 +1,78 @@
+﻿@model ClassSectionVM
+
+
+<table class="table table-hover mb-0" id="courseTable">
+    <thead class="bg-light">
+        <tr>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Group Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Course Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Staff Name</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Semester</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Date/Time</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Room</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold">Type</th>
+            <th class="border-0 px-4 py-3 text-uppercase text-muted small font-weight-semibold text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="classTableBody">
+        @if (Model.ClassSections!.Count() == 0)
+        {
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No classes found</p>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var f in Model.ClassSections!)
+            {
+                <tr class="border-bottom">
+                    <td class="px-4 py-3 text-muted">@(f.SectionType == "Lecture" ? "-" : f.TutorialGroup.GroupName)</td>
+                    <td class="px-4 py-3 text-muted">@f.Course.Name</td>
+                    <td class="px-4 py-3 text-muted">@f.Staff.FullName</td>
+                    <td class="px-4 py-3 text-muted">@f.SemesterId</td>
+                    <td class="px-4 py-3 text-muted">
+                        <div class="font-weight-medium text-gray-900">@f.Day</div>
+                        <div class="text-muted small">@f.StartTime.ToString("HH:mm") – @f.EndTime.ToString("HH:mm")</div>
+                    </td>
+                    <td class="px-4 py-3 text-muted">@f.Room.Id</td>
+                    <td class="px-4 py-3 text-muted">@f.SectionType</td>
+
+                    <td class="px-4 py-3 text-center">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                <a class="dropdown-item editBtn"
+                                   data-ajax="true"
+                                   data-ajax-method="GET"
+                                   data-ajax-url="@Url.Action("ViewClass", "Admin", new { editId = f.SectionId })"
+                                   data-ajax-update="#AddEditData"
+                                   data-ajax-success="onEditLoaded">
+
+                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                </a>
+
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger"
+                                   href="#"
+                                   data-toggle="modal"
+                                   data-target="#deleteModal"
+                                   data-id="@f.SectionId"
+                                   onclick="prepareDeleteModal(this); return false;">
+                                    <i class="fas fa-trash mr-2"></i> Delete
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+            }
+        }
+    </tbody>
+</table>
+
+

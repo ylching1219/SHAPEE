@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SHAPEE.Models;
 using SHAPEE.Services;
-using SHAPEE.Services;
 using Stripe;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -1836,6 +1835,101 @@ namespace SHAPEE.Controllers
         }
 
         //Class Section Management
+        public IActionResult ViewClass(string? FacultyId, string? ProgramId, string? SemesterId, string? type, string? editId)
+        {
+            ViewData["Title"] = "View Class Sections";
+            var classSections = db.ClassSections
+                .Include(c => c.Course)
+                .Include(c => c.Staff)
+                .Include(c => c.TutorialGroup)
+                    .ThenInclude(t => t.Program)
+                .Include(c => c.Room)
+                .AsQueryable();
+
+            Console.WriteLine("Edit id" + editId);
+
+            var faculty = db.Faculties
+                .OrderBy(f => f.Id)
+                .ToList();
+
+            var semester = db.Semesters
+                .OrderBy(s => s.Id)
+                .ToList();
+
+            var lectureClassSec = classSections;
+
+            if (!string.IsNullOrEmpty(FacultyId))
+            {
+                classSections = classSections
+                    .Where(c =>
+                        c.TutorialGroup != null &&
+                        c.TutorialGroup.Program.FacultyId == FacultyId
+                    );
+            }
+
+            if (!string.IsNullOrEmpty(ProgramId))
+            {
+                classSections = classSections.Where(c =>
+                    // Lecture: show ONLY if this program takes the course
+                    (c.SectionType == "Lecture" &&
+                     db.ProgramCourses.Any(pc =>
+                         pc.ProgramId == ProgramId &&
+                         pc.CourseId == c.CourseId))
+
+                    // Tutorial / Practical: program-specific
+                    || (c.SectionType != "Lecture" &&
+                        c.TutorialGroup != null &&
+                        c.TutorialGroup.ProgramId == ProgramId)
+                );
+            }
+
+            if (!string.IsNullOrEmpty(SemesterId))
+            {
+                classSections = classSections
+                    .Where(c => c.SemesterId == SemesterId);
+            }
+
+            if (!string.IsNullOrEmpty(type))
+            {
+                classSections = classSections
+                    .Where(c => c.SectionType == type);
+            }
+
+            if (!string.IsNullOrEmpty(editId))
+            {
+                var classToEdit = classSections
+                    .FirstOrDefault(c => c.SectionId == editId);
+
+
+                var rooms = db.Rooms
+                    .Where(r => r.Type == GetRoomType(classToEdit!.SectionType))
+                    .OrderBy(r => r.Id)
+                    .ToList();
+
+                ViewBag.RoomList = new SelectList(rooms, "Id", "Id", classToEdit!.RoomId);
+
+                var vmEdit = new ClassSectionVM
+                {
+                    ClassSections = classSections.ToList(),
+                    EditClassSection = classToEdit
+                };
+
+                return PartialView("_EditClassForm", vmEdit);
+            }
+            classSections = classSections.OrderBy(c => c.SectionId);
+            ViewBag.FacultyList = new SelectList(faculty, "Id", "Name");
+            ViewBag.SemesterList = new SelectList(semester, "Id", "Id");
+
+            var vm = new ClassSectionVM
+            {
+                ClassSections = classSections.ToList()
+            };
+            if (Request.IsAjax())
+            {
+                return PartialView("_ViewClass", vm);
+            }
+            return View(vm);
+        }
         public IActionResult ClassSection()
         {
             ViewData["Title"] = "Class Section Management";
@@ -1927,9 +2021,12 @@ namespace SHAPEE.Controllers
                                                 .Any();
 
 
-                        var staff = db.Staffs
+                        var staffs = db.Staffs
                             .Where(s => s.FacultyId == group.Program.FacultyId)
-                            .OrderBy(s => EF.Functions.Random())
+                            .ToList();
+
+                        var staff = staffs
+                            .OrderBy(_ => Guid.NewGuid())
                             .FirstOrDefault();
 
 
@@ -2016,6 +2113,41 @@ namespace SHAPEE.Controllers
             });
         }
 
+        public IActionResult EditClass(ClassSection vm)
+        {
+
+            ClassSection? cs = db.ClassSections
+                .Include(c => c.Course) 
+                .FirstOrDefault(c => c.SectionId == vm.SectionId);
+
+
+            if (cs != null)
+            {
+                cs.RoomId = vm.RoomId;
+                cs.Day = vm.Day;
+                cs.StartTime = vm.StartTime;
+                cs.EndTime = cs.StartTime.AddHours(GetDuration(cs.Course, cs.SectionType));
+
+
+                if (IsScheduleConflict(cs))
+                {
+                    TempData["ErrorMessage"] = "Class Section have conflict with other !";
+                }
+                else
+                {
+                    db.SaveChanges();
+                    TempData["SuccessMessage"] = "Class Section edited successfully";
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Class Section not found !";
+            }
+
+
+            return RedirectToAction(nameof(ViewClass));
+        }
+
         private ClassSection CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
         {
             int maxAttempts = 20;
@@ -2040,11 +2172,16 @@ namespace SHAPEE.Controllers
 
                 var roomType = GetRoomType(sectionType);
 
-                var room = db.Rooms
+                var rooms = db.Rooms
                     .Where(r => r.Type == roomType)
-                    .OrderBy(r => EF.Functions.Random())
+                    .ToList();
+
+                var room = rooms
+                    .OrderBy(_ => Guid.NewGuid())
                     .FirstOrDefault();
 
+
+                Console.WriteLine(" Selected Room: " + (room != null ? room.Id : "No room available"));
                 var sectionTypeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "Lecture", "L" },
@@ -2111,6 +2248,17 @@ namespace SHAPEE.Controllers
                 "Lecture" => pc.Course.LectureHours,
                 "Tutorial" => pc.Course.TutorialHours,
                 "Practical" => pc.Course.PracticalHours.GetValueOrDefault(),
+                _ => 1
+            };
+        }
+
+        private double GetDuration(Course c, string sectionType)
+        {
+            return sectionType switch
+            {
+                "Lecture" => c.LectureHours,
+                "Tutorial" => c.TutorialHours,
+                "Practical" => c.PracticalHours.GetValueOrDefault(),
                 _ => 1
             };
         }
@@ -2922,7 +3070,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students for any event change
-                var eventDateRange = startTime.Date == endTime.Date 
+                var eventDateRange = startTime.Date == endTime.Date
                     ? startTime.ToString("dd MMM yyyy")
                     : $"{startTime:dd MMM yyyy} to {endTime:dd MMM yyyy}";
 
@@ -2999,7 +3147,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students when event date is changed
-                var eventDateRange = newStart.Date == updatedEnd.Date 
+                var eventDateRange = newStart.Date == updatedEnd.Date
                     ? newStart.ToString("dd MMM yyyy")
                     : $"{newStart:dd MMM yyyy} to {updatedEnd:dd MMM yyyy}";
 
@@ -3086,14 +3234,14 @@ namespace SHAPEE.Controllers
         public IActionResult PaymentTransactions(string? searchQuery, string? facultyFilter, string? programFilter, DateTime? dateFrom, DateTime? dateTo, string? dateSort)
         {
             ViewData["Title"] = "Payment Transaction Management";
-            
+
             var query = db.PaymentTransactions
                 .Include(t => t.Invoice)
                     .ThenInclude(i => i.Student)
                         .ThenInclude(s => s.Program)
                             .ThenInclude(p => p.Faculty)
                 .AsQueryable();
-            
+
             //search by invoice ID, receipt ID, student ID or student name
             searchQuery = searchQuery?.Trim();
             if (!string.IsNullOrEmpty(searchQuery))
@@ -3104,19 +3252,19 @@ namespace SHAPEE.Controllers
                     t.Invoice.StudentId.Contains(searchQuery) ||
                     (t.Invoice.Student.FirstName + " " + t.Invoice.Student.LastName).Contains(searchQuery));
             }
-            
+
             //filter by faculty
             if (!string.IsNullOrEmpty(facultyFilter))
             {
                 query = query.Where(t => t.Invoice.Student.Program.FacultyId == facultyFilter);
             }
-            
+
             //filter by program
             if (!string.IsNullOrEmpty(programFilter))
             {
                 query = query.Where(t => t.Invoice.Student.ProgramId == programFilter);
             }
-            
+
             //filter by date range
             if (dateFrom.HasValue)
             {
@@ -3126,7 +3274,7 @@ namespace SHAPEE.Controllers
             {
                 query = query.Where(t => t.TransactionDate <= dateTo.Value.AddDays(1));
             }
-            
+
             //sort by date
             dateSort = dateSort?.Trim() ?? "newest";
             if (dateSort == "oldest")
@@ -3137,7 +3285,7 @@ namespace SHAPEE.Controllers
             {
                 query = query.OrderByDescending(t => t.TransactionDate);
             }
-            
+
             var transactions = query
                 .Select(t => new AdminPaymentTransactionRowVM
                 {
@@ -3151,14 +3299,14 @@ namespace SHAPEE.Controllers
                     AmountPaid = t.AmountPaid
                 })
                 .ToList();
-            
+
             //get all faculties for filter dropdown
             var faculties = db.Faculties
                 .OrderBy(f => f.Name)
                 .Select(f => new { f.Id, f.Name })
                 .ToList();
             ViewBag.Faculties = faculties;
-            
+
             //get programs for filter dropdown (filtered by selected faculty if any)
             var programsQuery = db.Programs.AsQueryable();
             if (!string.IsNullOrEmpty(facultyFilter))
@@ -3170,7 +3318,7 @@ namespace SHAPEE.Controllers
                 .Select(p => new { p.Id, p.Name })
                 .ToList();
             ViewBag.Programs = programs;
-            
+
             var vm = new PaymentTransactionManagementVM
             {
                 Transactions = transactions,
@@ -3181,13 +3329,13 @@ namespace SHAPEE.Controllers
                 DateTo = dateTo,
                 DateSort = dateSort
             };
-            
+
             //check if AJAX request - return partial view
             if (Request.IsAjax())
             {
                 return PartialView("_PaymentTransactions", vm);
             }
-            
+
             return View("PaymentTransactions", vm);
         }
 
@@ -3196,21 +3344,21 @@ namespace SHAPEE.Controllers
         public IActionResult GetProgramsByFaculty(string? facultyId)
         {
             var programsQuery = db.Programs.AsQueryable();
-            
+
             if (!string.IsNullOrEmpty(facultyId))
             {
                 programsQuery = programsQuery.Where(p => p.FacultyId == facultyId);
             }
-            
+
             var programs = programsQuery
                 .OrderBy(p => p.Name)
                 .Select(p => new { p.Id, p.Name })
                 .ToList();
-            
-            var options = string.Join("", programs.Select(p => 
+
+            var options = string.Join("", programs.Select(p =>
                 $"<option value=\"{p.Id}\">{p.Name}</option>"
             ));
-            
+
             return Content(options, "text/html");
         }
 
@@ -3218,15 +3366,15 @@ namespace SHAPEE.Controllers
         {
             var tx = db.PaymentTransactions
                 .FirstOrDefault(t => t.Id == receiptId);
-            
+
             if (tx == null) return NotFound();
-            
+
             var relative = (tx.ReceiptUrl ?? "").Trim().TrimStart('/');
             var physical = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
                 relative.Replace('/', Path.DirectorySeparatorChar));
-            
+
             if (!System.IO.File.Exists(physical)) return NotFound("Receipt file missing.");
-            
+
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{Path.GetFileName(physical)}\"";
             return PhysicalFile(physical, "application/pdf");
         }
@@ -3235,15 +3383,15 @@ namespace SHAPEE.Controllers
         {
             var tx = db.PaymentTransactions
                 .FirstOrDefault(t => t.Id == receiptId);
-            
+
             if (tx == null) return NotFound();
-            
+
             var relative = (tx.ReceiptUrl ?? "").Trim().TrimStart('/');
             var physical = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
                 relative.Replace('/', Path.DirectorySeparatorChar));
-            
+
             if (!System.IO.File.Exists(physical)) return NotFound("Receipt file missing.");
-            
+
             Response.Headers["Content-Disposition"] = $"attachment; filename=\"{Path.GetFileName(physical)}\"";
             return PhysicalFile(physical, "application/pdf");
         }
@@ -3253,11 +3401,11 @@ namespace SHAPEE.Controllers
         public IActionResult PaymentMonitoring(string? period, DateTime? startDate, DateTime? endDate)
         {
             ViewData["Title"] = "Payment Monitoring & Reports";
-            
+
             var today = DateTime.Today;
             DateTime? periodStart = null;
             DateTime? periodEnd = null;
-            
+
             //determine date range based on period
             period = period?.Trim() ?? "all";
             switch (period)
@@ -3283,29 +3431,29 @@ namespace SHAPEE.Controllers
                     periodEnd = endDate?.AddDays(1);
                     break;
             }
-            
+
             //total revenue (paid transactions) - by period
             var revenueQuery = db.PaymentTransactions
                 .Include(t => t.Invoice)
                 .AsQueryable();
-            
+
             if (periodStart.HasValue)
                 revenueQuery = revenueQuery.Where(t => t.TransactionDate >= periodStart.Value);
             if (periodEnd.HasValue)
                 revenueQuery = revenueQuery.Where(t => t.TransactionDate < periodEnd.Value);
-            
+
             var totalRevenue = revenueQuery.Sum(t => (decimal?)t.AmountPaid) ?? 0;
-            
+
             //outstanding payments (unpaid invoices)
             var outstandingPayments = db.Invoices
                 .Where(i => !i.IsPaid)
                 .Sum(i => (decimal?)i.TotalAmount) ?? 0;
-            
+
             //overdue payments count
             var overdueCount = db.Invoices
                 .Count(i => !i.IsPaid && DateTime.Today > i.DueDate.Date);
-            
-           //payment trends - based on selected period
+
+            //payment trends - based on selected period
             var trends = new List<PaymentTrendVM>();
             var actualStart = periodStart ?? today.AddYears(-1);
             var actualEnd = periodEnd ?? today.AddDays(1);
@@ -3320,11 +3468,11 @@ namespace SHAPEE.Controllers
                     var hourStart = startHour.AddHours(i);
                     var hourEnd = hourStart.AddHours(1);
                     var hourName = hourStart.ToString("HH:mm");
-                    
+
                     var hourTransactions = db.PaymentTransactions
                         .Where(t => t.TransactionDate >= hourStart && t.TransactionDate < hourEnd)
                         .ToList();
-                    
+
                     trends.Add(new PaymentTrendVM
                     {
                         Month = hourName,
@@ -3341,18 +3489,18 @@ namespace SHAPEE.Controllers
                 {
                     var dayEnd = currentDate.AddDays(1);
                     var dayName = currentDate.ToString("dd MMM");
-                    
+
                     var dayTransactions = db.PaymentTransactions
                         .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < dayEnd)
                         .ToList();
-                    
+
                     trends.Add(new PaymentTrendVM
                     {
                         Month = dayName,
                         Amount = dayTransactions.Sum(t => t.AmountPaid),
                         TransactionCount = dayTransactions.Count
                     });
-                    
+
                     currentDate = dayEnd;
                 }
             }
@@ -3364,18 +3512,18 @@ namespace SHAPEE.Controllers
                 {
                     var dayEnd = currentDate.AddDays(1);
                     var dayName = currentDate.ToString("dd MMM");
-                    
+
                     var dayTransactions = db.PaymentTransactions
                         .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < dayEnd)
                         .ToList();
-                    
+
                     trends.Add(new PaymentTrendVM
                     {
                         Month = dayName,
                         Amount = dayTransactions.Sum(t => t.AmountPaid),
                         TransactionCount = dayTransactions.Count
                     });
-                    
+
                     currentDate = dayEnd;
                 }
             }
@@ -3388,20 +3536,20 @@ namespace SHAPEE.Controllers
                     var monthEnd = currentDate.AddMonths(1);
                     if (monthEnd > actualEnd.Date)
                         monthEnd = actualEnd.Date;
-                    
+
                     var monthName = currentDate.ToString("MMM yyyy");
-                    
+
                     var monthTransactions = db.PaymentTransactions
                         .Where(t => t.TransactionDate >= currentDate && t.TransactionDate < monthEnd)
                         .ToList();
-                    
+
                     trends.Add(new PaymentTrendVM
                     {
                         Month = monthName,
                         Amount = monthTransactions.Sum(t => t.AmountPaid),
                         TransactionCount = monthTransactions.Count
                     });
-                    
+
                     currentDate = monthEnd;
                 }
             }
@@ -3413,11 +3561,11 @@ namespace SHAPEE.Controllers
                     var monthStart = today.AddMonths(-i).Date;
                     var monthEnd = monthStart.AddMonths(1);
                     var monthName = monthStart.ToString("MMM yyyy");
-                    
+
                     var monthTransactions = db.PaymentTransactions
                         .Where(t => t.TransactionDate >= monthStart && t.TransactionDate < monthEnd)
                         .ToList();
-                    
+
                     trends.Add(new PaymentTrendVM
                     {
                         Month = monthName,
@@ -3426,7 +3574,7 @@ namespace SHAPEE.Controllers
                     });
                 }
             }
-            
+
             //view students with overdue payments
             var overdueInvoices = db.Invoices
                 .Include(i => i.Student)
@@ -3446,7 +3594,7 @@ namespace SHAPEE.Controllers
                 })
                 .OrderByDescending(s => s.DaysOverdue)
                 .ToList();
-            
+
             var vm = new PaymentMonitoringVM
             {
                 TotalRevenue = totalRevenue,
@@ -3458,7 +3606,7 @@ namespace SHAPEE.Controllers
                 PaymentTrends = trends,
                 OverdueStudents = overdueStudents
             };
-            
+
             if (Request.IsAjax())
             {
                 return PartialView("_PaymentMonitoring", vm);
@@ -3473,12 +3621,12 @@ namespace SHAPEE.Controllers
                 .Include(t => t.Invoice)
                     .ThenInclude(i => i.Student)
                 .AsQueryable();
-            
+
             //apply period filter
             var today = DateTime.Today;
             DateTime? periodStart = null;
             DateTime? periodEnd = null;
-            
+
             period = period?.Trim() ?? "all";
             switch (period)
             {
@@ -3503,12 +3651,12 @@ namespace SHAPEE.Controllers
                     periodEnd = endDate?.AddDays(1);
                     break;
             }
-            
+
             if (periodStart.HasValue)
                 query = query.Where(t => t.TransactionDate >= periodStart.Value);
             if (periodEnd.HasValue)
                 query = query.Where(t => t.TransactionDate < periodEnd.Value);
-            
+
             var data = query
                 .OrderByDescending(t => t.TransactionDate)
                 .Select(t => new PaymentReportCsvVM
@@ -3523,7 +3671,7 @@ namespace SHAPEE.Controllers
                     AmountPaid = t.AmountPaid
                 })
                 .ToList();
-            
+
             var bytes = Helper.ExportToCsv(data);
             var fileName = $"PaymentReport_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             return File(bytes, "text/csv", fileName);
@@ -3535,12 +3683,12 @@ namespace SHAPEE.Controllers
                 .Include(t => t.Invoice)
                     .ThenInclude(i => i.Student)
                 .AsQueryable();
-            
+
             //apply period filter
             var today = DateTime.Today;
             DateTime? periodStart = null;
             DateTime? periodEnd = null;
-            
+
             period = period?.Trim() ?? "all";
             switch (period)
             {
@@ -3565,16 +3713,16 @@ namespace SHAPEE.Controllers
                     periodEnd = endDate?.AddDays(1);
                     break;
             }
-            
+
             if (periodStart.HasValue)
                 query = query.Where(t => t.TransactionDate >= periodStart.Value);
             if (periodEnd.HasValue)
                 query = query.Where(t => t.TransactionDate < periodEnd.Value);
-            
+
             var transactions = query
                 .OrderByDescending(t => t.TransactionDate)
                 .ToList();
-            
+
             //generate PDF
             var pdfBytes = Document.Create(container =>
             {
@@ -3583,7 +3731,7 @@ namespace SHAPEE.Controllers
                     page.Size(PageSizes.A4);
                     page.Margin(40);
                     page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
-                    
+
                     page.Header().Column(col =>
                     {
                         col.Item().Text("TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY")
@@ -3593,7 +3741,7 @@ namespace SHAPEE.Controllers
                         col.Item().PaddingTop(5).Text($"Generated on: {DateTime.Now:dd-MM-yyyy HH:mm:ss}")
                             .FontSize(9).FontColor(Colors.Grey.Medium);
                     });
-                    
+
                     page.Content().PaddingTop(20).Element(e =>
                     {
                         if (!transactions.Any())
@@ -3601,7 +3749,7 @@ namespace SHAPEE.Controllers
                             e.Text("No transactions found.").FontSize(12);
                             return;
                         }
-                        
+
                         e.Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
@@ -3613,7 +3761,7 @@ namespace SHAPEE.Controllers
                                 columns.RelativeColumn(1f);   // Method
                                 columns.RelativeColumn(1f);   // Amount
                             });
-                            
+
                             // Header
                             table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Receipt ID").Bold();
                             table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Invoice ID").Bold();
@@ -3621,7 +3769,7 @@ namespace SHAPEE.Controllers
                             table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Date").Bold();
                             table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Method").Bold();
                             table.Cell().Padding(5).Background(Colors.Grey.Lighten3).Text("Amount").Bold();
-                            
+
                             // Rows
                             foreach (var t in transactions)
                             {
@@ -3633,7 +3781,7 @@ namespace SHAPEE.Controllers
                                 table.Cell().Padding(4).Text(t.PaymentMethod);
                                 table.Cell().Padding(4).Text($"RM {t.AmountPaid:N2}");
                             }
-                            
+
                             // Footer row
                             table.Cell().Padding(4).Text("TOTAL").Bold().AlignRight();
                             table.Cell().Padding(4).Text("").Bold();
@@ -3646,9 +3794,9 @@ namespace SHAPEE.Controllers
                 });
             })
             .GeneratePdf();
-            
+
             var fileName = $"PaymentReport_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-            
+
             //return PDF directly for prevewi and download
             return File(pdfBytes, "application/pdf", fileName);
         }
@@ -3667,7 +3815,7 @@ namespace SHAPEE.Controllers
                 // Find unpaid invoices that are due in 3 days or less (not overdue)
                 var invoicesToRemind = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date >= today  // Not overdue
                         && i.DueDate.Date <= threeDaysFromNow  // Due in 3 days or less
                         && i.Student != null
@@ -3695,11 +3843,11 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     // Calculate days until due for the message
                     var daysUntilDue = (invoice.DueDate.Date - today).Days;
-                    var daysText = daysUntilDue == 0 ? "today" : 
-                                   daysUntilDue == 1 ? "1 day" : 
+                    var daysText = daysUntilDue == 0 ? "today" :
+                                   daysUntilDue == 1 ? "1 day" :
                                    $"{daysUntilDue} days";
 
                     // Send email
@@ -3735,9 +3883,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3752,7 +3900,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });
@@ -3774,7 +3922,7 @@ namespace SHAPEE.Controllers
                 //find unpaid invoices that are overdue (due date < today)
                 var overdueInvoices = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date < today  //overdue
                         && i.Student != null
                         && !string.IsNullOrEmpty(i.Student.Email))
@@ -3787,7 +3935,7 @@ namespace SHAPEE.Controllers
                 foreach (var invoice in overdueInvoices)
                 {
                     var daysOverdue = (today - invoice.DueDate.Date).Days;
-                    
+
                     //check if overdue reminder notification was already sent today
                     var reminderSentToday = db.Notification
                         .Any(n => n.UserId == invoice.StudentId
@@ -3803,7 +3951,7 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
 
                     //send email
@@ -3840,9 +3988,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3857,7 +4005,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending overdue reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });

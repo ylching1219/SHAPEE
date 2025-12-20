@@ -1696,6 +1696,8 @@
                 "oldest" => tasksQuery.OrderBy(t => t.DueDate),
                 "newest" => tasksQuery.OrderByDescending(t => t.DueDate),
                 "title" => tasksQuery.OrderBy(t => t.Title),
+                "id_asc" => tasksQuery.OrderBy(t => t.Id),       // Ascending ID
+                "id_desc" => tasksQuery.OrderByDescending(t => t.Id),
                 _ => tasksQuery.OrderByDescending(t => t.DueDate) // Default to newest
             };
 

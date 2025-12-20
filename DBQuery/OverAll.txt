@@ -237,102 +237,133 @@ INSERT INTO [dbo].[Semesters] (Id, StartDate, EndDate, IsActive) VALUES
 ('202608', '2026-08-24', '2026-11-29', 0);
 
 -- Course
-INSERT INTO [dbo].[Courses] 
-([Id], [Name], [CreditHours], [LectureHours], [PracticalHours], [TutorialHours]) 
+INSERT INTO [dbo].[Courses]
+([Id], [Name], [CreditHours], [LectureHours], [PracticalHours], [TutorialHours])
 VALUES
-
 -- Accounting & Finance
 ('BF101', 'Principles of Accounting', 3, 2, NULL, 2),
 ('BF102', 'Business Mathematics', 3, 2, NULL, 2),
 ('BF201', 'Financial Management', 3, 2, NULL, 2),
 ('BF202', 'Business Statistics', 3, 2, NULL, 2),
+('BF301', 'Investment Analysis', 3, 2, NULL, 2),
+('BF302', 'Auditing and Assurance', 3, 2, NULL, 2),
 
--- Civil Engineering
+-- Civil / Mechanical Engineering
 ('EN101', 'Engineering Drawing', 2, 2, 1, 1),
 ('EN201', 'Mechanics and Materials', 4, 2, 2, 2),
+('EN202', 'Thermodynamics', 3, 2, 1, 2),
 
 -- Electrical Engineering
 ('EN301', 'Circuit Theory', 3, 2, 2, 1),
 ('EN302', 'Electronics', 3, 2, 2, 1),
+('EN303', 'Control Systems', 3, 2, 2, 1),
 
--- General / Electives
+-- General Studies
 ('GS101', 'English for Academic Purposes', 2, 1, NULL, 1),
 ('GS102', 'Critical Thinking', 2, 1, NULL, 1),
 ('GS103', 'Cultural Studies', 2, 2, NULL, 1),
+('GS201', 'Professional Ethics', 2, 2, NULL, 1),
+('GS202', 'Entrepreneurship', 3, 2, NULL, 2),
 
 -- IT & Programming
+('IT201', 'Computer Networking', 3, 2, 2, 1),
 ('IT202', 'Database Systems', 3, 2, 1, 1),
+('IT301', 'Software Engineering', 3, 2, 1, 1),
 ('IT302', 'Web Application Development', 4, 2, 2, 2),
 ('IT303', 'Mobile Application Development', 4, 2, 2, 2),
 ('PR101', 'Programming Fundamentals', 3, 2, 2, 2),
 ('PR102', 'Object-Oriented Programming', 3, 2, 2, 2),
 ('PR201', 'Data Structures and Algorithms', 4, 2, 2, 2),
 
--- Science & Physics
+-- Science & Mathematics
 ('SC101', 'Introduction to Physics', 3, 2, NULL, 2),
 ('SC102', 'Applied Physics', 3, 2, 1, 2),
 ('SC201', 'General Chemistry', 3, 2, 2, 1),
 ('SC202', 'Organic Chemistry', 3, 2, 2, 1),
-('SC203', 'Applied Mathematics', 4, 2, NULL, 2);
+('SC203', 'Applied Mathematics', 4, 2, NULL, 2),
+('SC301', 'Analytical Chemistry', 4, 2, 2, 1),
+('SC302', 'Quantum Mechanics', 4, 2, NULL, 2);
 
 
---ProgramCourse
--- Accounting Programs
-INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
-('BAC', 'BF101', 1, 1),
-('BAC', 'BF102', 1, 2),
-('BAC', 'BF201', 2, 1),
-('BAC', 'BF202', 2, 2),
-('BFN', 'BF101', 1, 1),
-('BFN', 'BF202', 1, 2),
-('BFN', 'BF201', 2, 1),
-('DFI', 'BF201', 1, 1),
-('DAC', 'BF101', 1, 1),
-('DAC', 'BF102', 1, 2);
 
--- Civil Engineering Programs
-INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
-('BCE', 'EN101', 1, 1),
-('BCE', 'EN201', 1, 2),
-('BCE', 'SC101', 1, 1),
-('DCE', 'EN101', 1, 1),
-('DCE', 'EN201', 1, 2);
 
--- Electrical Engineering Programs
-INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
-('BEE', 'EN101', 1, 1),
-('BEE', 'EN201', 1, 2),
-('BEE', 'SC101', 1, 1),
-('DEE', 'EN101', 1, 1),
-('DEE', 'EN201', 1, 2),
-('DEE', 'SC101', 1, 1);
+-- ProgramCourses
+INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester)
+VALUES
+('BAC','BF101',1,1),
+('BAC','BF102',1,2),
+('BAC','BF201',2,1),
+('BAC','BF202',2,2),
+('BFN','BF101',1,1),
+('BFN','BF202',1,2),
+('BFN','BF201',2,1),
+('DFI','BF201',1,1),
+('DAC','BF101',1,1),
+('DAC','BF102',1,2),
+('DFI','BF202',1,1),
 
--- Applied Science Programs (Chemistry & Physics)
-INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
-('BCH', 'SC101', 1, 1),
-('BCH', 'SC102', 1, 2),
-('BCH', 'SC201', 2, 1),
-('BPH', 'SC101', 1, 1),
-('BPH', 'SC201', 2, 1),
-('DPH', 'SC101', 1, 1),
-('DPH', 'SC201', 2, 1),
-('DCH', 'SC102', 1, 2),
-('DCH', 'SC201', 2, 1);
+('BCE','EN101',1,1),
+('BCE','EN201',1,2),
+('BCE','SC101',1,1),
+('DCE','EN101',1,1),
+('DCE','EN201',1,2),
 
--- Computer Science & IT Programs
-INSERT INTO [dbo].[ProgramCourses] (ProgramId, CourseId, YearLevel, Semester) VALUES
-('BCS', 'PR101', 1, 1),
-('BCS', 'PR102', 1, 2),
-('BCS', 'IT202', 2, 1),
-('BIT', 'PR101', 1, 1),
-('BIT', 'PR201', 2, 1),
-('BIT', 'IT302', 2, 2),
-('DCS', 'PR101', 1, 1),
-('DCS', 'PR102', 1, 2),
-('DFT', 'PR101', 1, 1),
-('DFT', 'IT302', 2, 2),
-('DCH', 'SC202', 3, 2),
-('DCH', 'SC203', 3, 2),
-('DCH', 'GS101', 3, 2),
-('DFI', 'BF202', 1, 1);
+('BEE','EN101',1,1),
+('BEE','EN201',1,2),
+('BEE','SC101',1,1),
+('DEE','EN101',1,1),
+('DEE','EN201',1,2),
+('DEE','SC101',1,1),
+
+('BCH','SC101',1,1),
+('BCH','SC102',1,2),
+('BCH','SC201',2,1),
+('BPH','SC101',1,1),
+('BPH','SC201',2,1),
+('DPH','SC101',1,1),
+('DPH','SC201',2,1),
+('DCH','SC102',1,2),
+('DCH','SC201',2,1),
+
+('BCS','PR101',1,1),
+('BCS','PR102',1,2),
+('BCS','IT202',2,1),
+('BIT','PR101',1,1),
+('BIT','PR201',2,1),
+('BIT','IT302',2,2),
+('DCS','PR101',1,1),
+('DCS','PR102',1,2),
+('DFT','PR101',1,1),
+('DFT','IT302',2,2),
+('DFT','IT303',2,1),
+
+('DCH','SC202',3,2),
+('DCH','SC203',3,2),
+('DCH','GS101',3,2),
+('BCE','SC203',2,1),
+('BCE','EN202',2,1),
+('BEE','EN301',2,1),
+('BEE','EN302',2,1),
+('DAC','BF201',2,1),
+('DAC','GS202',2,1),
+('DCE','SC203',2,1),
+('DCE','GS201',2,1),
+('DCH','SC101',1,1),
+('DCH','SC201',1,1),
+('DCS','PR201',2,1),
+('DCS','IT202',2,1),
+('DEE','EN301',2,1),
+('DEE','EN302',2,1),
+('DFI','BF201',2,1),
+('DFI','BF202',2,1),
+
+('BAC','GS101',1,3),
+('BCE','GS102',1,3),
+('BCS','GS103',1,3),
+('BAC','BF301',3,1),
+('BAC','BF302',3,2),
+('BCS','IT301',3,1),
+('BCS','IT303',3,2),
+('BCE','EN303',3,1);
+
 

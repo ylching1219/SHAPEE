@@ -1,0 +1,260 @@
+﻿@model ClassSectionVM
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+<!-- Header -->
+<div class="bg-white border-bottom px-4 py-3 mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Class Management</h1>
+</div>
+
+
+
+<div class="tab-content" id="ClassManagementTabContent">
+
+    <div class="tab-pane fade show active" id="classes" role="tabpanel">
+        <div class="card shadow-sm">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
+                        Classes
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
+                            <i class="fas fa-download mr-1"></i> Export CSV
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="card-body bg-light border-bottom">
+                <form id="filterForm"
+                      data-ajax="true"
+                      data-ajax-method="GET"
+                      data-ajax-url="/Admin/ViewClass"
+                      data-ajax-update="#classData">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <select asp-for="FacultyId"
+                                    asp-items="ViewBag.FacultyList"
+                                    class="form-control filter">
+                                <option value="">Select Faculty</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select id="program" class="form-control filter" name="programId" disabled>
+                                <option value="">Select Program</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                                <select asp-for="SemesterId"
+                                        asp-items="ViewBag.SemesterList"
+                                        class="select2 filter">
+                                    <option value="">All Semester</option>
+                                </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <select class="form-control filter" id="type" name="type">
+                                <option value="">All Type</option>
+                                <option value="Lecture">Lecture</option>
+                                <option value="Practical">Practical</option>
+                                <option value="Tutorial">Tutorial</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <!-- Faculty Table -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <div id="classData">
+                        <partial name="_ViewClass" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="modal fade" id="addEditModal" tabindex="-1" role="dialog" aria-labelledby="addEditModalLabel">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Edit Class</h5>
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close"">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="AddEditData">
+                <partial name="_EditClassForm" />
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-semibold">Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-2">Are you sure you want to delete</p>
+                <p class="text-center font-weight-bold mb-3"><span id="ToDeleteName"></span>?</p>
+                <p class="text-danger small text-center mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <form id="deleteForm" method="post" asp-controller="Admin" asp-action="DeleteGroup" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteId" name="Id" />
+                    <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+         $("#FacultyId").on("change", function () {
+
+             const facultyId = $(this).val();
+
+             $("#program").empty().append('<option value="">Select Program</option>');
+             $("#program").prop("disabled", true);
+             if (!facultyId) return;
+
+             $.ajax({
+                 url: '/Admin/GetProgramFromFaculty',
+                 type: 'GET',
+                 data: {
+                     facultyId: facultyId
+                 },
+                 dataType: 'json',
+                 success: function (data) {
+
+                     if (data.length === 0) {
+                         console.log("No programs found");
+                         return;
+                     }
+
+                     data.forEach(function (p) {
+                         $("#program").append(
+                             `<option value="${p.id}">${p.name}</option>`
+                         );
+                     });
+
+                     $("#program").prop("disabled", false);
+                 },
+                 error: function (xhr, status, error) {
+                     console.error('Error loading programs:', error);
+                 }
+             });
+         });
+
+         $(".filter").on("change",function(){
+             $("#filterForm").submit();
+         });
+
+        function prepareDeleteModal(element) {
+            var id = $(element).data("id");
+            var name = $(element).data("groupname");
+
+            // Set hidden input value for form submission
+            $("#deleteId").val(id);
+
+            // Display name in modal
+            $("#ToDeleteName").text(name);
+        }
+
+        function initSelect2() {
+            // Page dropdowns (outside modal)
+            $('#filterForm .select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                minimumResultsForSearch: 0
+            });
+
+            // Modal dropdowns
+            $('#addEditModal .select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownParent: $('#addEditModal')
+            });
+        }
+
+        function onEditLoaded(){
+            $("#addEditModal").modal("show");
+        }
+
+        $(document).ready(function () {
+
+            initSelect2();
+            $("#exportCsvBtn").on("click", function () {
+
+                const form = $("#filterForm")[0];
+                const params = new URLSearchParams(new FormData(form));
+
+                // Redirect to export action with filters
+                window.location.href = '/Admin/ExportGroupsCsv?' + params.toString();
+            });
+        });
+
+        $('#addEditModal').on('shown.bs.modal', function () {
+            initSelect2();
+        });
+
+
+
+    </script>
+
+}
