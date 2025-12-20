@@ -22,11 +22,281 @@ namespace SHAPEE.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController(DB db, Helper hp, LeaveService _leaveService) : Controller
     {
-        // Dashboard
+        // Add this method to your AdminController.cs
+
         public IActionResult Dashboard()
         {
             ViewData["Title"] = "Admin Dashboard";
+
+            // Get total counts
+            var totalStudents = db.Students.Count();
+            var totalStaff = db.Staffs.Count();
+            var totalClasses = db.ClassSections.Count();
+
+            // Calculate monthly growth percentages
+            var lastMonth = DateTime.Now.AddMonths(-1);
+            var studentsLastMonth = db.Students.Count(s => s.DateJoin < DateOnly.FromDateTime(lastMonth));
+            var staffLastMonth = db.Staffs.Count(s => s.DateJoin < DateOnly.FromDateTime(lastMonth));
+
+            var studentGrowth = studentsLastMonth > 0
+                ? ((totalStudents - studentsLastMonth) / (double)studentsLastMonth * 100)
+                : 0;
+            var staffGrowth = staffLastMonth > 0
+                ? ((totalStaff - staffLastMonth) / (double)staffLastMonth * 100)
+                : 0;
+
+            // Get recent activities (last 10)
+            var recentActivities = new List<dynamic>();
+
+            // Recent student registrations
+            var recentStudents = db.Students
+                .OrderByDescending(s => s.DateJoin)
+                .Take(3)
+                .Select(s => new {
+                    Date = s.DateJoin,
+                    Activity = "New student registered",
+                    User = s.FirstName + " " + s.LastName,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Recent staff additions
+            var recentStaff = db.Staffs
+                .OrderByDescending(s => s.DateJoin)
+                .Take(3)
+                .Select(s => new {
+                    Date = s.DateJoin,
+                    Activity = "New staff member added",
+                    User = s.FirstName + " " + s.LastName,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Recent announcements
+            var recentAnnouncements = db.Announcements
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(2)
+                .Select(a => new {
+                    Date = DateOnly.FromDateTime(a.CreatedAt),
+                    Activity = "New announcement posted",
+                    User = a.Author,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Combine and sort all activities
+            recentActivities.AddRange(recentStudents.Cast<dynamic>());
+            recentActivities.AddRange(recentStaff.Cast<dynamic>());
+            recentActivities.AddRange(recentAnnouncements.Cast<dynamic>());
+            recentActivities = recentActivities
+                .OrderByDescending(a => a.Date)
+                .Take(10)
+                .ToList();
+
+            // Pass data to view
+            ViewBag.TotalStudents = totalStudents;
+            ViewBag.TotalStaff = totalStaff;
+            ViewBag.TotalClasses = totalClasses;
+            ViewBag.StudentGrowth = Math.Round(studentGrowth, 1);
+            ViewBag.StaffGrowth = Math.Round(staffGrowth, 1);
+            ViewBag.RecentActivities = recentActivities;
+
             return View();
+        }
+
+        // Add this new action method for AJAX chart data
+        [HttpGet]
+        public IActionResult GetChartData(string dataType, string timeline)
+        {
+            var now = DateTime.Now;
+            var labels = new List<string>();
+            var data = new List<int>();
+
+            switch (dataType)
+            {
+                case "students":
+                    data = GetStudentChartData(timeline, out labels);
+                    break;
+                case "staff":
+                    data = GetStaffChartData(timeline, out labels);
+                    break;
+                case "classes":
+                    data = GetClassChartData(timeline, out labels);
+                    break;
+            }
+
+            return Json(new { labels, data });
+        }
+
+        private List<int> GetStudentChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        var date = DateOnly.FromDateTime(now.AddDays(-i));
+                        labels.Add(date.ToString("dd MMM"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= date));
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var weekStart = DateOnly.FromDateTime(now.AddDays(-i * 7));
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.Students.Count(s => s.DateJoin <= weekStart));
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var quarterStart = DateOnly.FromDateTime(now.AddMonths(-i * 3));
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.Students.Count(s => s.DateJoin <= quarterStart));
+                    }
+                    break;
+            }
+
+            return data;
+        }
+
+        private List<int> GetStaffChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        var date = DateOnly.FromDateTime(now.AddDays(-i));
+                        labels.Add(date.ToString("dd MMM"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= date));
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var weekStart = DateOnly.FromDateTime(now.AddDays(-i * 7));
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= weekStart));
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var quarterStart = DateOnly.FromDateTime(now.AddMonths(-i * 3));
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= quarterStart));
+                    }
+                    break;
+            }
+
+            return data;
+        }
+
+        private List<int> GetClassChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            // Note: ClassSection doesn't have a creation date, so we'll use semester data
+            var activeSemester = db.Semesters.FirstOrDefault(s => s.IsActive);
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        labels.Add($"Day {7 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = now.AddMonths(-i);
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = now.AddMonths(-i);
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+            }
+
+            return data;
         }
 
         public IActionResult StudentManagement(string? name, string? filter1, string? filter2, string? filter3)
