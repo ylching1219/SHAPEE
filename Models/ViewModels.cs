@@ -584,6 +584,18 @@ namespace SHAPEE.Models
         public Announcement? EditAnnouncement { get; set; }
         public Staff? Staff { get; set; }
     }
+    public class StudentTimetableVM
+    {
+        public Student Student { get; set; }
+        public List<ClassSection> ClassSections { get; set; } = new List<ClassSection>();
+        public List<Semester> Semesters { get; set; } = new List<Semester>();
+        public string? SelectedSemesterId { get; set; }
+        public Semester? SelectedSemester { get; set; }
+        public int TotalWeeks { get; set; }
+        public int SelectedWeekNumber { get; set; }
+        public DateTime? WeekStartDate { get; set; }
+        public DateTime? WeekEndDate { get; set; }
+    }
 
 
     public class EmailVs

@@ -1,0 +1,767 @@
+﻿@model StudentTimetableVM
+@{
+    ViewData["Title"] = "My Timetable";
+}
+
+<style>
+    .timetable-container {
+        overflow-x: auto;
+    }
+
+    .timetable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+    }
+
+        .timetable th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 5px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #dee2e6;
+            font-size: 0.7rem;
+        }
+
+            .timetable th.time-column {
+                background: #f8f9fc;
+                color: #5a5c69;
+                width: 70px;
+            }
+
+        .timetable td {
+            border: 1px solid #e3e6f0;
+            padding: 2px;
+            vertical-align: top;
+            background: white;
+            height: 60px;
+            font-size: 0.7rem;
+        }
+
+            .timetable td.time-cell {
+                background: #f8f9fc;
+                text-align: center;
+                font-weight: 600;
+                color: #5a5c69;
+                font-size: 0.65rem;
+                padding: 5px 2px;
+            }
+
+            .timetable td.day-cell {
+                position: relative;
+                padding: 3px;
+            }
+
+    .class-block {
+        border-radius: 4px;
+        padding: 6px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        height: 100%;
+        font-size: 0.65rem;
+        line-height: 1.3;
+    }
+
+        .class-block:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+    .class-block-header {
+        font-weight: 700;
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+    }
+
+    .class-block-body {
+        font-size: 0.65rem;
+        opacity: 0.95;
+        margin-bottom: 3px;
+    }
+
+    .class-block-footer {
+        font-size: 0.6rem;
+        opacity: 0.9;
+        margin-top: 3px;
+        padding-top: 3px;
+        border-top: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .lecture-block {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .tutorial-block {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+    }
+
+    .practical-block {
+        background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+    }
+
+    .legend {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+    }
+
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+    }
+
+    .empty-timetable {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+        .empty-timetable i {
+            font-size: 3rem;
+            color: #d1d3e2;
+            margin-bottom: 15px;
+        }
+
+    .course-materials-section {
+        margin-top: 30px;
+    }
+
+    .course-card {
+        border-left: 4px solid #4e73df;
+        transition: all 0.3s ease;
+    }
+
+        .course-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .course-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+
+    .schedule-table {
+        font-size: 0.85rem;
+    }
+
+        .schedule-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+
+    @@media (max-width: 768px) {
+        .timetable {
+            font-size: 0.6rem;
+        }
+
+        .class-block {
+            font-size: 0.6rem;
+        }
+    }
+
+    @@media print {
+        /* Show print header only when printing */
+        .print-header {
+            display: block !important;
+        }
+        /* Hide everything except printable area */
+        body * {
+            visibility: hidden;
+        }
+
+        #printableArea, #printableArea * {
+            visibility: visible;
+        }
+
+        #printableArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+        }
+        /* Card styling */
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+            margin-bottom: 10px !important;
+        }
+
+        .card-header {
+            background: white !important;
+            border: none !important;
+            padding: 0 !important;
+            display: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+        /* Timetable container */
+        .timetable-container {
+            overflow: visible !important;
+        }
+        /* Timetable styling - Keep original design with BOLD borders */
+        .timetable {
+            border-collapse: collapse !important;
+            border: 3px solid #000 !important;
+            width: 100% !important;
+            page-break-inside: avoid;
+        }
+
+            .timetable th,
+            .timetable td {
+                border: 2px solid #000 !important;
+                padding: 8px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .timetable th {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                border: 2px solid #000 !important;
+                font-size: 0.9rem !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+                .timetable th.time-column {
+                    background: #e0e0e0 !important;
+                    color: #000 !important;
+                    border: 2px solid #000 !important;
+                }
+
+                .timetable th.hour-marker {
+                    border-left: 3px solid #000 !important;
+                }
+
+            .timetable td.time-cell {
+                background: #e0e0e0 !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                color: #000 !important;
+                border: 2px solid #000 !important;
+                font-size: 0.85rem !important;
+            }
+
+            .timetable td.day-cell {
+                background: #fff !important;
+                vertical-align: top !important;
+                border: 2px solid #000 !important;
+                min-height: 80px !important;
+            }
+
+            .timetable td.half-hour-slot {
+                border-left: 2px solid #333 !important;
+            }
+        /* Keep original colorful class blocks */
+        .class-block {
+            border-radius: 4px !important;
+            padding: 8px !important;
+            color: white !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            height: auto !important;
+            min-height: 60px !important;
+        }
+
+        .lecture-block {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .tutorial-block {
+            background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .practical-block {
+            background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .class-block-header {
+            font-weight: bold !important;
+            font-size: 0.8rem !important;
+            margin-bottom: 4px !important;
+        }
+
+        .class-block-body {
+            font-size: 0.7rem !important;
+            margin-bottom: 3px !important;
+        }
+
+        .class-block-footer {
+            font-size: 0.65rem !important;
+            border-top: 1px solid rgba(255,255,255,0.3) !important;
+            padding-top: 3px !important;
+            margin-top: 3px !important;
+        }
+        /* Print header styling */
+        .print-header {
+            border: 2px solid #000 !important;
+            padding: 15px !important;
+            margin-bottom: 15px !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .print-title {
+            font-size: 1.3rem !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            margin-bottom: 15px !important;
+            border-bottom: 2px solid #000 !important;
+            padding-bottom: 10px !important;
+        }
+        /* Hide legend, debug info and course materials */
+        .legend,
+        .course-materials-section,
+        .mt-3.p-3.bg-light {
+            display: none !important;
+        }
+        /* Page settings */
+        @@page {
+            margin: 0.5cm;
+            size: landscape;
+        }
+        /* Force colors to show */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+    }
+</style>
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-3 no-print">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">My Timetable</h1>
+        <p class="text-muted small mt-2">View your weekly class schedule and course materials</p>
+    </div>
+</div>
+
+<!-- Student Info Card (Screen only) -->
+<div class="row mb-3 no-print">
+    <div class="col-12">
+        <div class="card shadow-sm border-left-primary">
+            <div class="card-body py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h6 class="mb-1 text-primary font-weight-bold">@Model.Student.FullName</h6>
+                        <p class="mb-0 text-muted small">@Model.Student.Id</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-0 text-muted small">Program</p>
+                        <p class="mb-0 font-weight-bold small">@(Model.Student.Program?.Name ?? "N/A")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-0 text-muted small">Year & Semester</p>
+                        <p class="mb-0 font-weight-bold small">Year @Model.Student.YearLevel Semester @Model.Student.Semester</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-0 text-muted small">Tutorial Group</p>
+                        <p class="mb-0 font-weight-bold small">@(Model.Student.TutorialGroup?.GroupName ?? "Not Assigned")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Semester Filter & Legend -->
+<div class="card shadow mb-3 no-print">
+    <div class="card-body py-2">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label for="semesterFilter" class="font-weight-bold small mb-1">Select Semester:</label>
+                <select id="semesterFilter" class="form-control form-control-sm">
+                    @foreach (var semester in Model.Semesters)
+                    {
+                        if (semester.Id == Model.SelectedSemesterId)
+                        {
+                            <option value="@semester.Id" selected>
+                                @semester.Id
+                                @(semester.IsActive ? "(Active)" : "")
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@semester.Id">
+                                @semester.Id
+                                @(semester.IsActive ? "(Active)" : "")
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="weekFilter" class="font-weight-bold small mb-1">Select Week:</label>
+                <select id="weekFilter" class="form-control form-control-sm">
+                    @for (int i = 1; i <= Model.TotalWeeks; i++)
+                    {
+                        if (i == Model.SelectedWeekNumber)
+                        {
+                            <option value="@i" selected>Week @i</option>
+                        }
+                        else
+                        {
+                            <option value="@i">Week @i</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 mt-2 mt-md-0">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color lecture-block"></div>
+                        <span>Lecture (L)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color tutorial-block"></div>
+                        <span>Tutorial (T)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color practical-block"></div>
+                        <span>Practical (P)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 text-right">
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Printable Area Starts Here -->
+<div id="printableArea">
+
+    <!-- Print Header (Only shows when printing) -->
+    <div class="print-header" style="display: none;">
+        <div class="print-title">Student Timetable</div>
+        <table style="width: 100%; border: none;">
+            <tr>
+                <td style="border: none; padding: 5px;"><strong>Name:</strong> @Model.Student.FullName</td>
+                <td style="border: none; padding: 5px;"><strong>ID:</strong> @Model.Student.Id</td>
+            </tr>
+            <tr>
+                <td style="border: none; padding: 5px;"><strong>Program:</strong> @(Model.Student.Program?.Name ?? "N/A")</td>
+                <td style="border: none; padding: 5px;"><strong>Tutorial Group:</strong> @(Model.Student.TutorialGroup?.GroupName ?? "Not Assigned")</td>
+            </tr>
+            <tr>
+                <td style="border: none; padding: 5px;"><strong>Year:</strong> @Model.Student.YearLevel</td>
+                <td style="border: none; padding: 5px;"><strong>Semester:</strong> @Model.Student.Semester</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Timetable -->
+    <div class="card shadow mb-4" id="timetableCard">
+        <div class="card-header py-2">
+            <h6 class="m-0 font-weight-bold text-primary">
+                @Model.SelectedSemesterId Semester
+                <span class="text-muted small" id="weekDateRange">
+                    @if (Model.WeekStartDate.HasValue && Model.WeekEndDate.HasValue)
+                    {
+                        @:( Week @Model.SelectedWeekNumber: @Model.WeekStartDate.Value.ToString("dd MMM yyyy") - @Model.WeekEndDate.Value.ToString("dd MMM yyyy") )
+                    }
+                </span>
+            </h6>
+        </div>
+        <div class="card-body p-2">
+            <div id="timetableContainer">
+                @if (!Model.ClassSections.Any())
+                {
+                    <div class="empty-timetable">
+                        <i class="fas fa-calendar-times"></i>
+                        <h5 class="text-muted">No Classes Scheduled</h5>
+                        <p class="text-muted">No classes found for the selected semester.</p>
+                    </div>
+                }
+                else
+                {
+                    @await Html.PartialAsync("_TimetableGrid", Model.ClassSections)
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- End of Printable Area -->
+</div>
+
+<!-- Course Materials Section (Not printed) -->
+<div class="course-materials-section">
+    <div class="card shadow mb-4">
+        <div class="card-header py-2">
+            <h6 class="m-0 font-weight-bold text-primary">Semester Timetable By Course</h6>
+        </div>
+        <div class="card-body">
+            @if (!Model.ClassSections.Any())
+            {
+                <p class="text-muted text-center">No course materials available.</p>
+            }
+            else
+            {
+                var groupedCourses = Model.ClassSections
+                .GroupBy(cs => cs.Course.Id)
+                .Select(g => new
+                {
+                    Course = g.First().Course,
+                    Sessions = g.ToList()
+                })
+                .OrderBy(x => x.Course.Id)
+                .ToList();
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 5%;">No</th>
+                                <th style="width: 30%;">Course</th>
+                                <th style="width: 35%;">Day & Time (Duration)</th>
+                                <th style="width: 15%;">Venue</th>
+                                <th style="width: 15%;">Lecturer/Instructor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < groupedCourses.Count; i++)
+                            {
+                                var item = groupedCourses[i];
+                                var course = item.Course;
+                                var sessions = item.Sessions;
+
+                                var colors = new[] { "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c" };
+                                var courseColor = colors[i % colors.Length];
+
+                                <tr>
+                                    <td class="text-center">@(i + 1)</td>
+                                    <td>
+                                        <span class="badge course-badge" style="background: @courseColor;">
+                                            @((course.CreditHours * 100.0 / 20).ToString("0"))%
+                                        </span>
+                                        <strong>@course.Id</strong> @course.Name
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            var duration = (session.EndTime.ToTimeSpan() - session.StartTime.ToTimeSpan()).TotalHours;
+                                            <div class="mb-1">
+                                                <strong>@session.Day</strong>,
+                                                @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
+                                                ( @session.SectionType: @duration.ToString("0.0") hours )
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            <div class="mb-1">@(session.Room?.Id ?? "TBA")</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            var staffName = session.Staff != null
+                                            ? $"{session.Staff.FirstName} {session.Staff.LastName}"
+                                            : "TBA";
+                                            <div class="mb-1">@staffName (Weekly)</div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Class Details Modal -->
+<div class="modal fade" id="classDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Class Details</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="classDetailsContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle semester change
+            $('#semesterFilter').on('change', function() {
+                const semesterId = $(this).val();
+                applyFilters(semesterId, 1); // Reset to week 1 when semester changes
+
+                // Update week options
+                updateWeekOptions(semesterId);
+            });
+
+            // Handle week change
+            $('#weekFilter').on('change', function() {
+                const semesterId = $('#semesterFilter').val();
+                const weekNumber = $(this).val();
+                applyFilters(semesterId, weekNumber);
+            });
+
+            // Function to apply filters with AJAX
+            function applyFilters(semesterId, weekNumber) {
+                // Show loading state
+                $('#timetableContainer').html(
+                    '<div class="text-center py-5">' +
+                    '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="sr-only">Loading...</span>' +
+                    '</div>' +
+                    '<p class="mt-2 text-muted">Loading timetable...</p>' +
+                    '</div>'
+                );
+
+                // Update week date range
+                updateWeekDateRange(semesterId, weekNumber);
+
+                // Fetch timetable data
+                $.ajax({
+                    url: '@Url.Action("GetTimetableData", "Student")',
+                    type: 'GET',
+                    data: {
+                        semesterId: semesterId,
+                        weekNumber: weekNumber
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        $('#timetableContainer').html(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading timetable:', error);
+                        $('#timetableContainer').html(
+                            '<div class="empty-timetable">' +
+                            '<i class="fas fa-exclamation-triangle text-danger"></i>' +
+                            '<h5 class="text-muted">Error Loading Timetable</h5>' +
+                            '<p class="text-muted">Please try again later.</p>' +
+                            '</div>'
+                        );
+                    }
+                });
+            }
+
+            // Update week options based on semester
+            function updateWeekOptions(semesterId) {
+                $.ajax({
+                    url: '@Url.Action("GetSemesterWeeks", "Student")',
+                    type: 'GET',
+                    data: { semesterId: semesterId },
+                    success: function(response) {
+                        if (response.success) {
+                            const weekSelect = $('#weekFilter');
+                            weekSelect.empty();
+
+                            for (let i = 1; i <= response.totalWeeks; i++) {
+                                weekSelect.append($('<option>', {
+                                    value: i,
+                                    text: 'Week ' + i,
+                                    selected: i === 1
+                                }));
+                            }
+                        }
+                    },
+                    error: function() {
+                        console.error('Error loading week options');
+                    }
+                });
+            }
+
+            // Update week date range display
+            function updateWeekDateRange(semesterId, weekNumber) {
+                $.ajax({
+                    url: '@Url.Action("GetWeekDateRange", "Student")',
+                    type: 'GET',
+                    data: {
+                        semesterId: semesterId,
+                        weekNumber: weekNumber
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#weekDateRange').text(
+                                '( Week ' + weekNumber + ': ' +
+                                response.startDate + ' - ' +
+                                response.endDate + ' )'
+                            );
+                        }
+                    },
+                    error: function() {
+                        console.error('Error loading date range');
+                    }
+                });
+            }
+        });
+
+        function showClassDetails(sectionId, courseId, courseName, sectionType, startTime, endTime, roomId, staffName) {
+            const content = `
+                <div class="mb-3">
+                    <h6 class="text-primary font-weight-bold">${courseId} - ${courseName}</h6>
+                </div>
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="font-weight-bold" style="width: 40%;">Section ID:</td>
+                        <td>${sectionId}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">Type:</td>
+                        <td><span class="badge badge-primary">${sectionType}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">Time:</td>
+                        <td>${startTime} - ${endTime}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">Room:</td>
+                        <td>${roomId}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">Lecturer:</td>
+                        <td>${staffName}</td>
+                    </tr>
+                </table>
+            `;
+
+            $('#classDetailsContent').html(content);
+            $('#classDetailsModal').modal('show');
+        }
+    </script>
+}

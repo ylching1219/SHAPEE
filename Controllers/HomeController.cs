@@ -38,228 +38,248 @@ public class HomeController(DB db) : Controller
     }
 
     // POST: Submit Leave Application
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Student, Staff")]
-    public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, IFormFile? supportDocument)
+[HttpPost]
+[ValidateAntiForgeryToken]
+[Authorize(Roles = "Student, Staff")]
+public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, IFormFile? supportDocument)
+{
+    // Remove model state for file upload since it's optional (but we'll validate it separately)
+    ModelState.Remove(nameof(supportDocument));
+
+    // Server-side validation
+    if (!ModelState.IsValid)
     {
-        // Remove model state for file upload since it's optional (but we'll validate it separately)
-        ModelState.Remove(nameof(supportDocument));
-
-        // Server-side validation
-        if (!ModelState.IsValid)
-        {
-            TempData["ErrorMessage"] = "Please fill in all required fields correctly.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+        TempData["ErrorMessage"] = "Please fill in all required fields correctly.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
-
-        // Validate start date is not in the past
-        if (vm.StartDate < DateOnly.FromDateTime(DateTime.Today))
-        {
-            TempData["ErrorMessage"] = "Start date cannot be in the past.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    // Validate start date is not in the past
+    if (vm.StartDate < DateOnly.FromDateTime(DateTime.Today))
+    {
+        TempData["ErrorMessage"] = "Start date cannot be in the past.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
-
-        // Validate end date is not before start date
-        if (vm.EndDate < vm.StartDate)
-        {
-            TempData["ErrorMessage"] = "End date cannot be before start date.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    // Validate end date is not before start date
+    if (vm.EndDate < vm.StartDate)
+    {
+        TempData["ErrorMessage"] = "End date cannot be before start date.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
-
-        // Validate date range (e.g., max 30 days)
-        var duration = vm.EndDate.DayNumber - vm.StartDate.DayNumber + 1;
-        if (duration > 30)
-        {
-            TempData["ErrorMessage"] = "Leave duration cannot exceed 30 days.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    // Validate date range (e.g., max 30 days)
+    var duration = vm.EndDate.DayNumber - vm.StartDate.DayNumber + 1;
+    if (duration > 30)
+    {
+        TempData["ErrorMessage"] = "Leave duration cannot exceed 30 days.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
+    // Get current user ID
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Get current user ID
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId))
+    {
+        TempData["ErrorMessage"] = "User not authenticated. Please log in.";
+        return RedirectToAction("Login", "Account");
+    }
 
-        if (string.IsNullOrEmpty(userId))
-        {
-            TempData["ErrorMessage"] = "User not authenticated. Please log in.";
-            return RedirectToAction("Login", "Account");
-        }
+    // NEW: Find which semester the leave falls into
+    var affectedSemester = await db.Semesters
+        .FirstOrDefaultAsync(s => vm.StartDate >= s.StartDate && vm.StartDate <= s.EndDate);
 
-        // NEW: Check for overlapping leave applications
-        var hasOverlappingLeave = await db.LeaveApplications
-            .Where(la => la.UserId == userId
-                      && la.Status != "Rejected"
-                      && la.Status != "Cancelled")
-            .AnyAsync(la =>
-                // Check if the new leave period overlaps with existing leave
-                (vm.StartDate <= la.EndDate && vm.EndDate >= la.StartDate)
-            );
-
-        if (hasOverlappingLeave)
-        {
-            TempData["ErrorMessage"] = "You already have a leave application for the selected dates. Please check your leave history and choose different dates.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    if (affectedSemester == null)
+    {
+        TempData["ErrorMessage"] = "The selected start date does not fall within any active semester period. Please select a valid date.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
+    // NEW: Check total leave days in this semester (excluding rejected/cancelled)
+    var existingLeavesInSemester = await db.LeaveApplications
+        .Where(la => la.UserId == userId
+                  && la.Status != "Rejected"
+                  && la.Status != "Cancelled"
+                  && la.StartDate >= affectedSemester.StartDate
+                  && la.StartDate <= affectedSemester.EndDate)
+        .ToListAsync();
 
-        // CRITICAL: Since database requires document, we must validate that a file is uploaded
-        if (supportDocument == null || supportDocument.Length == 0)
-        {
-            TempData["ErrorMessage"] = "Supporting document is required for all leave applications.";
+    // Calculate total existing leave days in this semester
+    var totalExistingDays = existingLeavesInSemester.Sum(la => 
+        (la.EndDate.DayNumber - la.StartDate.DayNumber + 1));
 
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
-        {
-            new SelectListItem { Value = "Normal", Text = "Normal" },
-            new SelectListItem { Value = "Medical", Text = "Medical" },
-            new SelectListItem { Value = "Emergency", Text = "Emergency" }
-        };
-            ViewBag.LeaveTypes = leaveTypes;
-
-            return View("LeaveApplication", vm);
-        }
-
-        // Handle file upload (now required)
-        string documentUrl;
-
-        // Validate file type
-        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-        var fileExtension = Path.GetExtension(supportDocument.FileName).ToLowerInvariant();
-
-        if (!allowedExtensions.Contains(fileExtension))
-        {
-            TempData["ErrorMessage"] = "Invalid file type. Only PDF, images (JPG, PNG), and Word documents are allowed.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    // Check if adding this leave would exceed 7 days limit
+    if (totalExistingDays + duration > 7)
+    {
+        var remainingDays = 7 - totalExistingDays;
+        TempData["ErrorMessage"] = $"Leave limit exceeded! You can only apply for a maximum of 7 days of leave per semester. " +
+                                  $"You have already applied for {totalExistingDays} day{(totalExistingDays != 1 ? "s" : "")} " +
+                                  $"in semester {affectedSemester.Id}. " +
+                                  $"You have {remainingDays} day{(remainingDays != 1 ? "s" : "")} remaining.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
-        }
+    // Check for overlapping leave applications
+    var hasOverlappingLeave = await db.LeaveApplications
+        .Where(la => la.UserId == userId
+                  && la.Status != "Rejected"
+                  && la.Status != "Cancelled")
+        .AnyAsync(la =>
+            (vm.StartDate <= la.EndDate && vm.EndDate >= la.StartDate)
+        );
 
-        // Validate file size (5MB limit)
-        const int maxFileSize = 5 * 1024 * 1024; // 5MB
-        if (supportDocument.Length > maxFileSize)
-        {
-            TempData["ErrorMessage"] = "File size exceeds 5MB limit.";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
-        {
-            new SelectListItem { Value = "Normal", Text = "Normal" },
-            new SelectListItem { Value = "Medical", Text = "Medical" },
-            new SelectListItem { Value = "Emergency", Text = "Emergency" }
-        };
-            ViewBag.LeaveTypes = leaveTypes;
-
-            return View("LeaveApplication", vm);
-        }
-
-        try
-        {
-            // Create uploads directory if it doesn't exist
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "leave-documents");
-            Directory.CreateDirectory(uploadsFolder);
-
-            // Generate unique filename
-            var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid():N}{fileExtension}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            // Save file
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await supportDocument.CopyToAsync(fileStream);
-            }
-
-            documentUrl = $"/uploads/leave-documents/{uniqueFileName}";
-        }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = $"Failed to upload document: {ex.Message}";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+    if (hasOverlappingLeave)
+    {
+        TempData["ErrorMessage"] = "You already have a leave application for the selected dates. Please check your leave history and choose different dates.";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-            return View("LeaveApplication", vm);
+    // CRITICAL: Since database requires document, we must validate that a file is uploaded
+    if (supportDocument == null || supportDocument.Length == 0)
+    {
+        TempData["ErrorMessage"] = "Supporting document is required for all leave applications.";
+        var leaveTypes = new List<SelectListItem>
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
+
+    // Handle file upload (now required)
+    string documentUrl;
+
+    // Validate file type
+    var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
+    var fileExtension = Path.GetExtension(supportDocument.FileName).ToLowerInvariant();
+
+    if (!allowedExtensions.Contains(fileExtension))
+    {
+        TempData["ErrorMessage"] = "Invalid file type. Only PDF, images (JPG, PNG), and Word documents are allowed.";
+        var leaveTypes = new List<SelectListItem>
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
+
+    // Validate file size (5MB limit)
+    const int maxFileSize = 5 * 1024 * 1024; // 5MB
+    if (supportDocument.Length > maxFileSize)
+    {
+        TempData["ErrorMessage"] = "File size exceeds 5MB limit.";
+        var leaveTypes = new List<SelectListItem>
+        {
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
+        };
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
+
+    try
+    {
+        // Create uploads directory if it doesn't exist
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "leave-documents");
+        Directory.CreateDirectory(uploadsFolder);
+
+        // Generate unique filename
+        var uniqueFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid():N}{fileExtension}";
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        // Save file
+        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        {
+            await supportDocument.CopyToAsync(fileStream);
         }
 
-        // Create leave application entity
-        var leaveApplication = new LeaveApplication
+        documentUrl = $"/uploads/leave-documents/{uniqueFileName}";
+    }
+    catch (Exception ex)
+    {
+        TempData["ErrorMessage"] = $"Failed to upload document: {ex.Message}";
+        var leaveTypes = new List<SelectListItem>
         {
-            UserId = userId,
-            StartDate = vm.StartDate,
-            EndDate = vm.EndDate,
-            LeaveType = vm.LeaveType!,
-            Reason = vm.Reason!.Trim(),
-            SupportDocumentUrl = documentUrl,
-            ApplicationDate = DateOnly.FromDateTime(DateTime.Today),
-            Status = "Pending",
-            RejectReason = null
+            new SelectListItem { Value = "Normal", Text = "Normal" },
+            new SelectListItem { Value = "Medical", Text = "Medical" },
+            new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
+    }
 
-        try
-        {
-            db.LeaveApplications.Add(leaveApplication);
-            await db.SaveChangesAsync();
+    // Create leave application entity
+    var leaveApplication = new LeaveApplication
+    {
+        UserId = userId,
+        StartDate = vm.StartDate,
+        EndDate = vm.EndDate,
+        LeaveType = vm.LeaveType!,
+        Reason = vm.Reason!.Trim(),
+        SupportDocumentUrl = documentUrl,
+        ApplicationDate = DateOnly.FromDateTime(DateTime.Today),
+        Status = "Pending",
+        RejectReason = null
+    };
+
+    try
+    {
+        db.LeaveApplications.Add(leaveApplication);
+        await db.SaveChangesAsync();
 
             //notify all admins when a student or staff submits a leave application
             var user = db.Users.FirstOrDefault(u => u.Id == userId);
@@ -271,7 +291,7 @@ public class HomeController(DB db) : Controller
                     "New Leave Application",
                     $"Student {studentName} ({student.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
                     "info",
-                    "/Admin/LeaveManagement"
+                    "/Admin/LeaveApplications"
                 );
             }
             else if (user is Staff staff)
@@ -282,31 +302,28 @@ public class HomeController(DB db) : Controller
                     "New Leave Application",
                     $"Staff {staffName} ({staff.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
                     "info",
-                    "/Admin/LeaveManagement"
+                    "/Admin/LeaveApplications"
                 );
             }
 
-            TempData["SuccessMessage"] = $"Leave application for {duration} day{(duration != 1 ? "s" : "")} submitted successfully. You will be notified once reviewed.";
+        TempData["SuccessMessage"] = $"Leave application for {duration} day{(duration != 1 ? "s" : "")} submitted successfully. You will be notified once reviewed.";
 
-            // Redirect to same action to prevent URL change and form resubmission
-            return RedirectToAction(nameof(LeaveApplication));
-        }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = $"Failed to submit leave application: {ex.Message}";
-
-            // Repopulate dropdown
-            var leaveTypes = new List<SelectListItem>
+        // Redirect to same action to prevent URL change and form resubmission
+        return RedirectToAction(nameof(LeaveApplication));
+    }
+    catch (Exception ex)
+    {
+        TempData["ErrorMessage"] = $"Failed to submit leave application: {ex.Message}";
+        var leaveTypes = new List<SelectListItem>
         {
             new SelectListItem { Value = "Normal", Text = "Normal" },
             new SelectListItem { Value = "Medical", Text = "Medical" },
             new SelectListItem { Value = "Emergency", Text = "Emergency" }
         };
-            ViewBag.LeaveTypes = leaveTypes;
-
-            return View("LeaveApplication", vm);
-        }
+        ViewBag.LeaveTypes = leaveTypes;
+        return View("LeaveApplication", vm);
     }
+}
 
     // GET: View Leave Applications History
     public IActionResult LeaveHistory()
