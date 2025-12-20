@@ -133,6 +133,33 @@
             margin-bottom: 15px;
         }
 
+    .course-materials-section {
+        margin-top: 30px;
+    }
+
+    .course-card {
+        border-left: 4px solid #4e73df;
+        transition: all 0.3s ease;
+    }
+
+        .course-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .course-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+
+    .schedule-table {
+        font-size: 0.85rem;
+    }
+
+        .schedule-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+
     @@media (max-width: 768px) {
         .timetable {
             font-size: 0.6rem;
@@ -307,6 +334,7 @@
         }
         /* Hide legend, debug info and course materials */
         .legend,
+        .course-materials-section,
         .mt-3.p-3.bg-light {
             display: none !important;
         }
@@ -328,7 +356,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-3 no-print">
     <div>
         <h1 class="h3 mb-0 text-gray-800">My Timetable</h1>
-        <p class="text-muted small mt-2">View your weekly class schedule</p>
+        <p class="text-muted small mt-2">View your weekly class schedule and course materials</p>
     </div>
 </div>
 
@@ -481,6 +509,94 @@
     </div>
 
     <!-- End of Printable Area -->
+</div>
+
+<!-- Course Materials Section (Not printed) -->
+<div class="course-materials-section">
+    <div class="card shadow mb-4">
+        <div class="card-header py-2">
+            <h6 class="m-0 font-weight-bold text-primary">Semester Timetable By Course</h6>
+        </div>
+        <div class="card-body">
+            @if (!Model.ClassSections.Any())
+            {
+                <p class="text-muted text-center">No course materials available.</p>
+            }
+            else
+            {
+                var groupedCourses = Model.ClassSections
+                .GroupBy(cs => cs.Course.Id)
+                .Select(g => new
+                {
+                    Course = g.First().Course,
+                    Sessions = g.ToList()
+                })
+                .OrderBy(x => x.Course.Id)
+                .ToList();
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 5%;">No</th>
+                                <th style="width: 30%;">Course</th>
+                                <th style="width: 35%;">Day & Time (Duration)</th>
+                                <th style="width: 15%;">Venue</th>
+                                <th style="width: 15%;">Lecturer/Instructor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < groupedCourses.Count; i++)
+                            {
+                                var item = groupedCourses[i];
+                                var course = item.Course;
+                                var sessions = item.Sessions;
+
+                                var colors = new[] { "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c" };
+                                var courseColor = colors[i % colors.Length];
+
+                                <tr>
+                                    <td class="text-center">@(i + 1)</td>
+                                    <td>
+                                        <span class="badge course-badge" style="background: @courseColor;">
+                                            @((course.CreditHours * 100.0 / 20).ToString("0"))%
+                                        </span>
+                                        <strong>@course.Id</strong> @course.Name
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            var duration = (session.EndTime.ToTimeSpan() - session.StartTime.ToTimeSpan()).TotalHours;
+                                            <div class="mb-1">
+                                                <strong>@session.Day</strong>,
+                                                @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
+                                                ( @session.SectionType: @duration.ToString("0.0") hours )
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            <div class="mb-1">@(session.Room?.Id ?? "TBA")</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @foreach (var session in sessions.OrderBy(s => s.Day))
+                                        {
+                                            var staffName = session.Staff != null
+                                            ? $"{session.Staff.FirstName} {session.Staff.LastName}"
+                                            : "TBA";
+                                            <div class="mb-1">@staffName (Weekly)</div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 <!-- Class Details Modal -->
