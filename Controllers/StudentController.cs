@@ -1721,14 +1721,17 @@ namespace SHAPEE.Controllers
 
             return View(tasks);
         }
+        //submit task
         public IActionResult TaskSubmit(string id)
         {
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Fetch Task + Class info + Course details
+            // FETCH: Task + Class + Course + ATTACHED MATERIALS
             var task = db.CourseTasks
                 .Include(t => t.ClassSection)
                     .ThenInclude(cs => cs.Course)
+                .Include(t => t.Materials) //  refers to the List<TaskMaterial>
+                    .ThenInclude(tm => tm.Material) //  gets the actual file info
                 .FirstOrDefault(t => t.Id == id);
 
             if (task == null) return NotFound();
@@ -1742,35 +1745,57 @@ namespace SHAPEE.Controllers
 
             return View(task);
         }
-
+        //upload submit
         [HttpPost]
         public IActionResult Upload(string id, IFormFile file)
         {
             var task = db.CourseTasks.Find(id);
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var userId = User.Identity.Name;
+            if (task == null || file == null) return NotFound();
 
-            if (task.DueDate < DateTime.Now)
+            // Generate Sequential ID
+            var lastSubmission = db.Submissions
+                .Where(s => s.Id.StartsWith("SMS"))
+                .OrderByDescending(s => s.Id)
+                .FirstOrDefault();
+
+            int nextNumber = 1;
+            if (lastSubmission != null)
             {
-                TempData["error"] = "Due date passed. Cannot submit.";
-                return RedirectToAction("TaskSubmit", new { id });
+                // Extract number from "SMS005" -> "005" -> 5
+                string numericPart = lastSubmission.Id.Substring(3);
+                if (int.TryParse(numericPart, out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
             }
+            string newId = $"SMS{nextNumber:D3}"; // D3 ensures it is always 3 digits (001, 002)
 
-            string newId = "S" + (db.Submissions.Count() + 1).ToString("D4");
+            //  Create file name
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmm");
+            string originalName = Path.GetFileNameWithoutExtension(file.FileName);
+            string cleanOriginalName = string.Concat(originalName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+            string extension = Path.GetExtension(file.FileName);
 
-            string fileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_" + file.FileName;
-            string path = Path.Combine("wwwroot/Submissions", fileName);
+            string fileName = $"{studentId}_{id}_{timestamp}_{cleanOriginalName}{extension}";
+
+            string uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Submissions");
+            if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+
+            string path = Path.Combine(uploadFolder, fileName);
 
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 file.CopyTo(stream);
             }
 
-            Submission sub = new Submission
+            //  Save to DB Submissions table
+            var sub = new Submission
             {
-                Id = newId,
+                Id = newId, // Sequential ID: SMSxxx
                 CourseTaskId = id,
-                StudentId = userId,
+                StudentId = studentId,
                 FileUrl = "/Submissions/" + fileName,
                 SubmittedAt = DateTime.Now
             };
@@ -1778,7 +1803,6 @@ namespace SHAPEE.Controllers
             db.Submissions.Add(sub);
             db.SaveChanges();
 
-            TempData["msg"] = "Uploaded!";
             return RedirectToAction("TaskSubmit", new { id });
         }
 
