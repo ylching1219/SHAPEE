@@ -524,6 +524,91 @@ namespace SHAPEE
                 return false;
             }
         }
+
+        public async Task<bool> SendOverdueReminderEmail(
+            string toEmail,
+            string studentName,
+            string invoiceId,
+            decimal totalAmount,
+            DateTime dueDate,
+            int daysOverdue)
+        {
+            try
+            {
+                var smtpUser = _configuration["Smtp:User"];
+                var smtpPass = _configuration["Smtp:Pass"];
+                var smtpName = _configuration["Smtp:Name"];
+                var smtpHost = _configuration["Smtp:Host"];
+                var smtpPort = int.Parse(_configuration["Smtp:Port"]);
+
+                var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
+
+                var body = $@"
+        <!DOCTYPE html>
+        <html>
+        <body style='font-family: Arial, sans-serif; color:#333;'>
+        <div style='max-width: 640px; margin: 0 auto; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;'>
+            <div style='background:#dc3545; color:#fff; padding:16px 20px;'>
+            <h2 style='margin:0;'>⚠️ Overdue Payment Notice</h2>
+            </div>
+            <div style='padding:20px; background:#f8f9fc;'>
+            <p>Dear <b>{studentName}</b>,</p>
+            <p style='color:#dc3545; font-weight:bold;'>Your invoice payment is <b>{daysText} overdue</b>. Immediate action is required.</p>
+
+            <table style='width:100%; border-collapse:collapse; background:#fff; margin-top:16px;'>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Invoice ID</b></td><td style='padding:10px; border-bottom:1px solid #eee;'>{invoiceId}</td></tr>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Amount Due</b></td><td style='padding:10px; border-bottom:1px solid #eee;'><b style='color:#dc3545;'>RM {totalAmount:N2}</b></td></tr>
+                <tr><td style='padding:10px; border-bottom:1px solid #eee;'><b>Due Date</b></td><td style='padding:10px; border-bottom:1px solid #eee;'>{dueDate:dd MMM yyyy}</td></tr>
+                <tr><td style='padding:10px;'><b>Days Overdue</b></td><td style='padding:10px;'><b style='color:#dc3545;'>{daysText}</b></td></tr>
+            </table>
+
+            <p style='margin-top:16px; color:#dc3545; font-weight:bold;'>
+                ⚠️ Your account may be restricted until payment is received. Please make payment immediately to avoid further consequences.
+            </p>
+
+            <div style='margin-top:20px; text-align:center;'>
+                <a href='/Student/CurrentBilling' 
+                   style='display:inline-block; padding:12px 24px; background:#dc3545; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;'>
+                    Pay Now - Urgent
+                </a>
+            </div>
+
+            <p style='margin-top:16px;'>Regards,<br/><b>TARUMT Finance</b></p>
+            </div>
+            <div style='padding:12px 20px; font-size:12px; color:#666;'>
+            This is an automated email. Please do not reply.
+            </div>
+        </div>
+        </body>
+        </html>";
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(smtpUser, smtpName),
+                    Subject = $"⚠️ URGENT: Overdue Payment - Invoice {invoiceId} ({daysText} overdue)",
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(new MailAddress(toEmail));
+
+                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+
+                await smtpClient.SendMailAsync(mailMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Overdue reminder email sending failed: {ex.Message}");
+                return false;
+            }
+        }
+    
+    
     
     }
 }

@@ -440,6 +440,7 @@ select.form-control-sm {
 .icon.success { background: #1cc88a; }
 .icon.warning { background: #f6c23e; }
 .icon.error { background: #e74a3b; }
+.icon.danger { background: #e74a3b; }
 
 /* content */
 .notification-item .content {
