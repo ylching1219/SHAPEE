@@ -139,6 +139,7 @@ namespace SHAPEE.Models
         public List<int>? GroupList { get; set; } = [];
         public List<ClassSection>? ClassSections { get; set; } = [];
         public ClassSection? EditClassSection { get; set; }
+        public string? SectionId { get; set; }
         public string? SemesterId { get; set; }
         public string? RoomId { get; set; }
         public string? FacultyId { get; set; }

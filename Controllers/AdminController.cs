@@ -1835,7 +1835,7 @@ namespace SHAPEE.Controllers
         }
 
         //Class Section Management
-        public IActionResult ViewClass(string? FacultyId, string? ProgramId, string? SemesterId, string? type ,string? editId)
+        public IActionResult ViewClass(string? FacultyId, string? ProgramId, string? SemesterId, string? type, string? editId)
         {
             ViewData["Title"] = "View Class Sections";
             var classSections = db.ClassSections
@@ -1895,19 +1895,26 @@ namespace SHAPEE.Controllers
                     .Where(c => c.SectionType == type);
             }
 
-            if(!string.IsNullOrEmpty(editId))
+            if (!string.IsNullOrEmpty(editId))
             {
                 var classToEdit = classSections
                     .FirstOrDefault(c => c.SectionId == editId);
 
-                Console.WriteLine("Editing Class Section: " + GetRoomType(classToEdit!.SectionType));
+
                 var rooms = db.Rooms
                     .Where(r => r.Type == GetRoomType(classToEdit!.SectionType))
                     .OrderBy(r => r.Id)
                     .ToList();
 
-                Console.WriteLine(rooms.Count);
-                ViewBag.RoomList = new SelectList(rooms, "Id", "Id",classToEdit!.RoomId);
+                ViewBag.RoomList = new SelectList(rooms, "Id", "Id", classToEdit!.RoomId);
+
+                var vmEdit = new ClassSectionVM
+                {
+                    ClassSections = classSections.ToList(),
+                    EditClassSection = classToEdit
+                };
+
+                return PartialView("_EditClassForm", vmEdit);
             }
             classSections = classSections.OrderBy(c => c.SectionId);
             ViewBag.FacultyList = new SelectList(faculty, "Id", "Name");
@@ -2106,6 +2113,41 @@ namespace SHAPEE.Controllers
             });
         }
 
+        public IActionResult EditClass(ClassSection vm)
+        {
+
+            ClassSection? cs = db.ClassSections
+                .Include(c => c.Course) 
+                .FirstOrDefault(c => c.SectionId == vm.SectionId);
+
+
+            if (cs != null)
+            {
+                cs.RoomId = vm.RoomId;
+                cs.Day = vm.Day;
+                cs.StartTime = vm.StartTime;
+                cs.EndTime = cs.StartTime.AddHours(GetDuration(cs.Course, cs.SectionType));
+
+
+                if (IsScheduleConflict(cs))
+                {
+                    TempData["ErrorMessage"] = "Class Section have conflict with other !";
+                }
+                else
+                {
+                    db.SaveChanges();
+                    TempData["SuccessMessage"] = "Class Section edited successfully";
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Class Section not found !";
+            }
+
+
+            return RedirectToAction(nameof(ViewClass));
+        }
+
         private ClassSection CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
         {
             int maxAttempts = 20;
@@ -2206,6 +2248,17 @@ namespace SHAPEE.Controllers
                 "Lecture" => pc.Course.LectureHours,
                 "Tutorial" => pc.Course.TutorialHours,
                 "Practical" => pc.Course.PracticalHours.GetValueOrDefault(),
+                _ => 1
+            };
+        }
+
+        private double GetDuration(Course c, string sectionType)
+        {
+            return sectionType switch
+            {
+                "Lecture" => c.LectureHours,
+                "Tutorial" => c.TutorialHours,
+                "Practical" => c.PracticalHours.GetValueOrDefault(),
                 _ => 1
             };
         }
@@ -3017,7 +3070,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students for any event change
-                var eventDateRange = startTime.Date == endTime.Date 
+                var eventDateRange = startTime.Date == endTime.Date
                     ? startTime.ToString("dd MMM yyyy")
                     : $"{startTime:dd MMM yyyy} to {endTime:dd MMM yyyy}";
 
@@ -3094,7 +3147,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students when event date is changed
-                var eventDateRange = newStart.Date == updatedEnd.Date 
+                var eventDateRange = newStart.Date == updatedEnd.Date
                     ? newStart.ToString("dd MMM yyyy")
                     : $"{newStart:dd MMM yyyy} to {updatedEnd:dd MMM yyyy}";
 
@@ -3762,7 +3815,7 @@ namespace SHAPEE.Controllers
                 // Find unpaid invoices that are due in 3 days or less (not overdue)
                 var invoicesToRemind = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date >= today  // Not overdue
                         && i.DueDate.Date <= threeDaysFromNow  // Due in 3 days or less
                         && i.Student != null
@@ -3790,11 +3843,11 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     // Calculate days until due for the message
                     var daysUntilDue = (invoice.DueDate.Date - today).Days;
-                    var daysText = daysUntilDue == 0 ? "today" : 
-                                   daysUntilDue == 1 ? "1 day" : 
+                    var daysText = daysUntilDue == 0 ? "today" :
+                                   daysUntilDue == 1 ? "1 day" :
                                    $"{daysUntilDue} days";
 
                     // Send email
@@ -3830,9 +3883,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3847,7 +3900,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });
@@ -3869,7 +3922,7 @@ namespace SHAPEE.Controllers
                 //find unpaid invoices that are overdue (due date < today)
                 var overdueInvoices = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date < today  //overdue
                         && i.Student != null
                         && !string.IsNullOrEmpty(i.Student.Email))
@@ -3882,7 +3935,7 @@ namespace SHAPEE.Controllers
                 foreach (var invoice in overdueInvoices)
                 {
                     var daysOverdue = (today - invoice.DueDate.Date).Days;
-                    
+
                     //check if overdue reminder notification was already sent today
                     var reminderSentToday = db.Notification
                         .Any(n => n.UserId == invoice.StudentId
@@ -3898,7 +3951,7 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
 
                     //send email
@@ -3935,9 +3988,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3952,7 +4005,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending overdue reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });
