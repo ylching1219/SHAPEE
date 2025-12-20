@@ -1,0 +1,52 @@
+﻿@model IEnumerable<SHAPEE.Models.CourseTask>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-primary text-white">
+        <h6 class="m-0 font-weight-bold">My Assignments</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Task ID</th>
+                        <th>Assignment Title</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Model)
+                    {
+                        var submission = task.Submissions.FirstOrDefault();
+                        <tr>
+                            <td>@task.Id</td>
+                            <td>@task.Title</td>
+                            <td>@task.DueDate.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            <td>
+                                @if (submission != null)
+                                {
+                                    <span class="badge badge-success">Submitted</span>
+                                }
+                                else if (DateTime.Now > task.DueDate)
+                                {
+                                    <span class="badge badge-danger">Overdue</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("TaskSubmit", "Student", new { id = task.Id })" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
