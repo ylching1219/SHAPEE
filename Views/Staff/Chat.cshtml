@@ -59,27 +59,29 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     var currentUserId = "@ViewBag.UserId";
-    var activeChatId = ""; // Track the currently open student ID
+    var activeChatId = "";
 
     function loadStudentChat(studentId) {
-        activeChatId = studentId; // Set global state
+        activeChatId = studentId;
 
-        // UI Visual Feedback
+        // UI Updates
         $('.student-item').removeClass('active bg-primary text-white');
         $('#list-' + studentId).addClass('active bg-primary text-white');
         $('#chatHeader').html('<i class="fas fa-comments"></i> Chatting with: ' + studentId);
 
+        // Remove unread badge locally for immediate feedback
+        $('#list-' + studentId + ' .unread-badge').remove();
+
         // Enable Controls
         $('#msgContent, #sendBtn').prop('disabled', false).focus();
 
-        markMessagesAsRead(studentId);
-        refreshChat(); // Immediate first load
-    }
-
-    function markMessagesAsRead(studentId) {
-        $.post('@Url.Action("MarkAsRead", "Staff")', { targetUserId: studentId });
+        // Mark as read, then fetch messages
+        $.post('@Url.Action("MarkAsRead", "Staff")', { targetUserId: studentId }, function() {
+            refreshChat();
+        });
     }
 
     function refreshChat() {
@@ -88,8 +90,14 @@
         $.ajax({
             url: '@Url.Action("GetMessages", "Staff")',
             type: 'GET',
-            data: { targetUserId: activeChatId, timestamp: new Date().getTime() }, // Prevent browser caching
+            cache: false, // CRITICAL: Stops browser from loading old data
+            data: { targetUserId: activeChatId },
             success: function (data) {
+                var chatWin = document.getElementById("chatWindow");
+
+                // Check if user is scrolled to bottom before updating
+                var isAtBottom = chatWin.scrollHeight - chatWin.clientHeight <= chatWin.scrollTop + 50;
+
                 var html = '';
                 data.forEach(function (m) {
                     var isMe = (m.sender === currentUserId);
@@ -107,15 +115,15 @@
                              </div>`;
                 });
 
-                // Update the box content
                 $('#chatWindow').html(html);
 
-                // Auto-scroll to bottom
-                var chatWin = document.getElementById("chatWindow");
-                chatWin.scrollTop = chatWin.scrollHeight;
+                // Auto-scroll only if they were already at the bottom
+                if (isAtBottom) {
+                    chatWin.scrollTop = chatWin.scrollHeight;
+                }
             },
             error: function() {
-                console.log("Chat sync failed...");
+                console.log("Chat sync failed. Check server connection.");
             }
         });
     }
@@ -123,6 +131,9 @@
     function submitMessage() {
         var content = $('#msgContent').val().trim();
         if (!content || !activeChatId) return;
+
+        // Visual feedback: clear input immediately
+        $('#msgContent').val('');
 
         $.ajax({
             url: '@Url.Action("Send", "Staff")',
@@ -134,24 +145,24 @@
             },
             success: function (response) {
                 if (response.success) {
-                    $('#msgContent').val('');
-                    refreshChat(); // Update UI immediately
+                    refreshChat(); // Immediate update after sending
                 }
             }
         });
     }
 
     $(document).ready(function() {
-        // HEARTBEAT: This runs exactly every 3 seconds
+        // HEARTBEAT: Checks for new messages every 3 seconds
         setInterval(function() {
             if (activeChatId !== "") {
                 refreshChat();
             }
         }, 3000);
 
-        // Keyboard support
-        $('#msgContent').on('keypress', function (e) {
+        // Handle Enter Key correctly
+        $('#msgContent').on('keydown', function (e) {
             if (e.which == 13) {
+                e.preventDefault(); // Prevents page refresh/form submission
                 submitMessage();
             }
         });
