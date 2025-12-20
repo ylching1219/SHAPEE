@@ -1,54 +1,60 @@
 ﻿@model SHAPEE.Models.CourseTask
 
-<h2>@Model.Title</h2>
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">@Model.Title</h2>
+            <small>Course: @Model.ClassSection.Course.Name (@Model.ClassSectionId)</small>
+        </div>
 
-@if (ViewBag.IsLate)
-{
-    <div class="alert alert-danger">
-        ⚠ Due date passed. New submissions disabled.
-    </div>
-}
-
-@if (ViewBag.Submitted != null)
-{
-    <div class="alert alert-info">
-        <strong>Submitted at:</strong>
-        @ViewBag.Submitted.SubmittedAt <br />
-
-        <a href="@Url.Content(ViewBag.Submitted.FileUrl)" target="_blank" class="btn btn-sm btn-primary">
-            Download Submission
-        </a>
-
-        @if (ViewBag.Submitted.Grade != null)
-        {
-            <hr />
-            <strong>Grade:</strong>
- 
-            @ViewBag.Submitted.Grade
-            <br />
-            <strong>Feedback:</strong>
- 
-            @ViewBag.Submitted.Feedback
-        }
-    </div>
-}
-
-@if (ViewBag.Submitted == null)
-{
-    @* Added check: Only show form if it's NOT late *@
-    @if (!ViewBag.IsLate)
-    {
-        <form enctype="multipart/form-data"
-              method="post"
-              action="/AssignmentStudent/Upload/@Model.Id">
-            @* Changed AssignmentId to Id based on your schema *@
-
-            <div class="mb-3">
-                <label class="form-label">Upload your file:</label>
-                <input class="form-control" type="file" name="file" required />
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5>Instructions:</h5>
+                    <p class="text-muted">@Model.Description</p>
+                </div>
+                <div class="col-md-4 border-left">
+                    <h5>Deadline:</h5>
+                    <p class="text-danger font-weight-bold">
+                        <i class="fas fa-clock"></i> @Model.DueDate.ToString("dd MMM yyyy, hh:mm tt")
+                    </p>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-success">Submit</button>
-        </form>
-    }
-}
+            @if (ViewBag.Submitted != null)
+            {
+                <div class="alert alert-success">
+                    <h5 class="alert-heading"><i class="fas fa-check-circle"></i> Assignment Submitted</h5>
+                    <p>Submitted on: @ViewBag.Submitted.SubmittedAt.ToString("g")</p>
+                    <a href="@Url.Content(ViewBag.Submitted.FileUrl)" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-download"></i> Download My Submission
+                    </a>
+
+                    @if (ViewBag.Submitted.Grade != null)
+                    {
+                        <div class="mt-3 p-3 bg-white rounded border">
+                            <span class="badge badge-info">Grade: @ViewBag.Submitted.Grade/100</span>
+                            <p class="mt-2 mb-0"><strong>Feedback:</strong> @ViewBag.Submitted.Feedback</p>
+                        </div>
+                    }
+                </div>
+            }
+            else if (ViewBag.IsLate)
+            {
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> The deadline has passed. Submissions are closed.
+                </div>
+            }
+            else
+            {
+                <form enctype="multipart/form-data" method="post" action="/Student/Upload/@Model.Id">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Upload Submission (PDF/DOCX):</label>
+                        <input class="form-control-file" type="file" name="file" required />
+                    </div>
+                    <button type="submit" class="btn btn-success px-5">Submit Assignment</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

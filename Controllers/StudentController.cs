@@ -1721,18 +1721,23 @@ namespace SHAPEE.Controllers
 
             return View(tasks);
         }
-
         public IActionResult TaskSubmit(string id)
         {
-            var task = db.CourseTasks.FirstOrDefault(x => x.Id == id);
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var userId = User.Identity.Name;
+            // Fetch Task + Class info + Course details
+            var task = db.CourseTasks
+                .Include(t => t.ClassSection)
+                    .ThenInclude(cs => cs.Course)
+                .FirstOrDefault(t => t.Id == id);
 
+            if (task == null) return NotFound();
+
+            // Check for existing submission
             var submission = db.Submissions
-                .FirstOrDefault(x => x.StudentId == userId && x.CourseTaskId == id);
+                .FirstOrDefault(x => x.StudentId == studentId && x.CourseTaskId == id);
 
             ViewBag.Submitted = submission;
-
             ViewBag.IsLate = (DateTime.Now > task.DueDate);
 
             return View(task);
