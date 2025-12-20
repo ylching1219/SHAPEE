@@ -2249,6 +2249,30 @@ namespace SHAPEE.Controllers
                 .ThenBy(cs => cs.StartTime)
                 .ToList();
 
+            var sectionIds = classSections.Select(cs => cs.SectionId).ToList();
+            var attendances = db.Attendances
+                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .ToList();
+
+            var attendancePercentages = classSections
+                .Select(section =>
+                {
+                    var sectionAttendances = attendances
+                        .Where(a => a.ClassSectionId == section.SectionId)
+                        .ToList();
+
+                    var presentCount = sectionAttendances.Count(x => x.Status == "Present");
+                    var absentCount = sectionAttendances.Count(x => x.Status == "Absent");
+                    var consideredTotal = presentCount + absentCount;
+                    
+                    var percentage = consideredTotal > 0
+                        ? Math.Round((double)presentCount / consideredTotal * 100, 1)
+                        : 0;
+
+                    return new { SectionId = section.SectionId, Percentage = percentage };
+                })
+                .ToDictionary(x => x.SectionId, x => x.Percentage);
+
             var viewModel = new StudentTimetableVM
             {
                 Student = student,
@@ -2259,13 +2283,13 @@ namespace SHAPEE.Controllers
                 TotalWeeks = totalWeeks,
                 SelectedWeekNumber = weekNumber ?? 1,
                 WeekStartDate = weekStartDate,
-                WeekEndDate = weekEndDate
+                WeekEndDate = weekEndDate,
+                AttendancePercentages = attendancePercentages
             };
 
             return View(viewModel);
         }
 
-        // Add these methods to your StudentController
 
         [HttpGet]
         public IActionResult GetTimetableData(string? semesterId = null, int? weekNumber = null)
@@ -2337,7 +2361,35 @@ namespace SHAPEE.Controllers
                 .ThenBy(cs => cs.StartTime)
                 .ToList();
 
-            // Return the partial view with the class sections
+            //calculate attendance 
+            var sectionIds = classSections.Select(cs => cs.SectionId).ToList();
+            var attendances = db.Attendances
+                .Where(a => a.StudentId == studentId && sectionIds.Contains(a.ClassSectionId))
+                .ToList();
+
+            var attendancePercentages = classSections
+                .Select(section =>
+                {
+                    var sectionAttendances = attendances
+                        .Where(a => a.ClassSectionId == section.SectionId)
+                        .ToList();
+
+                    var presentCount = sectionAttendances.Count(x => x.Status == "Present");
+                    var absentCount = sectionAttendances.Count(x => x.Status == "Absent");
+                    var consideredTotal = presentCount + absentCount;
+                    
+                    var percentage = consideredTotal > 0
+                        ? Math.Round((double)presentCount / consideredTotal * 100, 1)
+                        : 0;
+
+                    return new { SectionId = section.SectionId, Percentage = percentage };
+                })
+                .ToDictionary(x => x.SectionId, x => x.Percentage);
+
+            //pass to ViewBag for the partial view
+            ViewBag.AttendancePercentages = attendancePercentages;
+
+            //return the partial view with the class sections
             return PartialView("_TimetableGrid", classSections);
         }
 
