@@ -551,6 +551,24 @@ namespace SHAPEE.Controllers
 
             db.Attendances.Add(att);
 
+            //if flagged, also flag all other attendances with the same IP in the same time window
+            if (isFlagged && !string.IsNullOrEmpty(ip))
+            {
+                var existingAttendancesWithSameIp = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId
+                        && a.Date == today
+                        && a.IpAddress == ip
+                        && a.RegisteredAt >= windowStart
+                        && !a.IsFlaged) //only update those not already flagged
+                    .ToList();
+
+                foreach (var existingAtt in existingAttendancesWithSameIp)
+                {
+                    existingAtt.IsFlaged = true;
+                    existingAtt.FlagReason = "Multiple students using same IP in short time window.";
+                }
+            }
+
             try
             {
                 db.SaveChanges();
@@ -1107,7 +1125,7 @@ namespace SHAPEE.Controllers
                                 invoiceCol.Item().Text($"Program/Course: {programName}").FontSize(10);
                             });
                         });
-                        
+
                         col.Item().PaddingTop(16);
 
                         // Items Table

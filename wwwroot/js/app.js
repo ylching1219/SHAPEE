@@ -172,6 +172,27 @@ $("#facultyFilter").on("change", function () {
     $("#filterForm").submit();
 });
 
+// Disable sidebar toggle on desktop (≥768px)
+$(document).ready(function() {
+    // Remove toggle functionality on desktop
+    if ($(window).width() >= 768) {
+        $('#sidebarToggle, #sidebarToggleTop').off('click');
+        
+        // Ensure sidebar is always expanded on desktop
+        $('body').removeClass('sidebar-toggled');
+        $('.sidebar').removeClass('toggled');
+    }
+    
+    // Handle window resize
+    $(window).resize(function() {
+        if ($(window).width() >= 768) {
+            $('#sidebarToggle, #sidebarToggleTop').off('click');
+            $('body').removeClass('sidebar-toggled');
+            $('.sidebar').removeClass('toggled');
+        }
+    });
+});
+
 //global search AJAX request
 $(function () {
     var $input = $('#globalSearchInput');
