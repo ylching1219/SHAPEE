@@ -1886,7 +1886,7 @@
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            //Get messages between STUDENT
+            // Pull messages between (Staff <-> Selected Student)
             var messages = db.ChatMessages
                 .Where(x => (x.SenderId == currentUserId && x.ReceiverId == targetUserId) ||
                             (x.SenderId == targetUserId && x.ReceiverId == currentUserId))

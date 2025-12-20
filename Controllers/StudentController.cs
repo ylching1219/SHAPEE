@@ -1724,7 +1724,7 @@ namespace SHAPEE.Controllers
             return View(messages);
         }
 
-
+        //send msg to staff
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Send(string classId, string content)
@@ -1732,17 +1732,20 @@ namespace SHAPEE.Controllers
             if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
 
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // 1. Find the actual Lecturer for this course based on the student's group
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-            if (student == null) return Json(new { success = false, message = "Student not found" });
 
+            if (student == null || student.TutorialGroupId == null)
+                return Json(new { success = false, message = "Student enrollment error" });
+
+            // Identify the correct lecturer
             var lecturerId = db.ClassSections
                 .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
                 .Select(cs => cs.StaffId)
-                .FirstOrDefault() ?? "STF0002"; // Fallback if no section found
+                .FirstOrDefault();
 
-            // 2. Generate ID (CM001...)
+            if (string.IsNullOrEmpty(lecturerId)) return Json(new { success = false, message = "No lecturer assigned" });
+
+            // Generate ID (CMxxx)
             var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
             int nextNum = 1;
             if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
@@ -1764,58 +1767,8 @@ namespace SHAPEE.Controllers
             db.ChatMessages.Add(msg);
             db.SaveChanges();
 
-            //get student name
-            var studentName = student.FullName?.Trim() ?? studentId;
-
-            //get course name
-            var course = db.Courses.FirstOrDefault(c => c.Id == classId);
-            var courseName = course?.Name ?? classId;
-
-            //notify the staff who received the message
-            HomeController.CreateNotificationForUser(
-                db,
-                lecturerId,
-                "New Message from Student",
-                $"New message from {studentName} in {courseName}",
-                "info",
-                $"/Staff/Chat?classId={classId}&studentId={studentId}"
-            );
-
             return Json(new { success = true });
         }
-        //// SEND MESSAGE
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Send(string classId, string content)
-        //{
-        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
-
-        //    var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //    // 1. Find the actual Lecturer for this course and student group
-        //    var student = db.Students.FirstOrDefault(s => s.Id == studentId);
-        //    var lecturerId = db.ClassSections
-        //        .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
-        //        .Select(cs => cs.StaffId)
-        //        .FirstOrDefault() ?? "STF0002"; // Fallback to test ID
-
-        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-        //    int nextNum = (lastMsg != null && lastMsg.Id.StartsWith("CM") && int.TryParse(lastMsg.Id.Substring(2), out int num)) ? num + 1 : 1;
-
-        //    var msg = new ChatMessage
-        //    {
-        //        Id = $"CM{nextNum:D3}",
-        //        SenderId = studentId,
-        //        ReceiverId = lecturerId, // Dynamic Receiver
-        //        Content = content,
-        //        SentAt = DateTime.Now,
-        //        IsRead = false
-        //    };
-
-        //    db.ChatMessages.Add(msg);
-        //    db.SaveChanges();
-        //    return Json(new { success = true });
-        //}
 
         // =======================
         // STUDENT TICKET DETAILS
@@ -1948,7 +1901,7 @@ namespace SHAPEE.Controllers
         {
             string studentId = "2500001";
 
-            // 1. Get the student without Includes to avoid SQL crashes
+            //  Get the student without Includes to avoid SQL crashes
             var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
             if (student == null) return Content("Student not found.");
@@ -1956,7 +1909,7 @@ namespace SHAPEE.Controllers
             var report = new System.Text.StringBuilder();
             report.AppendLine("====== RAW STUDENT DATA (PROPERTY DUMP) ======");
 
-            // 2. Automatically loop through every property in the class
+            //  Automatically loop through every property in the class
             var properties = student.GetType().GetProperties();
             foreach (var prop in properties)
             {
@@ -1986,14 +1939,26 @@ namespace SHAPEE.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMessages(string? search)
+        public IActionResult GetMessages(string classId, string? search)
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students.FirstOrDefault(s => s.Id == currentUserId);
 
-            // Logic: Get messages where I am sender or I am receiver (with STF0002)
+            if (student == null) return Json(new List<object>());
+
+            // FIND THE CORRECT STAFF: The one teaching THIS student's group in THIS course
+            var lecturerId = db.ClassSections
+                .Where(cs => cs.CourseId == classId && cs.TutorialGroupId == student.TutorialGroupId)
+                .Select(cs => cs.StaffId)
+                .FirstOrDefault();
+
+            // If no lecturer found for this specific class/group combo, return empty
+            if (string.IsNullOrEmpty(lecturerId)) return Json(new List<object>());
+
+            // QUERY: Pull messages between (Student <-> Lecturer)
             var query = db.ChatMessages
-                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == "STF0002") ||
-                            (x.SenderId == "STF0002" && x.ReceiverId == currentUserId));
+                .Where(x => (x.SenderId == currentUserId && x.ReceiverId == lecturerId) ||
+                            (x.SenderId == lecturerId && x.ReceiverId == currentUserId));
 
             if (!string.IsNullOrEmpty(search))
             {
@@ -2006,40 +1971,11 @@ namespace SHAPEE.Controllers
                     sender = m.SenderId,
                     content = m.Content,
                     time = m.SentAt.ToString("HH:mm"),
-                    isMe = m.SenderId == currentUserId
+                    isMe = m.SenderId == currentUserId // Decides if message is Right (blue) or Left (white)
                 }).ToList();
 
             return Json(messages);
         }
-
-        //[HttpPost]
-        //public IActionResult Send(string content)
-        //{
-        //    if (string.IsNullOrWhiteSpace(content)) return Json(new { success = false });
-
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    var lastMsg = db.ChatMessages.OrderByDescending(m => m.Id).FirstOrDefault();
-        //    int nextNum = 1;
-        //    if (lastMsg != null && lastMsg.Id.StartsWith("CM"))
-        //    {
-        //        if (int.TryParse(lastMsg.Id.Substring(2), out int num))
-        //            nextNum = num + 1;
-        //    }
-
-        //    var msg = new ChatMessage
-        //    {
-        //        Id = $"CM{nextNum:D3}",
-        //        SenderId = userId,
-        //        ReceiverId = "STF0002", // Reply goes to Staff
-        //        Content = content,
-        //        SentAt = DateTime.Now,
-        //        IsRead = false
-        //    };
-
-        //    db.ChatMessages.Add(msg);
-        //    db.SaveChanges();
-        //    return Json(new { success = true });
-        //}
 
         //JS
         public IActionResult Announcements(string? search, string? sort)

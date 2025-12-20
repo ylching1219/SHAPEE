@@ -39,29 +39,31 @@
     var currentUserId = "@ViewBag.UserId";
     var classId = "@ViewBag.ClassId";
 
-    function refreshChat() {
+       function refreshChat() {
         var searchTerm = $('#chatSearch').val();
         $.ajax({
             url: '@Url.Action("GetMessages", "Student")',
             type: 'GET',
-            data: { search: searchTerm },
+            // send the classId so C# can find the lecturer
+            data: { classId: classId, search: searchTerm },
             success: function (data) {
                 var chatWindow = $('#chatWindow');
                 var html = '';
                 data.forEach(function (m) {
-                    var isMe = (m.sender === currentUserId);
-                    var align = isMe ? 'flex-end' : 'flex-start';
-                    var bg = isMe ? '#007bff' : '#fff';
+                    // WhatsApp Style Logic
+                    var isMe = m.isMe;
+                    var align = isMe ? 'flex-end' : 'flex-start'; 
+                    var bg = isMe ? '#007bff' : '#ffffff';      
                     var text = isMe ? 'white' : 'black';
                     var border = isMe ? 'none' : '1px solid #ddd';
 
                     html += `<div style="display: flex; justify-content: ${align}; margin-bottom: 15px;">
                                 <div style="padding: 10px 15px; border-radius: 15px; background: ${bg}; color: ${text}; border: ${border}; max-width: 75%;">
-                                    <small><b>${m.sender}</b></small>
+                                    <small><b>${isMe ? "You" : "Lecturer"}</b></small>
                                     <p style="margin:0;">${m.content}</p>
                                     <small style="font-size:0.7rem; opacity:0.8; display:block; text-align:right;">${m.time}</small>
                                 </div>
-                            </div>`;
+                             </div>`;
                 });
                 chatWindow.html(html);
                 if (!searchTerm) { chatWindow.scrollTop(chatWindow[0].scrollHeight); }
@@ -69,7 +71,7 @@
         });
     }
 
-      function submitMessage() {
+    function submitMessage() {
         var content = $('#msgContent').val();
         if (!content.trim()) return;
 
@@ -77,9 +79,8 @@
             url: '@Url.Action("Send", "Student")',
             type: 'POST',
             data: {
-                classId: classId,
+                classId: classId, //  Matches the 'classId' parameter in  controller
                 content: content,
-                // This line fixes the "Error connecting to server" (Security Token)
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
             success: function (response) {
@@ -91,14 +92,12 @@
                 }
             },
             error: function(xhr) {
-                // Check console (F12) to see if it's a 400 or 500 error
                 console.error(xhr.responseText);
                 alert("Error connecting to server.");
             }
         });
     }
 
-    // Reuse the typing polling from StaffController
     function checkTypingStatus() {
         $.get('@Url.Action("GetTypingStatus", "Staff")', { classId: classId }, function(data) {
             if (data.isTyping) {
@@ -117,8 +116,13 @@
         refreshChat();
         $('#chatSearch').on('keyup', refreshChat);
         $('#msgContent').on('keypress', function (e) {
-            if (e.which == 13) { e.preventDefault(); submitMessage(); }
-            else { sendTypingNotification(); }
+            if (e.which == 13) {
+                e.preventDefault();
+                submitMessage();
+            }
+            else {
+                sendTypingNotification();
+            }
         });
 
         setInterval(refreshChat, 3000);
