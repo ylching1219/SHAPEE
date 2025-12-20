@@ -1414,6 +1414,21 @@
                 }
 
                 db.SaveChanges();
+
+                //get course name for notification
+                var course = db.Courses.FirstOrDefault(c => c.Id == courseId);
+                var courseName = course?.Name ?? courseId;
+
+                //send notifications to all students in tutorial groups for this course
+                HomeController.CreateNotificationForCourseStudents(
+                    db,
+                    courseId,
+                    "New Classwork Posted",
+                    $"New classwork '{title}' has been posted for {courseName}.",
+                    "info",
+                    $"/Student/StudentClasswork?courseId={courseId}"
+                );
+
                 return Json(savedMaterials);
             }
 

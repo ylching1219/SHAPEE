@@ -3662,5 +3662,115 @@ namespace SHAPEE.Controllers
             return File(pdfBytes, "application/pdf", fileName);
         }
 
+        //send payment reminders for invoices due in 3 days
+        //can be called manually or scheduled
+        [HttpPost]
+        [HttpGet]
+        public async Task<IActionResult> SendPaymentReminders()
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var threeDaysFromNow = today.AddDays(3);
+
+                // Find unpaid invoices that are due in 3 days or less (not overdue)
+                var invoicesToRemind = db.Invoices
+                    .Include(i => i.Student)
+                    .Where(i => !i.IsPaid 
+                        && i.DueDate.Date >= today  // Not overdue
+                        && i.DueDate.Date <= threeDaysFromNow  // Due in 3 days or less
+                        && i.Student != null
+                        && !string.IsNullOrEmpty(i.Student.Email))
+                    .ToList();
+
+                int successCount = 0;
+                int failCount = 0;
+                int skippedCount = 0;
+
+                foreach (var invoice in invoicesToRemind)
+                {
+                    // Check if reminder notification was already sent today
+                    var reminderSentToday = db.Notification
+                        .Any(n => n.UserId == invoice.StudentId
+                            && n.Title == "Payment Reminder"
+                            && n.Message.Contains(invoice.Id)
+                            && n.CreatedAt.Date == today);
+
+                    if (reminderSentToday)
+                    {
+                        skippedCount++;
+                        continue; // Skip if already sent today
+                    }
+
+                    var student = invoice.Student;
+                    var studentName = student.FullName?.Trim() ?? student.Id;
+                    
+                    // Calculate days until due for the message
+                    var daysUntilDue = (invoice.DueDate.Date - today).Days;
+                    var daysText = daysUntilDue == 0 ? "today" : 
+                                   daysUntilDue == 1 ? "1 day" : 
+                                   $"{daysUntilDue} days";
+
+                    // Send email
+                    var emailSent = await hp.SendPaymentReminderEmail(
+                        student.Email,
+                        studentName,
+                        invoice.Id,
+                        invoice.TotalAmount,
+                        invoice.DueDate
+                    );
+
+                    // Send notification regardless of email success
+                    HomeController.CreateNotificationForUser(
+                        db,
+                        invoice.StudentId,
+                        "Payment Reminder",
+                        $"Your invoice {invoice.Id} (RM {invoice.TotalAmount:N2}) is due in {daysText} on {invoice.DueDate:dd MMM yyyy}. Please make payment to avoid late fees.",
+                        "warning",
+                        "/Student/CurrentBilling"
+                    );
+
+                    if (emailSent)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+
+                var message = $"Processed {invoicesToRemind.Count} invoices: {successCount} reminders sent, {failCount} email failures, {skippedCount} already sent today.";
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = message,
+                        successCount = successCount,
+                        failCount = failCount,
+                        skippedCount = skippedCount,
+                        totalProcessed = invoicesToRemind.Count
+                    });
+                }
+
+                TempData["SuccessMessage"] = message;
+                return RedirectToAction("Dashboard");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Error sending reminders: {ex.Message}";
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
+                {
+                    return Json(new { success = false, message = errorMessage });
+                }
+
+                TempData["ErrorMessage"] = errorMessage;
+                return RedirectToAction("Dashboard");
+            }
+        }
+
     }
 }

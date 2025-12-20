@@ -260,16 +260,75 @@ $(document).ready(function() {
     }
 
     let currentFilter = 'all';
-    let pollInterval = 5000; // 20 seconds
+    let pollInterval = 5000; // 5 seconds
     let pollTimer = null;
+    const MAX_TOASTS = 3; // Maximum number of toasts to show at once
+    let isInitialLoad = true; // Track if this is the first load
 
-    //icon mapping for notification types
+    // Load dismissed notification IDs from localStorage
+    function loadDismissedNotificationIds() {
+        try {
+            const stored = localStorage.getItem('dismissedNotificationIds');
+            if (stored) {
+                const ids = JSON.parse(stored);
+                return new Set(ids);
+            }
+        } catch (e) {
+            console.error('Error loading dismissed notification IDs:', e);
+        }
+        return new Set();
+    }
+
+    // Save dismissed notification IDs to localStorage
+    function saveDismissedNotificationIds(ids) {
+        try {
+            const idsArray = Array.from(ids);
+            // Keep only last 100 IDs to prevent localStorage from getting too large
+            const trimmedIds = idsArray.slice(-100);
+            localStorage.setItem('dismissedNotificationIds', JSON.stringify(trimmedIds));
+        } catch (e) {
+            console.error('Error saving dismissed notification IDs:', e);
+        }
+    }
+
+    let lastNotificationIds = loadDismissedNotificationIds();
+
+    //icon mapping for notification types (fallback)
     const typeIcons = {
         'info': 'fas fa-info-circle',
         'success': 'fas fa-check-circle',
         'warning': 'fas fa-exclamation-triangle',
         'error': 'fas fa-times-circle'
     };
+
+    //icon mapping for specific notification titles
+    const titleIcons = {
+        'Password Reset Successful': 'fas fa-lock',
+        'Password Changed': 'fas fa-lock',
+        'New Invoice Generated': 'fas fa-receipt',
+        'Account Unlocked': 'fas fa-unlock',
+        'Payment Successful': 'fas fa-wallet',
+        'Payment Reminder': 'fas fa-exclamation-triangle',
+        'Account Locked - Payment Overdue': 'fas fa-lock',
+        'New Message from Student': 'fas fa-comments',
+        'New Message from Teacher': 'fas fa-comments',
+        'New Classwork Posted': 'fas fa-file-alt', // Keep default for classwork
+        'New Announcement': 'fas fa-bullhorn',
+        'Leave Application Approved': 'fas fa-check-circle', // Keep success icon
+        'Leave Application Rejected': 'fas fa-times-circle' // Keep error icon
+    };
+
+    // Get icon for notification based on title, fallback to type
+    function getNotificationIcon(notification) {
+        const title = notification.title || '';
+        // Check if we have a specific icon for this title
+        if (titleIcons[title]) {
+            return titleIcons[title];
+        }
+        // Fallback to type-based icon
+        const type = notification.type || 'info';
+        return typeIcons[type] || 'fas fa-bell';
+    }
 
     //format relative time
     function formatRelativeTime(dateTime) {
@@ -290,7 +349,7 @@ $(document).ready(function() {
 
     //render notification item HTML
     function renderNotificationItem(notification) {
-        const iconClass = typeIcons[notification.type] || 'fas fa-bell';
+        const iconClass = getNotificationIcon(notification);
         const iconBgClass = `icon ${notification.type}`;
         const itemClass = notification.isRead ? 'notification-item read' : 'notification-item unread';
         const title = notification.title.length > 60 
@@ -321,71 +380,234 @@ $(document).ready(function() {
         `;
     }
 
-        //load notifications
-        function loadNotifications(filter = 'all') {
-            const container = $('#notificationList');
-            const footer = $('.notification-footer');
-            if (container.length === 0) return;
-    
-            const url = '/Home/GetLatestNotifications?count=5&filter=' + filter;
-    
+    // Show toast notification
+    function showToastNotification(notification) {
+        const container = $('#toastContainer');
+        if (container.length === 0) {
+            console.log('Toast container not found');
+            return;
+        }
+
+        // Check if we've reached the max toasts limit
+        const currentToasts = container.find('.toast-notification:not(.dismissing)');
+        if (currentToasts.length >= MAX_TOASTS) {
+            // Dismiss the oldest toast (first one)
+            const oldestToast = currentToasts.first();
+            dismissToast(oldestToast);
+        }
+
+        const type = notification.type || 'info';
+        const iconClass = getNotificationIcon(notification);
+        const actionUrl = notification.actionUrl || '#';
+        const notificationId = notification.notificationId;
+
+        // Truncate message if too long
+        const message = notification.message.length > 150 
+            ? notification.message.substring(0, 150) + '...' 
+            : notification.message;
+
+        const toastHtml = `
+            <div class="toast-notification ${type}" data-notification-id="${notificationId}">
+                <div class="toast-icon ${type}">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${notification.title}</div>
+                    <div class="toast-message">${message}</div>
+                    <div class="toast-actions">
+                        <button class="toast-action-btn" onclick="handleToastAction('${actionUrl}', ${notificationId})">
+                            View
+                        </button>
+                        <button class="toast-action-btn" onclick="handleToastDismiss(${notificationId})">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+                <button class="toast-dismiss" onclick="handleToastDismiss(${notificationId})" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="toast-progress-container">
+                    <div class="toast-progress-bar"></div>
+                </div>
+            </div>
+        `;
+
+        const $toast = $(toastHtml);
+        container.append($toast);
+        console.log('Toast notification shown:', notification.title);
+
+        // Auto-dismiss after 4 seconds
+        setTimeout(() => {
+            dismissToast($toast);
+        }, 4000);
+    }
+
+    // Dismiss toast with animation
+    function dismissToast($toast) {
+        if ($toast.hasClass('dismissing')) return;
+        
+        $toast.addClass('dismissing');
+        setTimeout(() => {
+            const notificationId = $toast.data('notification-id');
+            if (notificationId) {
+                // Mark this notification as dismissed
+                lastNotificationIds.add(notificationId);
+                saveDismissedNotificationIds(lastNotificationIds);
+            }
+            $toast.remove();
+        }, 300);
+    }
+
+    // Global function to handle toast action (navigate to page)
+    window.handleToastAction = function(actionUrl, notificationId) {
+        // Mark as read if not already
+        if (notificationId) {
             $.ajax({
-                url: url,
-                type: 'GET',
+                url: '/Home/MarkAsRead',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ notificationId: notificationId }),
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                success: function(response) {
-                    if (response.notifications && response.notifications.length > 0) {
-                        let html = '';
-                        // Only show first 5 notifications
-                        const displayNotifications = response.notifications.slice(0, 5);
-                        displayNotifications.forEach(function(notif) {
-                            html += renderNotificationItem(notif);
-                        });
-                        container.html(html);
-    
-                        // Update footer with "X more notifications" text
-                        const displayedCount = displayNotifications.length;
-                        const totalCount = response.totalCount || displayedCount;
-                        const remainingCount = totalCount - displayedCount;
-    
-                        if (remainingCount > 0) {
-                            footer.html(`
-                                <span class="more-count">${remainingCount} more notification${remainingCount !== 1 ? 's' : ''}</span>
-                                <a href="/Home/Notifications">View all notifications</a>
-                            `);
-                        } else {
-                            footer.html('<a href="/Home/Notifications">View all notifications</a>');
-                        }
-                    } else {
-                        container.html(`
-                            <div class="text-center py-4">
-                                <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
-                                <p class="small text-muted mb-0">No ${filter === 'all' ? '' : 'unread '}notifications</p>
-                            </div>
+                success: function() {
+                    updateUnreadCount();
+                }
+            });
+
+            // Also mark as dismissed to prevent showing toast again
+            lastNotificationIds.add(notificationId);
+            saveDismissedNotificationIds(lastNotificationIds);
+        }
+
+        // Navigate to the page
+        if (actionUrl && actionUrl !== '#') {
+            window.location.href = actionUrl;
+        }
+
+        // Dismiss the toast
+        const $toast = $(`.toast-notification[data-notification-id="${notificationId}"]`);
+        if ($toast.length) {
+            dismissToast($toast);
+        }
+    };
+
+    // Global function to handle toast dismiss
+    window.handleToastDismiss = function(notificationId) {
+        // Mark as dismissed
+        lastNotificationIds.add(notificationId);
+        saveDismissedNotificationIds(lastNotificationIds);
+
+        const $toast = $(`.toast-notification[data-notification-id="${notificationId}"]`);
+        if ($toast.length) {
+            dismissToast($toast);
+        }
+    };
+
+    // Check for new notifications and show toasts
+    function checkForNewNotifications(notifications) {
+        if (!notifications || notifications.length === 0) return;
+
+        // Skip showing toasts on initial load
+        if (isInitialLoad) {
+            // Just track all IDs on initial load without showing toasts
+            notifications.forEach(function(notification) {
+                lastNotificationIds.add(notification.notificationId);
+            });
+            saveDismissedNotificationIds(lastNotificationIds);
+            return;
+        }
+
+        notifications.forEach(function(notification) {
+            // Only show toast for unread notifications we haven't seen before
+            if (!notification.isRead && !lastNotificationIds.has(notification.notificationId)) {
+                showToastNotification(notification);
+                lastNotificationIds.add(notification.notificationId);
+                saveDismissedNotificationIds(lastNotificationIds);
+            }
+        });
+
+        // Clean up old notification IDs (keep only last 100)
+        if (lastNotificationIds.size > 100) {
+            const idsArray = Array.from(lastNotificationIds);
+            lastNotificationIds = new Set(idsArray.slice(-100));
+            saveDismissedNotificationIds(lastNotificationIds);
+        }
+    }
+
+    //load notifications
+    function loadNotifications(filter = 'all') {
+        const container = $('#notificationList');
+        const footer = $('.notification-footer');
+        if (container.length === 0) return;
+
+        const url = '/Home/GetLatestNotifications?count=5&filter=' + filter;
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.notifications && response.notifications.length > 0) {
+                    // Check for new notifications before updating UI
+                    checkForNewNotifications(response.notifications);
+
+                    let html = '';
+                    // Only show first 5 notifications
+                    const displayNotifications = response.notifications.slice(0, 5);
+                    displayNotifications.forEach(function(notif) {
+                        html += renderNotificationItem(notif);
+                    });
+                    container.html(html);
+
+                    // Update footer with "X more notifications" text
+                    const displayedCount = displayNotifications.length;
+                    const totalCount = response.totalCount || displayedCount;
+                    const remainingCount = totalCount - displayedCount;
+
+                    if (remainingCount > 0) {
+                        footer.html(`
+                            <span class="more-count">${remainingCount} more notification${remainingCount !== 1 ? 's' : ''}</span>
+                            <a href="/Home/Notifications">View all notifications</a>
                         `);
+                    } else {
                         footer.html('<a href="/Home/Notifications">View all notifications</a>');
                     }
-                },
-                error: function(xhr, status, error) {
-                    if (xhr.status !== 401) {
-                        console.error('Error loading notifications:', {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            error: error
-                        });
-                    }
+                } else {
                     container.html(`
                         <div class="text-center py-4">
-                            <i class="fas fa-exclamation-circle fa-2x text-muted mb-2"></i>
-                            <p class="small text-muted mb-0">Error loading notifications</p>
+                            <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
+                            <p class="small text-muted mb-0">No ${filter === 'all' ? '' : 'unread '}notifications</p>
                         </div>
                     `);
                     footer.html('<a href="/Home/Notifications">View all notifications</a>');
                 }
-            });
-        }
+
+                // Mark initial load as complete after first successful load
+                if (isInitialLoad) {
+                    isInitialLoad = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                if (xhr.status !== 401) {
+                    console.error('Error loading notifications:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error
+                    });
+                }
+                container.html(`
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-circle fa-2x text-muted mb-2"></i>
+                        <p class="small text-muted mb-0">Error loading notifications</p>
+                    </div>
+                `);
+                footer.html('<a href="/Home/Notifications">View all notifications</a>');
+            }
+        });
+    }
 
     //update unread count badge
     function updateUnreadCount() {

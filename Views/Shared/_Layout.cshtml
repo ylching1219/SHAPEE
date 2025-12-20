@@ -386,11 +386,11 @@
                         </a>
                     </li>
 
-                    <!-- Nav Item - Materials -->
+                    <!-- Nav Item - Classroom -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                         <a class="nav-link" href="@Url.Action("ClassroomUI", "Student")">
                             <i class="fas fa-fw fa-file-alt"></i>
-                            <span>Course Materials</span>
+                            <span>Classroom</span>
                         </a>
                     </li>
 
@@ -609,5 +609,8 @@
 
 
     @RenderSection("Scripts", required: false)
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>

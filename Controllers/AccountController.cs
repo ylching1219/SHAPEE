@@ -77,6 +77,81 @@ public class AccountController(DB db, Helper hp) : Controller
 
         hp.SignIn(u.Id, u.FullName, u.Role, vm.RememberMe);
 
+        //check payment reminders on login
+        if (u.Role == "Student")
+        {
+            var studentId = u.Id; //capture the ID for use in background task
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    //create new scope for background task
+                    using var scope = HttpContext.RequestServices.CreateScope();
+                    var scopedDb = scope.ServiceProvider.GetRequiredService<DB>();
+                    var scopedHelper = scope.ServiceProvider.GetRequiredService<Helper>();
+                    
+                    //check payment reminders
+                    var today = DateTime.Today;
+                    var threeDaysFromNow = today.AddDays(3);
+
+                    var invoicesToRemind = scopedDb.Invoices
+                        .Include(i => i.Student)
+                        .Where(i => i.StudentId == studentId
+                            && !i.IsPaid
+                            && i.DueDate.Date >= today  //not overdue
+                            && i.DueDate.Date <= threeDaysFromNow  //due in 3 days or less
+                            && i.Student != null
+                            && !string.IsNullOrEmpty(i.Student.Email))
+                        .ToList();
+
+                    foreach (var invoice in invoicesToRemind)
+                    {
+                        //check if reminder notification was already sent today
+                        var reminderSentToday = scopedDb.Notification
+                            .Any(n => n.UserId == studentId
+                                && n.Title == "Payment Reminder"
+                                && n.Message.Contains(invoice.Id)
+                                && n.CreatedAt.Date == today);
+
+                        if (reminderSentToday)
+                            continue; //skip if already sent today
+
+                        var student = invoice.Student;
+                        var studentName = student.FullName?.Trim() ?? student.Id;
+                        
+                        //calculate days until due for the message
+                        var daysUntilDue = (invoice.DueDate.Date - today).Days;
+                        var daysText = daysUntilDue == 0 ? "today" : 
+                                       daysUntilDue == 1 ? "1 day" : 
+                                       $"{daysUntilDue} days";
+
+                        //send email
+                        await scopedHelper.SendPaymentReminderEmail(
+                            student.Email,
+                            studentName,
+                            invoice.Id,
+                            invoice.TotalAmount,
+                            invoice.DueDate
+                        );
+
+                        //send notification regardless of email success
+                        HomeController.CreateNotificationForUser(
+                            scopedDb,
+                            studentId,
+                            "Payment Reminder",
+                            $"Your invoice {invoice.Id} (RM {invoice.TotalAmount:N2}) is due in {daysText} on {invoice.DueDate:dd MMM yyyy}. Please make payment to avoid late fees.",
+                            "warning",
+                            "/Student/CurrentBilling"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing payment reminder on login: {ex.Message}");
+                }
+            });
+        }
+
         //if payment locked student log in force it into Current Billing tab
         if (u.Role == "Student" && u.Status == "LockedPayment")
         {
