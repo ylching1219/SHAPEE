@@ -11,6 +11,8 @@
                 <option value="newest" selected="@(ViewBag.CurrentSort == "newest")">Newest Due Date</option>
                 <option value="oldest" selected="@(ViewBag.CurrentSort == "oldest")">Oldest Due Date</option>
                 <option value="title" selected="@(ViewBag.CurrentSort == "title")">Task Title (A-Z)</option>
+                <option value="id_asc" selected="@(ViewBag.CurrentSort == "id_asc")">Task ID (Ascending)</option>
+                <option value="id_desc" selected="@(ViewBag.CurrentSort == "id_desc")">Task ID (Descending)</option>
             </select>
 
             <a href="/Staff/TaskCreate" class="btn btn-primary">
