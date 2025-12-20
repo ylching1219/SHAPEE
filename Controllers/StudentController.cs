@@ -1841,74 +1841,62 @@ namespace SHAPEE.Controllers
         {
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // FETCH: Task + Class + Course + ATTACHED MATERIALS
             var task = db.CourseTasks
                 .Include(t => t.ClassSection)
                     .ThenInclude(cs => cs.Course)
-                .Include(t => t.Materials) //  refers to the List<TaskMaterial>
-                    .ThenInclude(tm => tm.Material) //  gets the actual file info
+                .Include(t => t.Materials)
+                    .ThenInclude(tm => tm.Material)
                 .FirstOrDefault(t => t.Id == id);
 
             if (task == null) return NotFound();
 
-            // Check for existing submission
+            // makes the "Assignment Submitted" UI appear
             var submission = db.Submissions
                 .FirstOrDefault(x => x.StudentId == studentId && x.CourseTaskId == id);
 
-            ViewBag.Submitted = submission;
+            ViewBag.Submitted = submission; // If this is NOT null, the Green Box shows up
             ViewBag.IsLate = (DateTime.Now > task.DueDate);
 
             return View(task);
         }
         //upload submit
+        // =======================
+        // POST: Handle File Upload
+        // =======================
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Upload(string id, IFormFile file)
         {
-            var task = db.CourseTasks.Find(id);
             var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (file == null || file.Length == 0) return RedirectToAction("TaskSubmit", new { id });
 
-            if (task == null || file == null) return NotFound();
-
-            // Generate Sequential ID
+            // Generate SMSxxx Sequential ID
             var lastSubmission = db.Submissions
                 .Where(s => s.Id.StartsWith("SMS"))
                 .OrderByDescending(s => s.Id)
                 .FirstOrDefault();
 
             int nextNumber = 1;
-            if (lastSubmission != null)
+            if (lastSubmission != null && int.TryParse(lastSubmission.Id.Substring(3), out int lastNum))
             {
-                // Extract number from "SMS005" -> "005" -> 5
-                string numericPart = lastSubmission.Id.Substring(3);
-                if (int.TryParse(numericPart, out int lastNumber))
-                {
-                    nextNumber = lastNumber + 1;
-                }
+                nextNumber = lastNum + 1;
             }
-            string newId = $"SMS{nextNumber:D3}"; // D3 ensures it is always 3 digits (001, 002)
+            string newId = $"SMS{nextNumber:D3}";
 
-            //  Create file name
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmm");
-            string originalName = Path.GetFileNameWithoutExtension(file.FileName);
-            string cleanOriginalName = string.Concat(originalName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
-            string extension = Path.GetExtension(file.FileName);
-
-            string fileName = $"{studentId}_{id}_{timestamp}_{cleanOriginalName}{extension}";
-
+            //  Process File Saving
+            string fileName = $"{studentId}_{id}_{DateTime.Now:yyyyMMdd_HHmm}{Path.GetExtension(file.FileName)}";
             string uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Submissions");
             if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
 
-            string path = Path.Combine(uploadFolder, fileName);
-
-            using (var stream = new FileStream(path, FileMode.Create))
+            using (var stream = new FileStream(Path.Combine(uploadFolder, fileName), FileMode.Create))
             {
                 file.CopyTo(stream);
             }
 
-            //  Save to DB Submissions table
+            // 3Save to Database
             var sub = new Submission
             {
-                Id = newId, // Sequential ID: SMSxxx
+                Id = newId,
                 CourseTaskId = id,
                 StudentId = studentId,
                 FileUrl = "/Submissions/" + fileName,
@@ -1918,9 +1906,9 @@ namespace SHAPEE.Controllers
             db.Submissions.Add(sub);
             db.SaveChanges();
 
-            return RedirectToAction("TaskSubmit", new { id });
+            //  Jump back to the TaskSubmit page so the success UI triggers
+            return RedirectToAction("TaskSubmit", new { id = id });
         }
-
         public async Task<IActionResult> ViewProgramCourse()
         {
             await LoadProfilePicture();
