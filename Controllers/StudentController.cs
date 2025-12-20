@@ -1034,10 +1034,10 @@ namespace SHAPEE.Controllers
 
         private string CreatePdfReceipt(
             string receiptId,
-            string studentName,
-            string description,
-            decimal billAmount,
-            decimal amountPaid,
+            Invoice invoice,
+            Student student,
+            List<ProgramCourse> programCourses,
+            decimal costPerCreditHour,
             DateTime receiptDate)
         {
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "receipts");
@@ -1045,6 +1045,14 @@ namespace SHAPEE.Controllers
 
             var fileName = $"{receiptId}.pdf";
             var physical = Path.Combine(folder, fileName);
+
+            var studentName = student?.FullName?.Trim() ?? invoice.StudentId;
+            var studentRegNo = student?.Id ?? invoice.StudentId;
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == invoice.SemesterId);
+            var semesterName = semester?.Id ?? invoice.SemesterId;
+            var program = student?.Program;
+            var programName = program?.Name ?? "N/A";
+            var yearLevel = student != null ? $"Year {student.YearLevel} Semester {student.Semester}" : "N/A";
 
             Document.Create(container =>
             {
@@ -1054,46 +1062,142 @@ namespace SHAPEE.Controllers
                     page.Margin(40);
                     page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
 
+                    // Header
                     page.Header().Column(col =>
                     {
                         col.Item().Text("TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY")
                             .FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
-
-                        col.Item().PaddingTop(18).Text("RECEIPT").FontSize(16).Bold();
+                        col.Item().PaddingTop(4).Text("Wholly owned and operated by the TARC Education Foundation")
+                            .FontSize(9).FontColor(Colors.Grey.Darken1);
+                        col.Item().PaddingTop(4).Row(row =>
+                        {
+                            row.RelativeItem().Text("Email: finance@tarc.edu.my").FontSize(9);
+                            row.RelativeItem().AlignRight().Text("SST Number: W10-1812-32000111").FontSize(9);
+                        });
+                        col.Item().PaddingTop(12).Text("E-INVOICE").FontSize(18).Bold().AlignCenter();
                     });
 
-                    page.Content().PaddingTop(18).Element(e =>
+                    // Content
+                    page.Content().PaddingTop(20).Column(col =>
                     {
-                        e.Border(1).BorderColor(Colors.Grey.Medium).Padding(18).Table(table =>
+                        // Buyer and Invoice Details Section
+                                                // Buyer and Invoice Details Section
+                        col.Item().Row(row =>
+                        {
+                            // Left Column - Buyer Details
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(buyerCol =>
+                            {
+                                buyerCol.Item().Text("Buyer Details").FontSize(12).Bold();
+                                buyerCol.Item().PaddingTop(8).Text($"Buyer Name: {studentName}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Reg. No.: {studentRegNo}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Contact No.: {student?.Contact ?? "N/A"}").FontSize(10);
+                                buyerCol.Item().Text($"Buyer Email: {student?.Email ?? "N/A"}").FontSize(10);
+                            });
+
+                            // Right Column - Invoice & Student Details
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(invoiceCol =>
+                            {
+                                invoiceCol.Item().Text("Invoice & Student Details").FontSize(12).Bold();
+                                invoiceCol.Item().PaddingTop(8).Text($"Unique Identifier No.: {receiptId}").FontSize(10);
+                                invoiceCol.Item().Text($"E-Invoice Code: {invoice.Id}").FontSize(10);
+                                invoiceCol.Item().Text($"Invoice Date: {receiptDate:yyyy-MM-dd HH:mm:ss}").FontSize(10);
+                                invoiceCol.Item().Text($"Student Name: {studentName}").FontSize(10);
+                                invoiceCol.Item().Text($"Student Reg. No.: {studentRegNo}").FontSize(10);
+                                invoiceCol.Item().Text($"Year of Study: {yearLevel}").FontSize(10);
+                                invoiceCol.Item().Text($"Program/Course: {programName}").FontSize(10);
+                            });
+                        });
+                        
+                        col.Item().PaddingTop(16);
+
+                        // Items Table
+                        col.Item().Border(1).BorderColor(Colors.Grey.Medium).Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
                             {
-                                columns.RelativeColumn(3);   // label
-                                columns.ConstantColumn(12);  // :
-                                columns.RelativeColumn(6);   // value
+                                columns.RelativeColumn(3);  // Description
+                                columns.RelativeColumn(1);   // Qty (Credit Hours)
+                                columns.RelativeColumn(1.5f); // Price (RM) - per credit hour
+                                columns.RelativeColumn(1);   // Tax %
+                                columns.RelativeColumn(1.5f); // Tax (RM)
+                                columns.RelativeColumn(1.5f); // Excl. Tax (RM)
                             });
 
-                            void Row(string label, string value)
-                            {
-                                table.Cell().PaddingVertical(6).Text(label);
-                                table.Cell().PaddingVertical(6).AlignCenter().Text(":");
-                                table.Cell().PaddingVertical(6).Text(value);
-                            }
+                            // Header Row
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Description").Bold();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Qty").Bold().AlignCenter();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Price (RM)").Bold().AlignRight();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Tax %").Bold().AlignCenter();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Tax (RM)").Bold().AlignRight();
+                            table.Cell().Padding(8).Background(Colors.Grey.Lighten3).Text("Excl. Tax (RM)").Bold().AlignRight();
 
-                            Row("Receipt Number", receiptId);
-                            Row("Name", studentName);
-                            Row("Description", description); // e.g. Fees 202501 Y1S1
-                            Row("Bill Amount", $"RM {billAmount:N2}");
-                            Row("Amount Paid", $"RM {amountPaid:N2}");
-                            Row("Receipt Date", receiptDate.ToString("dd-MM-yyyy"));
-                            Row("Comment", "");
+                            // Course Items
+                            foreach (var pc in programCourses)
+                            {
+                                var course = pc.Course;
+                                var creditHours = course.CreditHours;
+                                var pricePerCredit = costPerCreditHour;
+                                var totalForCourse = creditHours * pricePerCredit;
+
+                                table.Cell().Padding(8).Text(course.Name ?? course.Id).FontSize(10);
+                                table.Cell().Padding(8).Text(creditHours.ToString()).AlignCenter().FontSize(10);
+                                table.Cell().Padding(8).Text(pricePerCredit.ToString("N2")).AlignRight().FontSize(10);
+                                table.Cell().Padding(8).Text("0.00").AlignCenter().FontSize(10);
+                                table.Cell().Padding(8).Text("0.00").AlignRight().FontSize(10);
+                                table.Cell().Padding(8).Text(totalForCourse.ToString("N2")).AlignRight().FontSize(10);
+                            }
+                        });
+
+                        col.Item().PaddingTop(12);
+
+                        // Payment Summary
+                        col.Item().Row(row =>
+                        {
+                            row.RelativeItem(2);
+                            row.RelativeItem(2).Border(1).BorderColor(Colors.Grey.Medium).Padding(12).Column(summaryCol =>
+                            {
+                                summaryCol.Item().Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Excluding Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(10).Bold();
+                                });
+                                summaryCol.Item().PaddingTop(4).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Service Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text("RM 0.00").FontSize(10);
+                                });
+                                summaryCol.Item().PaddingTop(4).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Including Tax:").FontSize(10);
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(10).Bold();
+                                });
+                                summaryCol.Item().PaddingTop(8).BorderTop(1).BorderColor(Colors.Grey.Medium).Row(summaryRow =>
+                                {
+                                    summaryRow.RelativeItem().Text("Total Payable Amount:").FontSize(11).Bold();
+                                    summaryRow.RelativeItem().AlignRight().Text($"RM {invoice.TotalAmount:N2}").FontSize(11).Bold();
+                                });
+                            });
+                        });
+
+                        col.Item().PaddingTop(16);
+
+                        // Footer
+                        col.Item().Row(footerRow =>
+                        {
+                            footerRow.RelativeItem().Column(footerCol =>
+                            {
+                                footerCol.Item().Text($"Reference No.: {receiptId}").FontSize(9);
+                                footerCol.Item().Text($"Remarks: {invoice.Id}").FontSize(9);
+                            });
+                            // No QR code as requested
                         });
                     });
 
-                    page.Footer().PaddingTop(28).Column(col =>
+                    // Page Footer
+                    page.Footer().PaddingTop(20).Column(footerCol =>
                     {
-                        col.Item().Text("1. This is a computer generated receipt and does not require a signature.").FontSize(9);
-                        col.Item().Text("2. This official receipt is valid subject to clearance.").FontSize(9);
+                        footerCol.Item().Text("1. This is a computer generated receipt and does not require a signature.").FontSize(9);
+                        footerCol.Item().Text("2. This official receipt is valid subject to clearance.").FontSize(9);
                     });
                 });
             })
@@ -1167,19 +1271,37 @@ namespace SHAPEE.Controllers
             // prevent double payment if user refreshes success page
             if (!invoice.IsPaid)
             {
-                var student = db.Students.FirstOrDefault(s => s.Id == studentId);
+                var student = db.Students
+                    .Include(s => s.Program)
+                        .ThenInclude(p => p.Faculty)
+                    .FirstOrDefault(s => s.Id == studentId);
+
+                if (student == null || string.IsNullOrEmpty(student.ProgramId))
+                {
+                    TempData["ErrorMessage"] = "Student program information not found.";
+                    return RedirectToAction("CurrentBilling");
+                }
+
+                // Get program courses for this semester
+                var programCourses = db.ProgramCourses
+                    .Where(pc =>
+                        pc.ProgramId == student.ProgramId &&
+                        pc.YearLevel == student.YearLevel &&
+                        pc.Semester == student.Semester)
+                    .Include(pc => pc.Course)
+                    .ToList();
+
+                var costPerCreditHour = student.Program.Faculty.CostPerCreditHour;
 
                 var receiptId = "RCP-" + DateTime.Now.ToString("yyMMdd-HHmmssfff");
-                var description = student != null
-                    ? $"Fees {invoice.SemesterId} Y{student.YearLevel}S{student.Semester}"
-                    : $"Fees {invoice.SemesterId}";
+                var description = $"Fees {invoice.SemesterId} Y{student.YearLevel}S{student.Semester}";
 
                 var receiptUrl = CreatePdfReceipt(
                     receiptId: receiptId,
-                    studentName: student?.FullName?.Trim() ?? studentId,
-                    description: description,
-                    billAmount: invoice.TotalAmount,
-                    amountPaid: invoice.TotalAmount,
+                    invoice: invoice,
+                    student: student,
+                    programCourses: programCourses,
+                    costPerCreditHour: costPerCreditHour,
                     receiptDate: DateTime.Now
                 );
 

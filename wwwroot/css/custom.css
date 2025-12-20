@@ -47,6 +47,13 @@ html, body {
         padding-top: 1.25rem;   /* tweak 1–2rem until it looks right */
     }
 }
+
+.sidebar-brand-icon img {
+    width: 35px;
+    height: auto; /* Maintains aspect ratio */
+    object-fit: contain; /* Ensures image fits without distortion */
+}
+
 #content {
     height: auto;
     overflow: visible;
