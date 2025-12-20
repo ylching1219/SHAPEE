@@ -348,33 +348,7 @@
                 if (section == null)
                     return RedirectToAction("ClassSelection", new { mode = "take" });
 
-               IQueryable<Student> enrolledStudentsQuery;
-
-                if (section.TutorialGroupId.HasValue)
-                {
-                    //tutorial and practical
-                    var tgId = section.TutorialGroupId.Value;
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
-                }
-                else if (section.SectionType == "Lecture")
-                {
-                    // lecture: all students in the same program
-                    var programIds = db.ProgramCourses
-                        .Where(pc => pc.CourseId == section.CourseId)
-                        .Select(pc => pc.ProgramId)
-                        .Distinct()
-                        .ToList();
-
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
-                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
-                }
-                else
-                {
-                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
-                }
-
+                var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
                 var enrolledStudents = enrolledStudentsQuery.ToList();
 
                 // Get attendance records for today
@@ -401,10 +375,7 @@
                 var presentCount = presentStudents.Count;
                 var absentCount = absentStudents.Count;
                 var flaggedCount = flaggedAttendances.Count;
-                var consideredTotal = presentCount + absentCount;
-                var attendancePercentage = consideredTotal > 0
-                    ? Math.Round((double)presentCount / consideredTotal * 100, 1)
-                    : 0;
+                var attendancePercentage = CalculateAttendancePercentage(presentCount, absentCount);
 
                 var viewModel = new SessionSummaryVM
                 {
@@ -434,32 +405,9 @@
                 if (section.Semester == null || !section.Semester.IsActive)
                 return;
 
-                IQueryable<Student> enrolledStudentsQuery;
-
-                if (section.TutorialGroupId.HasValue)
-                {
-                    var tgId = section.TutorialGroupId.Value;
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
-                }
-                else if (section.SectionType == "Lecture")
-                {
-                    var programIds = db.ProgramCourses
-                        .Where(pc => pc.CourseId == section.CourseId)
-                        .Select(pc => pc.ProgramId)
-                        .Distinct()
-                        .ToList();
-
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
-                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
-                }
-                else
-                {
-                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
-                }
-
+                var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
                 var enrolledStudents = enrolledStudentsQuery.ToList();
+
                 if (!enrolledStudents.Any()) return;
 
                 var existingIds = db.Attendances
@@ -547,32 +495,9 @@
                     return Json(new { success = false, message = "Section not found." });
                 }
 
-                IQueryable<Student> enrolledStudentsQuery;
-
-                if (section.TutorialGroupId.HasValue)
-                {
-                    var tgId = section.TutorialGroupId.Value;
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
-                }
-                else if (section.SectionType == "Lecture")
-                {
-                    var programIds = db.ProgramCourses
-                        .Where(pc => pc.CourseId == section.CourseId)
-                        .Select(pc => pc.ProgramId)
-                        .Distinct()
-                        .ToList();
-
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
-                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
-                }
-                else
-                {
-                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
-                }
-
+                var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
                 var enrolledStudents = enrolledStudentsQuery.ToList();
+
                 var totalStudents = enrolledStudents.Count;
 
                 //get all attendance records for this class section
@@ -595,9 +520,7 @@
                 var flaggedCount = allAttendances.Count(a => a.IsFlaged);
 
                 //count total absences this semester
-                var semesterStart = section.Semester?.Id != null
-                    ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
-                    : DateOnly.FromDateTime(DateTime.Now);
+                var semesterStart = GetSemesterStartDate(section.Semester);
 
                 var totalAbsences = totalAbsent;
 
@@ -638,32 +561,9 @@
                     AutoMarkAbsents(sectionId, today, staffId);
                 }
 
-                IQueryable<Student> enrolledStudentsQuery;
-
-                if (section.TutorialGroupId.HasValue)
-                {
-                    var tgId = section.TutorialGroupId.Value;
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
-                }
-                else if (section.SectionType == "Lecture")
-                {
-                    var programIds = db.ProgramCourses
-                        .Where(pc => pc.CourseId == section.CourseId)
-                        .Select(pc => pc.ProgramId)
-                        .Distinct()
-                        .ToList();
-
-                    enrolledStudentsQuery = db.Students
-                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
-                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
-                }
-                else
-                {
-                    enrolledStudentsQuery = Enumerable.Empty<Student>().AsQueryable();
-                }
-
+                var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
                 var enrolledStudents = enrolledStudentsQuery.ToList();
+
                 var totalStudents = enrolledStudents.Count;
 
                 //get all attendance records for this class section with filters
@@ -729,19 +629,14 @@
                 var totalAbsent  = allAttendances.Count(a => a.Status == "Absent");
                 // ignore Leave, Late, Excused in denominator as you prefer
 
-                var consideredTotal = totalPresent + totalAbsent;
-                var overallAttendancePercentage = consideredTotal > 0
-                    ? Math.Round((double)totalPresent / consideredTotal * 100, 1)
-                    : 0;
+                var overallAttendancePercentage = CalculateAttendancePercentage(totalPresent, totalAbsent);
 
 
                 //calculate flaged count
                 var flaggedCount = allAttendances.Count(a => a.IsFlaged);
 
                 //count total absences this semester
-                var semesterStart = section.Semester?.Id != null
-                    ? (section.Semester.Id.StartsWith("2025") ? new DateOnly(2025, 1, 1) : DateOnly.FromDateTime(DateTime.Now))
-                    : DateOnly.FromDateTime(DateTime.Now);
+                var semesterStart = GetSemesterStartDate(section.Semester);
 
                 var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
                 var totalAbsences = totalAbsent;
@@ -1072,65 +967,56 @@
             //export iCal for staff
             public IActionResult ExportICal(string? semesterId = null)
             {
-                var eventsQuery = db.CalendarEvents.AsQueryable();
-
-                if (!string.IsNullOrEmpty(semesterId))
-                {
-                    var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-                    if (semester != null)
-                    {
-                        eventsQuery = eventsQuery.Where(e =>
-                            e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
-                            e.StartTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
-                    }
-                }
-
-                var events = eventsQuery.ToList();
-
-                var ical = new StringBuilder();
-                ical.AppendLine("BEGIN:VCALENDAR");
-                ical.AppendLine("VERSION:2.0");
-                ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
-                ical.AppendLine("CALSCALE:GREGORIAN");
-                ical.AppendLine("METHOD:PUBLISH");
-
-                foreach (var evt in events)
-                {
-                    ical.AppendLine("BEGIN:VEVENT");
-                    ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
-                    ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
-                    ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
-                    ical.AppendLine($"SUMMARY:{evt.Title}");
-                    ical.AppendLine($"DESCRIPTION:{evt.Description}");
-                    ical.AppendLine($"LOCATION:Academic Calendar");
-                    ical.AppendLine($"STATUS:CONFIRMED");
-                    ical.AppendLine("END:VEVENT");
-                }
-
-                ical.AppendLine("END:VCALENDAR");
-
-                var bytes = Encoding.UTF8.GetBytes(ical.ToString());
-                return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+                return Helper.ExportICalendar(db, semesterId);
             }
 
             //get semester details for calendar navigation
             [HttpGet]
             public IActionResult GetSemesterDetails(string semesterId)
             {
-                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-                if (semester == null)
-                {
-                    return Json(new { success = false, message = "Semester not found." });
-                }
+                return Helper.GetSemesterDetails(db, semesterId);
+            }
 
-                return Json(new
+            //HELPER for attendance
+            private IQueryable<Student> GetEnrolledStudentsQuery(ClassSection section)
+            {
+                if (section.TutorialGroupId.HasValue)
                 {
-                    success = true,
-                    id = semester.Id,
-                    startDate = semester.StartDate.ToString("yyyy-MM-dd"),
-                    endDate = semester.EndDate.ToString("yyyy-MM-dd"),
-                    isActive = semester.IsActive
-                });
+                    var tgId = section.TutorialGroupId.Value;
+                    return db.Students
+                        .Where(s => s.TutorialGroupId.HasValue && s.TutorialGroupId.Value == tgId);
+                }
+                else if (section.SectionType == "Lecture")
+                {
+                    var programIds = db.ProgramCourses
+                        .Where(pc => pc.CourseId == section.CourseId)
+                        .Select(pc => pc.ProgramId)
+                        .Distinct()
+                        .ToList();
+
+                    return db.Students
+                        .Where(s => s.ProgramId != null && programIds.Contains(s.ProgramId))
+                        .Where(s => s.YearLevel == section.YearLevel && s.Semester == section.Sem);
+                }
+                else
+                {
+                    return Enumerable.Empty<Student>().AsQueryable();
+                }
+            }
+
+            private double CalculateAttendancePercentage(int presentCount, int absentCount)
+            {
+                var consideredTotal = presentCount + absentCount;
+                return consideredTotal > 0
+                    ? Math.Round((double)presentCount / consideredTotal * 100, 2)
+                    : 0;
+            }
+
+            private DateOnly GetSemesterStartDate(Semester? semester)
+            {
+                if (semester != null)
+                    return semester.StartDate;
+                return DateOnly.FromDateTime(DateTime.Now);
             }
 
 

@@ -746,65 +746,14 @@ namespace SHAPEE.Controllers
         //export iCal for students
         public IActionResult ExportICal(string? semesterId = null)
         {
-            var eventsQuery = db.CalendarEvents.AsQueryable();
-
-            if (!string.IsNullOrEmpty(semesterId))
-            {
-                var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-                if (semester != null)
-                {
-                    eventsQuery = eventsQuery.Where(e =>
-                        e.StartTime.Date >= semester.StartDate.ToDateTime(TimeOnly.MinValue) &&
-                        e.EndTime.Date <= semester.EndDate.ToDateTime(TimeOnly.MaxValue));
-                }
-            }
-
-            var events = eventsQuery.ToList();
-
-            var ical = new StringBuilder();
-            ical.AppendLine("BEGIN:VCALENDAR");
-            ical.AppendLine("VERSION:2.0");
-            ical.AppendLine("PRODID:-//TARUMT//Academic Calendar//EN");
-            ical.AppendLine("CALSCALE:GREGORIAN");
-            ical.AppendLine("METHOD:PUBLISH");
-
-            foreach (var evt in events)
-            {
-                ical.AppendLine("BEGIN:VEVENT");
-                ical.AppendLine($"UID:{evt.Id}@tarumt.edu.my");
-                ical.AppendLine($"DTSTART:{evt.StartTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"DTEND:{evt.EndTime:yyyyMMddTHHmmss}");
-                ical.AppendLine($"SUMMARY:{evt.Title}");
-                ical.AppendLine($"DESCRIPTION:{evt.Description}");
-                ical.AppendLine($"LOCATION:Academic Calendar");
-                ical.AppendLine($"STATUS:CONFIRMED");
-                ical.AppendLine("END:VEVENT");
-            }
-
-            ical.AppendLine("END:VCALENDAR");
-
-            var bytes = Encoding.UTF8.GetBytes(ical.ToString());
-            return File(bytes, "text/calendar", $"academic_calendar_{DateTime.Now:yyyyMMdd}.ics");
+            return Helper.ExportICalendar(db, semesterId);
         }
 
         //get semester details for calendar navigation
         [HttpGet]
         public IActionResult GetSemesterDetails(string semesterId)
         {
-            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
-            if (semester == null)
-            {
-                return Json(new { success = false, message = "Semester not found." });
-            }
-
-            return Json(new
-            {
-                success = true,
-                id = semester.Id,
-                startDate = semester.StartDate.ToString("yyyy-MM-dd"),
-                endDate = semester.EndDate.ToString("yyyy-MM-dd"),
-                isActive = semester.IsActive
-            });
+            return Helper.GetSemesterDetails(db, semesterId);
         }
 
 
@@ -1754,14 +1703,20 @@ namespace SHAPEE.Controllers
         }
 
         //task section
+        //task list
         public IActionResult TaskList()
         {
-            var userId = User.Identity.Name;
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var student = db.Students.FirstOrDefault(s => s.Id == studentId);
 
+            if (student == null || student.TutorialGroupId == null) return View(new List<CourseTask>());
+
+            // Get tasks for the student's specific tutorial group sections
             var tasks = db.CourseTasks
-                .Include(x => x.Submissions)
-                .Where(x => x.ClassSectionId == "SEC001") // adjust
-                .OrderBy(x => x.DueDate)
+                .Include(t => t.ClassSection)
+                .Include(t => t.Submissions.Where(s => s.StudentId == studentId))
+                .Where(t => t.ClassSection.TutorialGroupId == student.TutorialGroupId)
+                .OrderBy(t => t.DueDate)
                 .ToList();
 
             return View(tasks);
@@ -2018,7 +1973,7 @@ namespace SHAPEE.Controllers
             db.TicketMessages.Add(ticketMessage);
             db.SaveChanges();
 
-            // 5. Handle AJAX response
+            // Handle AJAX response
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new

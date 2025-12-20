@@ -281,30 +281,30 @@ public async Task<IActionResult> SubmitLeaveApplication(LeaveApplicationVM vm, I
         db.LeaveApplications.Add(leaveApplication);
         await db.SaveChangesAsync();
 
-        //notify all admins when a student or staff submits a leave application
-        var user = db.Users.FirstOrDefault(u => u.Id == userId);
-        if (user is Student student)
-        {
-            var studentName = student.FullName?.Trim() ?? student.Id;
-            CreateNotificationForAllAdmins(
-                db,
-                "New Leave Application",
-                $"Student {studentName} ({student.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
-                "info",
-                "/Admin/LeaveApplications"
-            );
-        }
-        else if (user is Staff staff)
-        {
-            var staffName = staff.FullName?.Trim() ?? staff.Id;
-            CreateNotificationForAllAdmins(
-                db,
-                "New Leave Application",
-                $"Staff {staffName} ({staff.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
-                "info",
-                "/Admin/LeaveApplications"
-            );
-        }
+            //notify all admins when a student or staff submits a leave application
+            var user = db.Users.FirstOrDefault(u => u.Id == userId);
+            if (user is Student student)
+            {
+                var studentName = student.FullName?.Trim() ?? student.Id;
+                CreateNotificationForAllAdmins(
+                    db,
+                    "New Leave Application",
+                    $"Student {studentName} ({student.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
+                    "info",
+                    "/Admin/LeaveApplications"
+                );
+            }
+            else if (user is Staff staff)
+            {
+                var staffName = staff.FullName?.Trim() ?? staff.Id;
+                CreateNotificationForAllAdmins(
+                    db,
+                    "New Leave Application",
+                    $"Staff {staffName} ({staff.Id}) has submitted a new leave application for {duration} day{(duration != 1 ? "s" : "")} ({vm.StartDate:dd MMM yyyy} - {vm.EndDate:dd MMM yyyy}).",
+                    "info",
+                    "/Admin/LeaveApplications"
+                );
+            }
 
         TempData["SuccessMessage"] = $"Leave application for {duration} day{(duration != 1 ? "s" : "")} submitted successfully. You will be notified once reviewed.";
 
