@@ -15,7 +15,147 @@
             {
                 await LoadProfilePicture();
                 ViewData["Title"] = "Staff Dashboard";
-                return View();
+
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var today = DateTime.Now;
+                var todayDateOnly = DateOnly.FromDateTime(today);
+                var todayDayOfWeek = today.DayOfWeek.ToString();
+                var currentTime = TimeOnly.FromDateTime(today);
+
+                // Get active semester
+                var activeSemester = db.Semesters
+                    .OrderByDescending(s => s.Id)
+                    .FirstOrDefault(s => s.IsActive);
+
+                if (activeSemester == null)
+                {
+                    // If no active semester, return empty dashboard
+                    return View(new StaffDashboardVM
+                    {
+                        TotalClasses = 0,
+                        TotalStudents = 0,
+                        AverageAttendance = 0,
+                        MyClasses = new List<ClassSummaryVM>(),
+                        TodaySchedule = new List<ScheduleItemVM>(),
+                        PendingAttendance = new List<PendingAttendanceVM>()
+                    });
+                }
+
+                // Get all class sections for this staff in active semester
+                var sections = db.ClassSections
+                    .Include(c => c.Course)
+                    .Include(c => c.Room)
+                    .Include(c => c.Semester)
+                    .Where(c => c.StaffId == staffId && c.SemesterId == activeSemester.Id)
+                    .ToList();
+
+                var totalClasses = sections.Count;
+
+                // Calculate total students and attendance for each class
+                var classSummaries = new List<ClassSummaryVM>();
+                var allStudentIds = new HashSet<string>();
+                var totalAttendancePercentage = 0.0;
+                var classesWithAttendance = 0;
+
+                foreach (var section in sections)
+                {
+                    var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
+                    var enrolledStudents = enrolledStudentsQuery.ToList();
+                    var studentCount = enrolledStudents.Count;
+                    
+                    foreach (var student in enrolledStudents)
+                    {
+                        allStudentIds.Add(student.Id);
+                    }
+
+                    // Calculate attendance percentage for this class
+                    var attendances = db.Attendances
+                        .Where(a => a.ClassSectionId == section.SectionId)
+                        .ToList();
+
+                    var presentCount = attendances.Count(a => a.Status == "Present" || a.Status == "Late");
+                    var absentCount = attendances.Count(a => a.Status == "Absent");
+                    var attendancePercentage = CalculateAttendancePercentage(presentCount, absentCount);
+
+                    if (presentCount + absentCount > 0)
+                    {
+                        totalAttendancePercentage += attendancePercentage;
+                        classesWithAttendance++;
+                    }
+
+                    // Format days (e.g., "Mon, Wed, Fri")
+                    var daysList = section.Day.Split(',').Select(d => d.Trim()).ToList();
+                    var daysDisplay = string.Join(", ", daysList.Select(d => 
+                    {
+                        var dayName = d.Length >= 3 ? d.Substring(0, 3) : d;
+                        return dayName;
+                    }));
+
+                    classSummaries.Add(new ClassSummaryVM
+                    {
+                        SectionId = section.SectionId,
+                        CourseId = section.Course?.Id ?? "",
+                        CourseName = section.Course?.Name ?? "",
+                        SectionType = section.SectionType ?? "",
+                        Room = section.Room != null ? (!string.IsNullOrEmpty(section.Room.Block) ? $"Block {section.Room.Block} – {section.Room.Id}" : section.Room.Id) : "",
+                        Days = daysDisplay,
+                        Time = $"{section.StartTime:hh:mm tt} – {section.EndTime:hh:mm tt}",
+                        StudentCount = studentCount,
+                        AttendancePercentage = attendancePercentage
+                    });
+                }
+
+                var totalStudents = allStudentIds.Count;
+                var averageAttendance = classesWithAttendance > 0 
+                    ? Math.Round(totalAttendancePercentage / classesWithAttendance, 1) 
+                    : 0;
+
+                // Get today's schedule
+                var todaySchedule = sections
+                    .Where(s => s.Day.Equals(todayDayOfWeek, StringComparison.OrdinalIgnoreCase) ||
+                            s.Day.Split(',').Any(d => d.Trim().Equals(todayDayOfWeek, StringComparison.OrdinalIgnoreCase)))
+                    .Where(s => s.EndTime >= currentTime) // Only future classes today
+                    .OrderBy(s => s.StartTime)
+                    .Select(s => new ScheduleItemVM
+                    {
+                        StartTime = s.StartTime,
+                        EndTime = s.EndTime,
+                        CourseName = s.Course?.Name ?? "",
+                        Room = s.Room != null ? (!string.IsNullOrEmpty(s.Room.Block) ? $"Block {s.Room.Block} – {s.Room.Id}" : s.Room.Id) : ""
+                    })
+                    .Take(4)
+                    .ToList();
+
+                // Get pending attendance (classes available to start session)
+                var pendingAttendance = sections
+                    .Where(s => s.Day.Equals(todayDayOfWeek, StringComparison.OrdinalIgnoreCase) ||
+                            s.Day.Split(',').Any(d => d.Trim().Equals(todayDayOfWeek, StringComparison.OrdinalIgnoreCase)))
+                    .Where(s => currentTime >= s.StartTime && currentTime <= s.EndTime) // Classes currently happening
+                    .Where(s => !s.IsAttendanceSessionActive) // No active session running
+                    .OrderByDescending(s => s.StartTime) // Most recent first
+                    .Take(3) // Limit to 3 latest
+                    .Select(s => new PendingAttendanceVM
+                    {
+                        SectionId = s.SectionId,
+                        CourseId = s.Course?.Id ?? "",
+                        CourseName = s.Course?.Name ?? "",
+                        StartTime = s.StartTime,
+                        Date = todayDateOnly
+                    })
+                    .ToList();
+
+                 var viewModel = new StaffDashboardVM
+                {
+                    TotalClasses = totalClasses,
+                    TotalStudents = totalStudents,
+                    AverageAttendance = averageAttendance,
+                    MyClasses = classSummaries.Take(3).ToList(), // Show top 3 classes
+                    TodaySchedule = todaySchedule,
+                    PendingAttendance = pendingAttendance,
+                    TodayDate = todayDateOnly
+                };
+
+                return View(viewModel);
             }
 
 
@@ -61,16 +201,16 @@
                         s.Day.ToLower().StartsWith(todayAbbrevLower));
                 }
 
-                // search filter (only section id, course id ,room id)
+                // search filter (course id, course name, room id)
                 search = search?.Trim() ?? "";
                 if (!string.IsNullOrEmpty(search))
                 {
                     var searchLower = search.ToLower();
                     sectionsQuery = sectionsQuery.Where(s =>
-                        s.SectionId.ToLower().Contains(searchLower) ||
                         (s.Course != null && s.Course.Id.ToLower().Contains(searchLower)) ||
                         (s.Course != null && s.Course.Name.ToLower().Contains(searchLower)) ||
-                        (s.Room != null && s.Room.Id.ToLower().Contains(searchLower)));
+                        (s.Room != null && s.Room.Id.ToLower().Contains(searchLower))
+                    );
                 }
 
                 // other filters (works for both modes)
@@ -116,11 +256,10 @@
                     sectionsQuery = sectionsQuery.Where(s => s.SemesterId == semester);
                 }
 
-                // sorting
+                                //sort
+                sort = sort?.Trim() ?? "";
                 sectionsQuery = sort switch
                 {
-                    "1" => sectionsQuery.OrderBy(s => s.SectionId),
-                    "2" => sectionsQuery.OrderByDescending(s => s.SectionId),
                     "3" => sectionsQuery.OrderBy(s => s.Day),
                     "4" => sectionsQuery.OrderByDescending(s => s.Day),
                     "5" => sectionsQuery.OrderBy(s => s.StartTime),
@@ -399,6 +538,7 @@
             private void AutoMarkAbsents(string sectionId, DateOnly date, string staffId)
             {
                 var section = db.ClassSections
+                    .Include(c => c.Semester)
                     .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
                 if (section == null) return;
 
