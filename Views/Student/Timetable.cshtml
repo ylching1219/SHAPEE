@@ -675,34 +675,37 @@
             }
 
             // NEW: Update course materials table
-            function updateCourseMaterials(semesterId) {
-                $('#courseMaterialsContainer').html(
-                    '<div class="text-center py-5">' +
-                    '<div class="spinner-border text-primary" role="status">' +
-                    '<span class="sr-only">Loading...</span>' +
-                    '</div>' +
-                    '<p class="mt-2 text-muted">Loading course materials...</p>' +
-                    '</div>'
-                );
+                    function updateCourseMaterials(semesterId) {
+            console.log('updateCourseMaterials called with:', semesterId);
 
-                $.ajax({
-                    url: '@Url.Action("GetCourseMaterialsData", "Student")',
-                    type: 'GET',
-                    data: { semesterId: semesterId },
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(data) {
-                        $('#courseMaterialsContainer').html(data);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error loading course materials:', error);
-                        $('#courseMaterialsContainer').html(
-                            '<p class="text-muted text-center">Error loading course materials. Please try again.</p>'
-                        );
-                    }
-                });
-            }
+            $('#courseMaterialsContainer').html(
+                '<div class="text-center py-5">' +
+                '<div class="spinner-border text-primary" role="status">' +
+                '<span class="sr-only">Loading...</span>' +
+                '</div>' +
+                '<p class="mt-2 text-muted">Loading course schedule...</p>' +
+                '</div>'
+            );
+
+            $.ajax({
+                url: '@Url.Action("GetTimetableAttData", "Student")',  // ← CORRECT NAME
+                type: 'GET',
+                data: { semesterId: semesterId },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    console.log('Course schedule data received');
+                    $('#courseMaterialsContainer').html(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading course schedule:', error);
+                    $('#courseMaterialsContainer').html(
+                        '<p class="text-muted text-center">Error loading course schedule. Please try again.</p>'
+                    );
+                }
+            });
+        }
         });
 
         function showClassDetails(sectionId, courseId, courseName, sectionType, startTime, endTime, roomId, staffName) {

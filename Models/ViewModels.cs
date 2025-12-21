@@ -627,6 +627,19 @@ namespace SHAPEE.Models
         public Dictionary<string, double> AttendancePercentages { get; set; } = new();
     }
 
+    public class StaffTimetableVM
+    {
+        public Staff Staff { get; set; }
+        public List<ClassSection> ClassSections { get; set; } = new List<ClassSection>();
+        public List<Semester> Semesters { get; set; } = new List<Semester>();
+        public string? SelectedSemesterId { get; set; }
+        public Semester? SelectedSemester { get; set; }
+        public int TotalWeeks { get; set; }
+        public int SelectedWeekNumber { get; set; }
+        public DateTime? WeekStartDate { get; set; }
+        public DateTime? WeekEndDate { get; set; }
+    }
+
 
     public class EmailVs
     {

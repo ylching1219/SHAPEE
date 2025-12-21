@@ -1,0 +1,73 @@
+﻿@model StaffTimetableVM
+@if (!Model.ClassSections.Any())
+{
+    <p class="text-muted text-center">No course schedule available.</p>
+}
+else
+{
+    var groupedCourses = Model.ClassSections
+        .GroupBy(cs => cs.Course.Id)
+        .Select(g => new
+        {
+            Course = g.First().Course,
+            Sessions = g.ToList()
+        })
+        .OrderBy(x => x.Course.Id)
+        .ToList();
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+            <thead class="bg-light">
+                <tr>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 30%;">Course</th>
+                    <th style="width: 35%;">Day & Time (Duration)</th>
+                    <th style="width: 15%;">Venue</th>
+                    <th style="width: 15%;">Tutorial Group</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < groupedCourses.Count; i++)
+                {
+                    var item = groupedCourses[i];
+                    var course = item.Course;
+                    var sessions = item.Sessions;
+
+                    var colors = new[] { "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c" };
+                    var courseColor = colors[i % colors.Length];
+
+                    <tr>
+                        <td class="text-center">@(i + 1)</td>
+                        <td>
+                            <strong>@course.Id</strong> @course.Name
+                        </td>
+                        <td>
+                            @foreach (var session in sessions.OrderBy(s => s.Day))
+                            {
+                                var duration = (session.EndTime.ToTimeSpan() - session.StartTime.ToTimeSpan()).TotalHours;
+                                <div class="mb-1">
+                                    <strong>@session.Day</strong>,
+                                    @session.StartTime.ToString("h:mm tt") - @session.EndTime.ToString("h:mm tt")
+                                    ( @session.SectionType: @duration.ToString("0.0") hours )
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var session in sessions.OrderBy(s => s.Day))
+                            {
+                                <div class="mb-1">@(session.Room?.Id ?? "TBA")</div>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var session in sessions.OrderBy(s => s.Day))
+                            {
+                                var groupName = session.TutorialGroup?.GroupName ?? "All Students";
+                                <div class="mb-1">@groupName</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
