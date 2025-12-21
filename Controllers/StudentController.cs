@@ -2341,7 +2341,9 @@ namespace SHAPEE.Controllers
                 .Include(cs => cs.Staff)
                 .Include(cs => cs.Room)
                 .Include(cs => cs.Semester)
-                .Where(cs => cs.SemesterId == semesterId)
+                .Where(cs => cs.SemesterId == semesterId
+                    && cs.YearLevel == student.YearLevel
+                    && cs.Sem == student.Semester)
                 .AsQueryable();
 
             List<ClassSection> classSections = new List<ClassSection>();

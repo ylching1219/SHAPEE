@@ -277,25 +277,28 @@
             const form = document.getElementById('studentForm');
             const statusGroup = document.getElementById('statusGroup');
             const contactNumberInput = document.getElementById('contactNumber');
+            const facultySelect = document.getElementById('faculty');
+            const programSelect = document.getElementById('program');
+            const yearSelect = document.getElementById('yearLevel'); 
 
             contactNumberInput.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '');
+                this.value = this.value.replace(/[^0-9]/g, '');
             });
 
             contactNumberInput.addEventListener('keypress', function(e) {
-            const charCode = e.which ? e.which : e.keyCode;
-            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
-                e.preventDefault();
-                return false;
-            }
-            return true;
+                const charCode = e.which ? e.which : e.keyCode;
+                if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    e.preventDefault();
+                    return false;
+                }
+                return true;
             });
 
             contactNumberInput.addEventListener('paste', function(e) {
-            e.preventDefault();
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            const numbersOnly = pastedText.replace(/[^0-9]/g, '');
-            this.value = numbersOnly;
+                e.preventDefault();
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+                this.value = numbersOnly;
             });
 
             const programsByFaculty = {};
@@ -318,12 +321,40 @@
                     </text>
             }
 
-            const facultySelect = document.getElementById('faculty');
-            const programSelect = document.getElementById('program');
+            function updateYearOptions() {
+
+                const selectedProgramName = programSelect.value || "";
+
+                yearSelect.innerHTML = '<option value="">Year</option>';
+
+                if (!selectedProgramName) {
+                    yearSelect.disabled = true;
+                    return;
+                }
+
+                yearSelect.disabled = false;
+
+                let maxYears = 3; 
+
+                if (selectedProgramName.toLowerCase().includes("diploma")) {
+                    maxYears = 2; 
+                }
+
+                for (let i = 1; i <= maxYears; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    yearSelect.appendChild(option);
+                }
+            }
 
             facultySelect.addEventListener('change', function() {
                 const selectedFaculty = this.value;
+
                 programSelect.innerHTML = '<option value="">Select Program</option>';
+
+                yearSelect.innerHTML = '<option value="">Year</option>';
+                yearSelect.disabled = true;
 
                 if (selectedFaculty && programsByFaculty[selectedFaculty]) {
                     programSelect.disabled = false;
@@ -341,6 +372,8 @@
                 programSelect.value = '';
             });
 
+            programSelect.addEventListener('change', updateYearOptions);
+
             window.prepareAddModal = function() {
                 modalTitle.innerText = 'Add New Student';
                 form.setAttribute('action', '@Url.Action("CreateStudent", "Admin")');
@@ -349,8 +382,60 @@
                 statusGroup.style.display = 'none';
 
                 facultySelect.value = '';
+
                 programSelect.disabled = true;
                 programSelect.innerHTML = '<option value="">Select Faculty First</option>';
+
+                yearSelect.disabled = true;
+                yearSelect.innerHTML = '<option value="">Year</option>';
+
+                form.classList.remove('was-validated');
+                document.querySelectorAll('.form-control').forEach(input => {
+                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-valid');
+                });
+            };
+
+            window.prepareEditModal = function(element) {
+                const row = element.closest('tr');
+                const studentData = JSON.parse(row.getAttribute('data-student'));
+
+                modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
+                form.setAttribute('action', '@Url.Action("EditStudent", "Admin")');
+
+                document.getElementById('studentId').value = studentData.Id;
+                document.getElementById('firstName').value = studentData.FirstName;
+                document.getElementById('lastName').value = studentData.LastName;
+                document.getElementById('gender').value = studentData.Gender || '';
+                document.getElementById('studentEmail').value = studentData.Email;
+                document.getElementById('contactNumber').value = studentData.Contact || '';
+
+                document.getElementById('semester').value = studentData.Semester || '1';
+                document.getElementById('status').value = (studentData.Status || '').trim();
+
+                let foundFaculty = '';
+                for (const [faculty, programs] of Object.entries(programsByFaculty)) {
+                    if (programs.some(p => p.name === studentData.Program)) {
+                        foundFaculty = faculty;
+                        break;
+                    }
+                }
+
+                if (foundFaculty) {
+
+                    facultySelect.value = foundFaculty;
+
+                    facultySelect.dispatchEvent(new Event('change'));
+
+                    setTimeout(() => {
+                        programSelect.value = studentData.Program;
+                        updateYearOptions();
+
+                        yearSelect.value = studentData.YearLevel;
+                    }, 0);
+                }
+
+                statusGroup.style.display = 'block';
 
                 form.classList.remove('was-validated');
                 document.querySelectorAll('.form-control').forEach(input => {
@@ -366,50 +451,6 @@
                 }
                 form.classList.add('was-validated');
             }, false);
-
-            window.prepareEditModal = function(element) {
-                const row = element.closest('tr');
-                const studentData = JSON.parse(row.getAttribute('data-student'));
-
-                modalTitle.innerText = 'Edit Student: ' + studentData.FirstName + ' ' + studentData.LastName;
-                form.setAttribute('action', '@Url.Action("EditStudent", "Admin")');
-
-                document.getElementById('studentId').value = studentData.Id;
-                document.getElementById('firstName').value = studentData.FirstName;
-                document.getElementById('lastName').value = studentData.LastName;
-                document.getElementById('gender').value = studentData.Gender || '';
-                document.getElementById('studentEmail').value = studentData.Email;
-                document.getElementById('contactNumber').value = studentData.Contact || '';
-                document.getElementById('program').value = studentData.Program;
-                document.getElementById('yearLevel').value = studentData.YearLevel;
-                document.getElementById('semester').value = studentData.Semester || '1';
-                document.getElementById('status').value = (studentData.Status || '').trim();
-
-                let foundFaculty = '';
-                for (const [faculty, programs] of Object.entries(programsByFaculty)) {
-                    if (programs.some(p => p.name === studentData.Program)) {
-                        foundFaculty = faculty;
-                        break;
-                    }
-                }
-
-                if (foundFaculty) {
-                    facultySelect.value = foundFaculty;
-                    facultySelect.dispatchEvent(new Event('change'));
-
-                    setTimeout(() => {
-                        programSelect.value = studentData.Program;
-                    }, 0);
-                }
-
-                statusGroup.style.display = 'block';
-
-                form.classList.remove('was-validated');
-                document.querySelectorAll('.form-control').forEach(input => {
-                    input.classList.remove('is-invalid');
-                    input.classList.remove('is-valid');
-                });
-            };
 
             window.prepareDeleteModal = function(element) {
                 const row = element.closest('tr');
@@ -454,8 +495,10 @@
                 });
             }, 5000);
 
-            document.getElementById('exportCsvBtn').addEventListener('click', function() {
-                alert('Export CSV functionality to be implemented');
+            $("#exportCsvBtn").on("click", function () {
+                const form = $("#filterForm")[0];
+                const params = new URLSearchParams(new FormData(form));
+                window.location.href = '/Admin/ExportStudentCsv?' + params.toString();
             });
         });
     </script>

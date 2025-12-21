@@ -30,12 +30,16 @@ public class AccountController(DB db, Helper hp) : Controller
 
         if (u != null)
         {
-            if (u.Status == "Locked") 
-            { 
+            if (u.Status == "Locked")
+            {
                 ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration.");
                 return View(vm);
             }
-           
+            else if (u.Status == "Suspended")
+            {
+                ModelState.AddModelError("", "Your account has been suspended. Please contact Administration.");
+                return View(vm);
+            }
         }
         else
         {
@@ -56,11 +60,10 @@ public class AccountController(DB db, Helper hp) : Controller
                 }
                 else
                 {
-                    ModelState.AddModelError("",
-                        "Please check your ID or password and try again. (" + (3 - u.LoginAttempts) + " attempt(s) remaining)");
+                    ModelState.AddModelError("", "Please check your ID or password and try again. (" + (3 - u.LoginAttempts) + " attempt(s) remaining)");
                 }
 
-                db.SaveChanges(); 
+                db.SaveChanges();
             }
             else
             {
@@ -71,26 +74,27 @@ public class AccountController(DB db, Helper hp) : Controller
         }
 
         u!.LoginAttempts = 0;
-        if (u.Status != "LockedPayment")
+
+        if (u.Status != "LockedPayment" && u.Status != "Suspended")
+        {
             u.Status = "Active";
+        }
+
         db.SaveChanges();
 
         hp.SignIn(u.Id, u.FullName, u.Role, vm.RememberMe);
 
-        //check payment reminders on login
         if (u.Role == "Student")
         {
-            var studentId = u.Id; //capture the ID for use in background task
+            var studentId = u.Id;
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    //create new scope for background task
                     using var scope = HttpContext.RequestServices.CreateScope();
                     var scopedDb = scope.ServiceProvider.GetRequiredService<DB>();
                     var scopedHelper = scope.ServiceProvider.GetRequiredService<Helper>();
-                    
-                    //check payment reminders
+
                     var today = DateTime.Today;
                     var threeDaysFromNow = today.AddDays(3);
 
@@ -98,34 +102,30 @@ public class AccountController(DB db, Helper hp) : Controller
                         .Include(i => i.Student)
                         .Where(i => i.StudentId == studentId
                             && !i.IsPaid
-                            && i.DueDate.Date >= today  //not overdue
-                            && i.DueDate.Date <= threeDaysFromNow  //due in 3 days or less
+                            && i.DueDate.Date >= today
+                            && i.DueDate.Date <= threeDaysFromNow
                             && i.Student != null
                             && !string.IsNullOrEmpty(i.Student.Email))
                         .ToList();
 
                     foreach (var invoice in invoicesToRemind)
                     {
-                        //check if reminder notification was already sent today
                         var reminderSentToday = scopedDb.Notification
                             .Any(n => n.UserId == studentId
                                 && n.Title == "Payment Reminder"
                                 && n.Message.Contains(invoice.Id)
                                 && n.CreatedAt.Date == today);
 
-                        if (reminderSentToday)
-                            continue; //skip if already sent today
+                        if (reminderSentToday) continue;
 
                         var student = invoice.Student;
                         var studentName = student.FullName?.Trim() ?? student.Id;
-                        
-                        //calculate days until due for the message
+
                         var daysUntilDue = (invoice.DueDate.Date - today).Days;
-                        var daysText = daysUntilDue == 0 ? "today" : 
-                                       daysUntilDue == 1 ? "1 day" : 
+                        var daysText = daysUntilDue == 0 ? "today" :
+                                       daysUntilDue == 1 ? "1 day" :
                                        $"{daysUntilDue} days";
 
-                        //send email
                         await scopedHelper.SendPaymentReminderEmail(
                             student.Email,
                             studentName,
@@ -134,7 +134,6 @@ public class AccountController(DB db, Helper hp) : Controller
                             invoice.DueDate
                         );
 
-                        //send notification regardless of email success
                         HomeController.CreateNotificationForUser(
                             scopedDb,
                             studentId,
@@ -152,14 +151,12 @@ public class AccountController(DB db, Helper hp) : Controller
             });
         }
 
-        //if payment locked student log in force it into Current Billing tab
         if (u.Role == "Student" && u.Status == "LockedPayment")
         {
             TempData["PaymentLockMessage"] = "Your account is locked due to overdue fees. Please complete payment to regain access.";
             return RedirectToAction("CurrentBilling", "Student");
         }
 
-        // Redirection based on role
         if (!string.IsNullOrEmpty(returnURL))
         {
             return LocalRedirect(returnURL);

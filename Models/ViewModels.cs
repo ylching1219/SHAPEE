@@ -63,6 +63,48 @@ namespace SHAPEE.Models
         public Faculty? EditFaculty { get; set; }
     }
 
+    public class StudentCsvVM
+    {
+        public string StudentId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Contact { get; set; }
+        public string Gender { get; set; }
+        public string Program { get; set; }
+        public int Year { get; set; }
+        public int Semester { get; set; }
+        public string Status { get; set; }
+        public string DateJoined { get; set; }
+    }
+
+    public class StaffCsvVM
+    {
+        public string StaffId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Contact { get; set; }
+        public string Gender { get; set; }
+        public string Faculty { get; set; }
+        public string Status { get; set; }
+        public string DateJoined { get; set; }
+    }
+
+    public class AdminCsvVM
+    {
+        public string AdminId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Contact { get; set; }
+        public string Status { get; set; }
+    }
+
+    public class FacultyCsvVM
+    {
+        public string FacultyCode { get; set; } // Maps to Id (e.g., FOCS)
+        public string FacultyName { get; set; } // Maps to Name
+        public string CostPerCreditHour { get; set; } // Formatted with RM
+    }
+
     //YL
 
 
