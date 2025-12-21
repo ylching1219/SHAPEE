@@ -1442,7 +1442,6 @@ namespace SHAPEE.Controllers
                 );
             }
 
-            TempData["SuccessMessage"] = "Payment successful (Stripe).";
             return RedirectToAction("PaymentHistory");
         }
 
