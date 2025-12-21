@@ -36,7 +36,7 @@
                 <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditAdminModal" onclick="prepareAddAdminModal()">
                     <i class="fas fa-user-plus mr-1"></i> Add Admin
                 </button>
-                <button class="btn btn-outline-primary btn-sm" id="exportAdminCsvBtn">
+                <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
                     <i class="fas fa-download mr-1"></i> Export CSV
                 </button>
             </div>
@@ -294,9 +294,13 @@
                 });
             }, 5000);
 
-            document.getElementById('exportAdminCsvBtn').addEventListener('click', function() {
-                alert('Export CSV functionality to be implemented');
-            });
+          $("#exportCsvBtn").on("click", function () {
+
+            const form = $("#filterForm")[0];
+            const params = new URLSearchParams(new FormData(form));
+
+            window.location.href = '/Admin/ExportAdminCsv?' + params.toString();
+           });
         });
     </script>
 }

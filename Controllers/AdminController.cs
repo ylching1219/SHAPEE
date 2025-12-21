@@ -318,11 +318,21 @@ namespace SHAPEE.Controllers
                 .Include(s => s.Program)
                 .AsQueryable();
 
-            name = name?.Trim() ?? "";
+            name = name?.Trim();
+
             if (!string.IsNullOrEmpty(name))
             {
-                filteredStudent = filteredStudent
-                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var term in searchTerms)
+                {
+
+                    var tempTerm = term;
+
+                    filteredStudent = filteredStudent.Where(s =>
+                        s.FirstName.Contains(tempTerm) ||
+                        s.LastName.Contains(tempTerm));
+                }
             }
 
             filter1 = filter1?.Trim() ?? "";
@@ -362,11 +372,21 @@ namespace SHAPEE.Controllers
                 .Include(s => s.Faculty)
                 .AsQueryable();
 
-            name = name?.Trim() ?? "";
+            name = name?.Trim();
+
             if (!string.IsNullOrEmpty(name))
             {
-                filteredStaff = filteredStaff
-                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var term in searchTerms)
+                {
+
+                    var tempTerm = term;
+
+                    filteredStaff = filteredStaff.Where(s =>
+                        s.FirstName.Contains(tempTerm) ||
+                        s.LastName.Contains(tempTerm));
+                }
             }
 
             filter1 = filter1?.Trim() ?? "";
@@ -406,11 +426,21 @@ namespace SHAPEE.Controllers
             var filteredAdmin = db.Admins
                 .AsQueryable();
 
-            name = name?.Trim() ?? "";
+            name = name?.Trim();
+
             if (!string.IsNullOrEmpty(name))
             {
-                filteredAdmin = filteredAdmin
-                    .Where(s => (s.FirstName + " " + s.LastName).Contains(name));
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var term in searchTerms)
+                {
+
+                    var tempTerm = term;
+
+                    filteredAdmin = filteredAdmin.Where(s =>
+                        s.FirstName.Contains(tempTerm) ||
+                        s.LastName.Contains(tempTerm));
+                }
             }
 
             var result = filteredAdmin
@@ -433,6 +463,142 @@ namespace SHAPEE.Controllers
                 .Range(1, length)
                 .Select(_ => valid[random.Next(valid.Length)])
                 .ToArray());
+        }
+
+        public IActionResult ExportStudentCsv(string? name, string? filter1, string? filter2, string? filter3)
+        {
+            var query = db.Students
+                .Include(s => s.Program)
+                .AsQueryable();
+
+            name = name?.Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var term in searchTerms)
+                {
+                    var tempTerm = term;
+                    query = query.Where(s =>
+                        s.FirstName.Contains(tempTerm) ||
+                        s.LastName.Contains(tempTerm));
+                }
+            }
+
+            if (!string.IsNullOrEmpty(filter1)) query = query.Where(s => s.Status == filter1);
+            if (!string.IsNullOrEmpty(filter2)) query = query.Where(s => s.Gender == filter2);
+            if (!string.IsNullOrEmpty(filter3)) query = query.Where(s => s.ProgramId == filter3);
+
+            var data = query
+                .OrderBy(s => s.Id)
+                .Select(s => new StudentCsvVM
+                {
+                    StudentId = s.Id,
+                    FullName = s.LastName + " " + s.FirstName,
+                    Email = s.Email,
+                    Contact = s.Contact ?? "-",
+                    Gender = s.Gender,
+
+                    Program = (s.Program != null ? s.Program.Id : "N/A") + "Y" + s.YearLevel + "S" + s.Semester,
+
+                    Year = s.YearLevel,
+                    Semester = s.Semester,
+                    Status = s.Status,
+                    DateJoined = s.DateJoin.ToString("yyyy-MM-dd")
+                })
+                .ToList();
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", $"Students_List_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        }
+
+        public IActionResult ExportStaffCsv(string? name, string? filter1, string? filter2, string? filter3)
+        {
+            var query = db.Staffs
+                .Include(s => s.Faculty)
+                .AsQueryable();
+
+            name = name?.Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var term in searchTerms)
+                {
+                    var tempTerm = term;
+                    query = query.Where(s =>
+                        s.FirstName.Contains(tempTerm) ||
+                        s.LastName.Contains(tempTerm));
+                }
+            }
+
+            if (!string.IsNullOrEmpty(filter1))
+            {
+                query = query.Where(s => s.Status == filter1);
+            }
+
+            if (!string.IsNullOrEmpty(filter2))
+            {
+                query = query.Where(s => s.Gender == filter2);
+            }
+
+            if (!string.IsNullOrEmpty(filter3))
+            {
+                query = query.Where(s => s.FacultyId == filter3);
+            }
+
+            var data = query
+                .OrderBy(s => s.Id)
+                .Select(s => new StaffCsvVM
+                {
+                    StaffId = s.Id,
+                    FullName = s.LastName + " " + s.FirstName,
+                    Email = s.Email,                   
+                    Contact = s.Contact ?? "-",       
+
+                    Gender = s.Gender,  
+
+                    Faculty = s.Faculty != null ? s.Faculty.Name : (s.FacultyId ?? "-"),
+
+                    Status = s.Status,   
+
+                    DateJoined = s.DateJoin.ToString("yyyy-MM-dd")
+                })
+                .ToList();
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", $"Staffs_List_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        }
+
+        public IActionResult ExportAdminCsv(string? name)
+        {
+            var query = db.Admins.AsQueryable();
+
+            name = name?.Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var term in searchTerms)
+                {
+                    var tempTerm = term;
+                    query = query.Where(a =>
+                        a.FirstName.Contains(tempTerm) ||
+                        a.LastName.Contains(tempTerm));
+                }
+            }
+
+            var data = query
+                .OrderBy(a => a.Id)
+                .Select(a => new AdminCsvVM
+                {
+                    AdminId = a.Id,
+                    FullName = a.LastName + " " + a.FirstName,
+                    Email = a.Email,
+                    Contact = a.Contact ?? "-",
+                    Status = a.Status
+                })
+                .ToList();
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", $"Admin_List_{DateTime.Now:yyyyMMdd_HHmm}.csv");
         }
 
         //Add Student
