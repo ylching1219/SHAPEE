@@ -58,7 +58,7 @@
                         <div class="col-12 col-md-3">
                             <select asp-for="FacultyId"
                                     asp-items="ViewBag.FacultyList"
-                                    class="form-control filter">
+                                    class="form-control">
                                 <option value="">Select Faculty</option>
                             </select>
                         </div>
@@ -170,6 +170,16 @@
 
              $("#program").empty().append('<option value="">Select Program</option>');
              $("#program").prop("disabled", true);
+             $("#classTableBody").html(
+                 ` <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-0">Please Select Program To View</p>
+                        </td>
+                    </tr>`
+             );
+             $("#SemesetId").val("").trigger("change");
+             $("#type").val("");
              if (!facultyId) return;
 
              $.ajax({
