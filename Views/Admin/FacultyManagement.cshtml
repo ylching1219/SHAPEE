@@ -261,6 +261,14 @@
             document.getElementById('facultyToDeleteName').innerText = facultyName;
             document.getElementById('deleteFacultyId').value = facultyId;
         };
+
+        $("#exportCsvBtn").on("click", function () {
+
+        const form = $("#filterForm")[0];
+        const params = new URLSearchParams(new FormData(form));
+
+        window.location.href = '/Admin/ExportFacultiesCsv?' + params.toString();
+        });
     </script>
 
 }

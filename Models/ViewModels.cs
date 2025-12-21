@@ -98,6 +98,13 @@ namespace SHAPEE.Models
         public string Status { get; set; }
     }
 
+    public class FacultyCsvVM
+    {
+        public string FacultyCode { get; set; } // Maps to Id (e.g., FOCS)
+        public string FacultyName { get; set; } // Maps to Name
+        public string CostPerCreditHour { get; set; } // Formatted with RM
+    }
+
     //YL
 
 

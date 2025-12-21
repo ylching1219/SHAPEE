@@ -604,6 +604,58 @@ namespace SHAPEE.Controllers
             return File(bytes, "text/csv", $"Admin_List_{DateTime.Now:yyyyMMdd_HHmm}.csv");
         }
 
+        public IActionResult ExportFacultiesCsv(string? name, string? sort)
+        {
+            var query = db.Faculties.AsQueryable();
+
+            name = name?.Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                var searchTerms = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var term in searchTerms)
+                {
+                    var tempTerm = term;
+                    query = query.Where(f =>
+                        f.Id.Contains(tempTerm) ||
+                        f.Name.Contains(tempTerm));
+                }
+            }
+
+            switch (sort)
+            {
+                case "name_asc":
+                    query = query.OrderBy(f => f.Name);
+                    break;
+                case "name_desc":
+                    query = query.OrderByDescending(f => f.Name);
+                    break;
+                case "cost_asc":
+                    query = query.OrderBy(f => f.CostPerCreditHour);
+                    break;
+                case "cost_desc":
+                    query = query.OrderByDescending(f => f.CostPerCreditHour);
+                    break;
+                case "code_desc":
+                    query = query.OrderByDescending(f => f.Id);
+                    break;
+                default:
+                    query = query.OrderBy(f => f.Id);
+                    break;
+            }
+
+            var data = query
+                .Select(f => new FacultyCsvVM
+                {
+                    FacultyCode = f.Id,
+                    FacultyName = f.Name,
+                    CostPerCreditHour = "RM " + f.CostPerCreditHour.ToString("F2")
+                })
+                .ToList();
+
+            var bytes = Helper.ExportToCsv(data);
+            return File(bytes, "text/csv", $"Faculties_List_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        }
+
         //Add Student
         [HttpPost]
         [ValidateAntiForgeryToken]
