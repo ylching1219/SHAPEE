@@ -199,8 +199,8 @@
                         <div id="collapseMyClasses" class="collapse" aria-labelledby="headingMyClasses" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Classes</h6>
-                                <a class="collapse-item" href="#">View My Classes</a>
-                                <a class="collapse-item" href="#">Class Schedule</a>
+                                <a class="collapse-item" href="@Url.Action("StaffClassroomUI", "Staff")">View My Classes</a>
+                                <a class="collapse-item" href="@Url.Action("Timetable", "Staff")">Timetable</a>
                             </div>
                         </div>
                     </li>
@@ -304,9 +304,8 @@
                         <div id="collapseStudentClasses" class="collapse" aria-labelledby="headingStudentClasses" data-parent="#accordionSidebar">
                             <div class="bg-white py-2 collapse-inner rounded">
                                 <h6 class="collapse-header">Classes</h6>
-                                <a class="collapse-item" href="#">View My Classes</a>
+                                <a class="collapse-item" href="@Url.Action("ClassroomUI", "Student")">View My Classes</a>
                                 <a class="collapse-item" href="@Url.Action("Timetable", "Student")">Timetable</a>
-                                <a class="collapse-item" href="#">Class Schedule</a>
                             </div>
                         </div>
                     </li>

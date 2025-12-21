@@ -264,6 +264,12 @@ namespace SHAPEE.Models
         public int FlaggedCount { get; set; }
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
+
+        public int? SelectedWeek { get; set; }
+        public int TotalWeeks { get; set; }
+        public DateOnly WeekStartDate { get; set; }
+        public DateOnly WeekEndDate { get; set; }
+        public bool HasAttendanceForWeek { get; set; }
     }
 
     //student dashboard
@@ -654,6 +660,19 @@ namespace SHAPEE.Models
         public DateTime? WeekStartDate { get; set; }
         public DateTime? WeekEndDate { get; set; }
         public Dictionary<string, double> AttendancePercentages { get; set; } = new();
+    }
+
+    public class StaffTimetableVM
+    {
+        public Staff Staff { get; set; }
+        public List<ClassSection> ClassSections { get; set; } = new List<ClassSection>();
+        public List<Semester> Semesters { get; set; } = new List<Semester>();
+        public string? SelectedSemesterId { get; set; }
+        public Semester? SelectedSemester { get; set; }
+        public int TotalWeeks { get; set; }
+        public int SelectedWeekNumber { get; set; }
+        public DateTime? WeekStartDate { get; set; }
+        public DateTime? WeekEndDate { get; set; }
     }
 
 

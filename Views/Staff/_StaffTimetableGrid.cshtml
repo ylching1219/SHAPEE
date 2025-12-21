@@ -1,0 +1,122 @@
+﻿@model List<SHAPEE.Models.ClassSection>
+
+@{
+    var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    var timeSlots = new List<string>();
+    for (int hour = 8; hour <= 20; hour++)
+    {
+        timeSlots.Add($"{hour:D2}:00");
+        timeSlots.Add($"{hour:D2}:30");
+    }
+}
+
+<style>
+    .half-hour-slot {
+        min-width: 40px;
+        border-left: 1px solid #e3e6f0;
+    }
+
+    .hour-marker {
+        border-left: 2px solid #d1d3e2 !important;
+        font-weight: 600;
+    }
+</style>
+
+@if (!Model.Any())
+{
+    <div class="empty-timetable">
+        <i class="fas fa-calendar-times"></i>
+        <h5 class="text-muted">No Classes Scheduled</h5>
+        <p class="text-muted">No classes found for the selected week.</p>
+    </div>
+}
+else
+{
+    <div class="timetable-container">
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th class="time-column">Day/Time</th>
+                    @for (int i = 0; i < timeSlots.Count; i++)
+                    {
+                        var slot = timeSlots[i];
+                        var isHourMark = slot.EndsWith(":00");
+
+                        @if (isHourMark)
+                        {
+                            <th colspan="2" class="hour-marker">@slot.Substring(0, 5)</th>
+                        }
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in days)
+                {
+                    var classesForDay = Model.Where(cs => cs.Day == day).OrderBy(cs => cs.StartTime).ToList();
+
+                    <tr>
+                        <td class="time-cell"><strong>@day</strong></td>
+
+                        @{
+                            var processedSlots = new HashSet<int>();
+
+                            for (int i = 0; i < timeSlots.Count; i++)
+                            {
+                                if (processedSlots.Contains(i))
+                                {
+                                    continue;
+                                }
+
+                                var currentSlotTime = TimeOnly.Parse(timeSlots[i]);
+                                var nextSlotTime = i < timeSlots.Count - 1
+                                ? TimeOnly.Parse(timeSlots[i + 1])
+                                : TimeOnly.Parse("21:00");
+
+                                var classAtTime = classesForDay.FirstOrDefault(c =>
+                                c.StartTime >= currentSlotTime && c.StartTime < nextSlotTime);
+
+                                if (classAtTime != null)
+                                {
+                                    var durationMinutes = (classAtTime.EndTime - classAtTime.StartTime).TotalMinutes;
+                                    var slotsNeeded = (int)Math.Ceiling(durationMinutes / 30.0);
+
+                                    if (slotsNeeded < 1) slotsNeeded = 1;
+
+                                    for (int j = i + 1; j < i + slotsNeeded && j < timeSlots.Count; j++)
+                                    {
+                                        processedSlots.Add(j);
+                                    }
+
+                                    var blockClass = classAtTime.SectionType.ToLower() + "-block";
+                                    var typeAbbr = classAtTime.SectionType == "Lecture" ? "L" :
+                                    classAtTime.SectionType == "Tutorial" ? "T" : "P";
+
+                                    var roomId = classAtTime.Room?.Id ?? "TBA";
+                                    var groupName = classAtTime.TutorialGroup?.GroupName ?? "All";
+
+                                    <td class="day-cell half-hour-slot" colspan="@slotsNeeded">
+                                        <div class="class-block @blockClass"
+                                             onclick="showClassDetails('@classAtTime.SectionId', '@classAtTime.CourseId', '@classAtTime.Course.Name.Replace("'", "\\'").Replace("\"", "&quot;")', '@classAtTime.SectionType', '@classAtTime.StartTime.ToString("h:mm tt")', '@classAtTime.EndTime.ToString("h:mm tt")', '@roomId', '@groupName.Replace("'", "\\'").Replace("\"", "&quot;")')">
+                                            <div class="class-block-header">@classAtTime.CourseId (@typeAbbr)</div>
+                                            <div class="class-block-body">
+                                                @classAtTime.StartTime.ToString("h:mm tt") - @classAtTime.EndTime.ToString("h:mm tt")
+                                            </div>
+                                            <div class="class-block-body">@roomId</div>
+                                            <div class="class-block-footer">
+                                                @groupName
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td class="day-cell half-hour-slot"></td>
+                                }
+                            }
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

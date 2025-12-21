@@ -1,0 +1,84 @@
+-- Find students enrolled in class section: BF201-G1-L-b31f
+-- This is a Lecture section, so students are determined by ProgramCourses
+
+DECLARE @SectionId NVARCHAR(50) = 'BF201-G1-L-b31f';
+
+-- Get the class section details
+DECLARE @CourseId NVARCHAR(10);
+DECLARE @YearLevel INT;
+DECLARE @Sem INT;
+DECLARE @SemesterId NVARCHAR(10);
+DECLARE @SectionType NVARCHAR(20);
+
+SELECT 
+    @CourseId = CourseId,
+    @YearLevel = YearLevel,
+    @Sem = Sem,
+    @SemesterId = SemesterId,
+    @SectionType = SectionType
+FROM [dbo].[ClassSections]
+WHERE SectionId = @SectionId;
+
+-- Find students enrolled in this class section
+-- For Lecture: Students are enrolled if they are in programs that have this course
+--              in their current year level and semester
+-- For Tutorial/Practical: Students are enrolled via TutorialGroupId
+
+SELECT DISTINCT
+    u.Id AS StudentId,
+    u.FirstName,
+    u.LastName,
+    u.FirstName + ' ' + u.LastName AS FullName,
+    u.Email,
+    u.ProgramId,
+    p.Name AS ProgramName,
+    u.YearLevel,
+    u.Semester,
+    u.TutorialGroupId,
+    tg.GroupName AS TutorialGroupName,
+    cs.SectionId,
+    cs.CourseId,
+    c.Name AS CourseName,
+    cs.SectionType,
+    cs.Day,
+    cs.StartTime,
+    cs.EndTime,
+    cs.RoomId,
+    cs.SemesterId
+FROM 
+    [dbo].[ClassSections] cs
+    INNER JOIN [dbo].[Courses] c ON cs.CourseId = c.Id
+    -- For Lecture sections: Find students via ProgramCourses
+    LEFT JOIN [dbo].[ProgramCourses] pc 
+        ON cs.CourseId = pc.CourseId
+        AND cs.YearLevel = pc.YearLevel
+        AND cs.Sem = pc.Semester
+    LEFT JOIN [dbo].[Users] u 
+        ON u.Discriminator = 'Student'
+        AND u.ProgramId = pc.ProgramId
+        AND u.YearLevel = pc.YearLevel
+        AND u.Semester = pc.Semester
+    LEFT JOIN [dbo].[Programs] p ON u.ProgramId = p.Id
+    -- For Tutorial/Practical sections: Find students via TutorialGroup
+    LEFT JOIN [dbo].[TutorialGroups] tg 
+        ON cs.TutorialGroupId = tg.Id
+        AND u.TutorialGroupId = tg.Id
+WHERE 
+    cs.SectionId = @SectionId
+    AND (
+        -- For Lecture sections (TutorialGroupId IS NULL)
+        (cs.SectionType = 'Lecture' AND cs.TutorialGroupId IS NULL AND u.Id IS NOT NULL)
+        OR
+        -- For Tutorial/Practical sections (TutorialGroupId IS NOT NULL)
+        (cs.SectionType IN ('Tutorial', 'Practical') AND cs.TutorialGroupId IS NOT NULL AND u.TutorialGroupId = cs.TutorialGroupId)
+    )
+    -- Ensure student is in the correct semester
+    AND u.Id IN (
+        SELECT Id FROM [dbo].[Users] 
+        WHERE Discriminator = 'Student'
+        -- Note: You may need to match SemesterId with student's current semester
+        -- This assumes students have a way to track which semester they're in
+    )
+ORDER BY 
+    u.LastName, 
+    u.FirstName;

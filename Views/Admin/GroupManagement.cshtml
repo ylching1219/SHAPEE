@@ -21,6 +21,23 @@
     </div>
 }
 
+@if (TempData["UpdateSummary"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["UpdateSummary"]
+    </div>
+}
+
+@if (ViewBag.UpdateLogs != null)
+{
+    <ul>
+        @foreach (var log in ViewBag.UpdateLogs)
+        {
+            <li>@log</li>
+        }
+    </ul>
+}
+
 <!-- Header -->
 <div class="bg-white border-bottom px-4 py-3 mb-4">
     <h1 class="h3 mb-0 text-gray-800">Group Management</h1>
@@ -39,7 +56,10 @@
                         Groups
                     </h5>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEditModal" id="addData">
+                        <button type="button" class="btn btn-warning mr-2" data-toggle="modal" data-target="#updateConfirmationModal">
+                            Update All Groups & Students
+                        </button>
+                        <button class="btn btn-primary btn-sm mr-2" data-toggle="modal" data-target="#addEditModal" id="addData">
                             <i class="fas fa-user-plus mr-1"></i> Add Group
                         </button>
                         <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
@@ -61,7 +81,7 @@
                         <div class="col-12 col-md-5">
                             <select asp-for="ProgramId"
                                     asp-items="ViewBag.ProgramList"
-                                    class="select2 filter" >
+                                    class="select2 filter">
                                 <option value="">Select Program</option>
                             </select>
                         </div>
@@ -82,7 +102,7 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-1">
-                            <button type="reset" class="btn btn-secondary w-100" title="Reset filters">
+                            <button type="reset" id="resetBtn" class="btn btn-secondary w-100" title="Reset filters">
                                 <i class="fas fa-undo"></i>
                             </button>
                         </div>
@@ -111,7 +131,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Add New Faculty</h5>
-                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close" onclick="onAddLoaded()">
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -145,7 +165,6 @@
                                         <option value="1">1</option>
                                         <option value="2">2</option>
                                         <option value="3">3</option>
-                                        <option value="4">4</option>
                                     </select>
                                     <div class="invalid-feedback">Please select year level.</div>
                                 </div>
@@ -217,10 +236,47 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="updateConfirmationModal" tabindex="-1" role="alertdialog" aria-labelledby="updateConfirmationLabel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-gray-500 text-white">
+                <h5 class="modal-title font-weight-semibold" id="addEditModalLabel">Update Group & Student</h5>
+                <button class="close text-white closeBtn" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-warning mb-0" role="alert">
+                    Are you sure you want to <strong>update all groups</strong> and the <strong>related students' year and semester</strong>?
+                    This action cannot be undone.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdateBtn" data-post="@Url.Action("UpdateAllYearSem", "Admin")">Yes, Update</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
 
-        
+        $(".filter").on("change", function () {
+            $("#filterForm").submit();
+        });
+
+        $("#resetBtn").on("click", function () {
+            $('#filterForm .select2').val(null).trigger('change');
+            $("#filterForm").submit();
+        });
+
+
         function prepareDeleteModal(element) {
             var id = $(element).data("id");
             var name = $(element).data("groupname");
