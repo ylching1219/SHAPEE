@@ -1,6 +1,10 @@
 ﻿@model IEnumerable<Admin>
 @using System.Text.Json
 
+@{
+    var currentUserName = User?.Identity?.Name;
+}
+
 <table class="table table-hover mb-0" id="adminsTable">
     <thead class="bg-light">
         <tr>
@@ -44,8 +48,16 @@
                     admin.Contact,
                     admin.Status
                 });
-                <tr data-admin='@adminJson' data-admin-name="@admin.FullName" class="border-bottom">
-                    <td class="px-4 py-3 text-muted">@admin.Id</td>
+                var isCurrentUser = admin.Id == currentUserName;
+
+                <tr data-admin='@adminJson' data-admin-name="@admin.FullName" class="border-bottom @(isCurrentUser ? "bg-light" : "")">
+                    <td class="px-4 py-3 text-muted">
+                        @admin.Id
+                        @if (isCurrentUser)
+                        {
+                            <span class="badge badge-info badge-sm ml-1">You</span>
+                        }
+                    </td>
                     <td class="px-4 py-3">
                         <div class="font-weight-medium text-gray-900">@admin.FullName</div>
                     </td>
@@ -55,23 +67,48 @@
                         <span class="badge @statusClass badge-pill">@statusRaw</span>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditAdminModal">
-                                    <i class="fas fa-edit mr-2 text-primary"></i> Edit
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="toggleSuspend('@admin.Id', this); return false;">
-                                    <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteAdminModal">
-                                    <i class="fas fa-trash mr-2"></i> Delete
-                                </a>
+                        @if (isCurrentUser)
+                        {
+                            <!-- Limited actions for current user -->
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditAdminModal">
+                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit Profile
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item disabled text-muted" href="#" onclick="return false;" title="You cannot suspend your own account">
+                                        <i class="fas fa-ban mr-2"></i> Cannot Suspend Self
+                                    </a>
+                                    <a class="dropdown-item disabled text-muted" href="#" onclick="return false;" title="You cannot delete your own account">
+                                        <i class="fas fa-ban mr-2"></i> Cannot Delete Self
+                                    </a>
+                                </div>
                             </div>
-                        </div>
+                        }
+                        else
+                        {
+                            <!-- Full actions for other admins -->
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light" type="button" data-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                    <a class="dropdown-item" href="#" onclick="prepareEditModal(this); return false;" data-toggle="modal" data-target="#addEditAdminModal">
+                                        <i class="fas fa-edit mr-2 text-primary"></i> Edit
+                                    </a>
+                                    <a class="dropdown-item" href="#" onclick="toggleSuspend('@admin.Id', this); return false;">
+                                        <i class="fas fa-user-lock mr-2 text-warning"></i> @(status == "Suspended" ? "Activate" : "Suspend")
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="#" onclick="prepareDeleteModal(this); return false;" data-toggle="modal" data-target="#deleteAdminModal">
+                                        <i class="fas fa-trash mr-2"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        }
                     </td>
                 </tr>
             }
