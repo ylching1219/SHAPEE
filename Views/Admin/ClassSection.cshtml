@@ -71,7 +71,7 @@
     }
 
     .stat-icon {
-        color:white;
+        color: white;
     }
 
 </style>
@@ -137,44 +137,17 @@
 <div id="results" class="d-none">
     <!-- Stats Cards -->
     <div class="row g-4 mb-4 mt-4">
-        <div class="col-md-1"></div>
+
+        <div class="col-md-4"></div>
 
         <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-primary bg-opacity-10 me-3">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Active Groups</div>
-                        <div class="stat-number text-primary" id="statGroups">0</div>
-                        <div class="text-muted small" id="statSemester">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-2"></div>
-
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-warning bg-opacity-10 me-3">
-                        <i class="bi bi-calendar-check-fill"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Classes Generated</div>
-                        <div class="stat-number text-warning" id="statClasses">0</div>
-                        <div class="text-muted small">Auto-created</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
 
     <!-- Generated Classes -->
-    <div id="generatedClasses"></div>
+    <div id="generatedClasses">
+    </div>
 </div>
 
 
@@ -272,6 +245,10 @@
                  GroupList: groupList
             };
 
+            const container = document.getElementById('generatedClasses');
+            container.innerHTML = '';
+
+
              $.ajax({
                 url: '/Admin/CreateClass',
                 type: 'POST',
@@ -280,13 +257,65 @@
                 success: function (data) {
 
                     if(data.success){
-                        showAlert('success', 'Classes created successfully.');
-                        $("#statGroups").text(data.groupCnt);
-                        $("#statClasses").text(data.successClass.length);
-                        console.log(data.successClass); 
-                        console.log(data.failedClass);
+                        $("#statClasses").text();
                         groupList.length = 0;
                         $("#results").removeClass("d-none");
+                        console.log(data.successClass);
+                        const groupCard = document.createElement('div');
+                        groupCard.className = 'group-card card';
+
+                        groupCard.innerHTML = `
+                            <div class="group-header">
+                               <div class="card stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon bg-warning bg-opacity-10 me-3">
+                                            <i class="bi bi-calendar-check-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Classes Generated</div>
+                                            <div class="stat-number text-warning" id="statClasses">${data.successClass.length}</div>
+                                            <div class="text-muted small">Auto-created</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                            ${data.successClass.map(p => `
+                                <div class="course-item mb-3">
+                                    <div class="section-details">
+                                        <div class="row g-3">
+                                            <div class="col-md-2">
+                                                <div class="text-muted small">Group</div>
+                                                <div class="fw-semibold">${p.sectionType === 'Lecture' ? '-' : p.groupName}</div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="text-muted small">Course</div>
+                                                <div class="pending-text">${p.courseId}</div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="text-muted small">Teacher</div>
+                                                <div class="pending-text">${p.fullName}</div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="text-muted small">Room</div>
+                                                <div class="pending-text">${p.roomId}</div>
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <div class="text-muted small">Type</div>
+                                                <div class="pending-text">${p.sectionType}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        `;
+                        container.appendChild(groupCard);
 
                     } else {
                         showAlert('danger', 'Error: ' + data.message);
@@ -326,67 +355,14 @@
             const totalCourses = classData.reduce((sum, g) => sum + g.courses.length, 0);
             const totalClasses = totalCourses;
 
-            document.getElementById('statGroups').textContent = totalGroups;
-            document.getElementById('statSemester').textContent = currentAcademicInfo.semester;
-            document.getElementById('statCourses').textContent = totalCourses;
-            document.getElementById('statClasses').textContent = totalClasses;
 
-            document.getElementById('successText').textContent =
-                `System has automatically generated ${totalClasses} classes for ${currentAcademicInfo.semester} (${currentAcademicInfo.academicYear}) based on the program course structure.`;
+
 
             const container = document.getElementById('generatedClasses');
             container.innerHTML = '';
 
             classData.forEach(groupData => {
-                const groupCard = document.createElement('div');
-                groupCard.className = 'group-card card';
 
-                groupCard.innerHTML = `
-                    <div class="group-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h3 class="mb-1">${groupData.group}</h3>
-                                <div class="opacity-75">${groupData.year} - ${groupData.semester}</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="small opacity-75">Courses</div>
-                                <div class="display-4 fw-bold">${groupData.courses.length}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body p-4">
-                        ${groupData.courses.map(course => `
-                            <div class="course-item">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h5 class="mb-1">${course.code} - ${course.name}</h5>
-                                        <div class="text-muted small">${course.credits} Credits</div>
-                                    </div>
-                                </div>
-                                <div class="section-details">
-                                    <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <div class="text-muted small">Section</div>
-                                            <div class="fw-semibold">${groupData.group}</div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-muted small">Lecturer</div>
-                                            <div class="pending-text">To be assigned</div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-muted small">Schedule</div>
-                                            <div class="pending-text">To be scheduled</div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-muted small">Room</div>
-                                            <div class="pending-text">To be assigned</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
 
                 container.appendChild(groupCard);
             });

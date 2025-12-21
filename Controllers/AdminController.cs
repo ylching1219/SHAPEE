@@ -2105,7 +2105,7 @@ namespace SHAPEE.Controllers
         }
 
         //Class Section Management
-        public IActionResult ViewClass(string? FacultyId, string? ProgramId, string? SemesterId, string? type, string? editId)
+        public IActionResult ViewClass(string? ProgramId, string? SemesterId, string? type, string? editId)
         {
             ViewData["Title"] = "View Class Sections";
             var classSections = db.ClassSections
@@ -2128,14 +2128,6 @@ namespace SHAPEE.Controllers
 
             var lectureClassSec = classSections;
 
-            if (!string.IsNullOrEmpty(FacultyId))
-            {
-                classSections = classSections
-                    .Where(c =>
-                        c.TutorialGroup != null &&
-                        c.TutorialGroup.Program.FacultyId == FacultyId
-                    );
-            }
 
             if (!string.IsNullOrEmpty(ProgramId))
             {
@@ -2278,18 +2270,13 @@ namespace SHAPEE.Controllers
 
                         // check if lecture class exists for the course in the year level and semester
                         bool lectureExists = db.ClassSections
-                                                .Join(db.TutorialGroups,
-                                                      c => c.TutorialGroupId,
-                                                      g => g.Id,
-                                                      (c, g) => new { c, g })
-                                                .Where(x => x.c.CourseId == pc.CourseId &&
-                                                            x.c.YearLevel == group.YearLevel &&
-                                                            x.c.Sem == group.Semester &&
-                                                            x.c.SectionType == "Lecture" &&
-                                                            x.g != null &&
-                                                            x.g.Program.FacultyId == group.Program.FacultyId)
-                                                .Any();
-
+                            .Any(c =>
+                                c.CourseId == pc.CourseId &&
+                                c.YearLevel == group.YearLevel &&
+                                c.Sem == group.Semester &&
+                                c.SectionType == "Lecture" &&
+                                c.TutorialGroupId == null
+                            );
 
                         var staffs = db.Staffs
                             .Where(s => s.FacultyId == group.Program.FacultyId)
@@ -2367,10 +2354,11 @@ namespace SHAPEE.Controllers
             var successClassDto = successClass.Select(c => new
             {
                 c.SectionId,
+                c.TutorialGroup?.GroupName,
+                c.SectionType,
                 c.CourseId,
-                c.StaffId,
-                c.SemesterId,
-                c.YearLevel
+                c.Staff.FullName,
+                c.RoomId
             }).ToList();
 
             return Json(new
@@ -2469,7 +2457,7 @@ namespace SHAPEE.Controllers
                     CourseId = pc.CourseId,
                     StaffId = staff.Id,
                     SemesterId = semester!,
-                    TutorialGroupId = group.Id,
+                    TutorialGroupId = (sectionType=="Lecture"?null:group.Id),
                     SectionType = sectionType,
                     YearLevel = group.YearLevel,
                     Sem = group.Semester,
