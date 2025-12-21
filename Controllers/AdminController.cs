@@ -3652,34 +3652,6 @@ namespace SHAPEE.Controllers
 
                 db.SaveChanges();
 
-                //notify all students for any event change
-                var eventDateRange = startTime.Date == endTime.Date
-                    ? startTime.ToString("dd MMM yyyy")
-                    : $"{startTime:dd MMM yyyy} to {endTime:dd MMM yyyy}";
-
-                if (isNewEvent)
-                {
-                    //notify all students when a new event is created
-                    HomeController.CreateNotificationForAllStudents(
-                        db,
-                        "New Academic Calendar Event",
-                        $"A new {type} event '{title}' has been scheduled for {eventDateRange}. Please check the academic calendar for details.",
-                        "info",
-                        "/Student/ViewCalendar"
-                    );
-                }
-                else
-                {
-                    //notify all students when an event is updated
-                    HomeController.CreateNotificationForAllStudents(
-                        db,
-                        "Academic Calendar Event Updated",
-                        $"The {type} event '{title}' has been updated. New schedule: {eventDateRange}. Please check the academic calendar for details.",
-                        "info",
-                        "/Student/ViewCalendar"
-                    );
-                }
-
                 return Json(new
                 {
                     success = true,
@@ -3728,19 +3700,6 @@ namespace SHAPEE.Controllers
                 calendarEvent.EndTime = updatedEnd;
 
                 db.SaveChanges();
-
-                //notify all students when event date is changed
-                var eventDateRange = newStart.Date == updatedEnd.Date
-                    ? newStart.ToString("dd MMM yyyy")
-                    : $"{newStart:dd MMM yyyy} to {updatedEnd:dd MMM yyyy}";
-
-                HomeController.CreateNotificationForAllStudents(
-                    db,
-                    "Academic Calendar Event Rescheduled",
-                    $"The {calendarEvent.Type} event '{calendarEvent.Title}' has been rescheduled to {eventDateRange}. Please check the academic calendar for details.",
-                    "warning",
-                    "/Student/ViewCalendar"
-                );
 
                 return Json(new { success = true, message = "Event rescheduled successfully." });
             }
