@@ -1518,35 +1518,38 @@
                 return Json(savedMaterials);
             }
 
-            // =======================
-            // DELETE MATERIAL
-            // =======================
-            [HttpPost]
-            public IActionResult DeleteMaterial(string id)
+        // =======================
+        // DELETE MATERIAL
+        // =======================
+        [HttpPost]
+        public IActionResult DeleteMaterial(string id)
+        {
+            // 1. Find the material
+            var material = db.Materials.FirstOrDefault(m => m.Id == id);
+            if (material == null) return NotFound();
+
+            // 2. NEW: Remove any links in the junction table first
+            var taskLinks = db.TaskMaterials.Where(tm => tm.MaterialId == id);
+            db.TaskMaterials.RemoveRange(taskLinks);
+
+            // 3. Handle physical file deletion
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", material.FileUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
             {
-                var material = db.Materials.FirstOrDefault(m => m.Id == id);
-                if (material != null)
-                {
-                    var filePath = Path.Combine(
-                        Directory.GetCurrentDirectory(),
-                        "wwwroot",
-                        material.FileUrl.TrimStart('/')
-                    );
-
-                    if (System.IO.File.Exists(filePath))
-                        System.IO.File.Delete(filePath);
-
-                    db.Materials.Remove(material);
-                    db.SaveChanges();
-                }
-
-                return Ok();
+                System.IO.File.Delete(filePath);
             }
 
-            // =======================
-            // STAFF CLASSROOM UI
-            // =======================
-            public IActionResult StaffClassroomUI()
+            // 4. Remove the material and save
+            db.Materials.Remove(material);
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        // =======================
+        // STAFF CLASSROOM UI
+        // =======================
+        public IActionResult StaffClassroomUI()
             {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var coursesHeTeaches = db.ClassSections
