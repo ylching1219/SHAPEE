@@ -1,4 +1,0 @@
-﻿FOCS	Faculty of Computing & Information Technology	20.00
-FAFB	Faculty of Accountancy, Finance & Business	30.00
-FAS	Faculty of Applied Sciences	60.00
-FOET	Faculty of Engineering & Technology	50.00
