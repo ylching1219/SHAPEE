@@ -1,11 +1,16 @@
 ﻿@model SHAPEE.Models.CourseTask
 
+@{
+    ViewData["Title"] = "Submit Assignment";
+}
+
 <div class="container mt-4">
     <div class="mb-3">
         <a href="@Url.Action("TaskList", "Student")" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-left"></i> Back to Assignments
         </a>
     </div>
+
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
             <h2 class="mb-0">@Model.Title</h2>
@@ -17,6 +22,24 @@
                 <div class="col-md-8">
                     <h5>Instructions:</h5>
                     <p class="text-muted">@Model.Description</p>
+
+                    @if (Model.Materials != null && Model.Materials.Any())
+                    {
+                        <div class="mt-4">
+                            <h6 class="fw-bold"><i class="fas fa-paperclip"></i> Reference Materials:</h6>
+                            <ul class="list-group list-group-flush">
+                                @foreach (var taskMat in Model.Materials)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light border rounded mb-2">
+                                        <span>@taskMat.Material.Title</span>
+                                        <a href="@taskMat.Material.FileUrl" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-file-download"></i> View File
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
                 </div>
                 <div class="col-md-4 border-left">
                     <h5>Deadline:</h5>
@@ -26,6 +49,9 @@
                 </div>
             </div>
 
+            <hr />
+
+            @* --- Submission Logic --- *@
             @if (ViewBag.Submitted != null)
             {
                 <div class="alert alert-success">
@@ -37,8 +63,8 @@
 
                     @if (ViewBag.Submitted.Grade != null)
                     {
-                        <div class="mt-3 p-3 bg-white rounded border">
-                            <span class="badge badge-info">Grade: @ViewBag.Submitted.Grade/100</span>
+                        <div class="mt-3 p-3 bg-white rounded border text-dark">
+                            <span class="badge bg-info text-dark">Grade: @ViewBag.Submitted.Grade/100</span>
                             <p class="mt-2 mb-0"><strong>Feedback:</strong> @ViewBag.Submitted.Feedback</p>
                         </div>
                     }
@@ -52,12 +78,22 @@
             }
             else
             {
-                <form enctype="multipart/form-data" method="post" action="/Student/Upload/@Model.Id">
-                    <div class="form-group">
-                        <label class="font-weight-bold">Upload Submission (PDF/DOCX):</label>
-                        <input class="form-control-file" type="file" name="file" required />
+                @* Using asp-helpers for secure and accurate routing *@
+                <form enctype="multipart/form-data" method="post"
+                      asp-action="Upload"
+                      asp-controller="Student"
+                      asp-route-id="@Model.Id">
+
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold mb-2">Upload Submission (PDF/DOCX):</label>
+                        <input class="form-control" type="file" name="file" required />
                     </div>
-                    <button type="submit" class="btn btn-success px-5">Submit Assignment</button>
+
+                    <button type="submit" class="btn btn-success px-5">
+                        <i class="fas fa-upload"></i> Submit Assignment
+                    </button>
                 </form>
             }
         </div>

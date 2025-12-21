@@ -1,5 +1,5 @@
 ﻿@model ClassSectionVM
-<h1>@ViewBag.RoomList?.Count  tttt</h1>
+
 <!-- Success/Error Messages -->
 @if (TempData["SuccessMessage"] != null)
 {
@@ -38,12 +38,6 @@
                     <h5 class="mb-3 mb-md-0 font-weight-semibold text-gray-800">
                         Classes
                     </h5>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm" id="exportCsvBtn">
-                            <i class="fas fa-download mr-1"></i> Export CSV
-                        </button>
-
-                    </div>
                 </div>
             </div>
 
@@ -58,7 +52,7 @@
                         <div class="col-12 col-md-3">
                             <select asp-for="FacultyId"
                                     asp-items="ViewBag.FacultyList"
-                                    class="form-control filter">
+                                    class="form-control">
                                 <option value="">Select Faculty</option>
                             </select>
                         </div>
@@ -117,65 +111,7 @@
                 </button>
             </div>
             <div id="AddEditData">
-                <form id="addEditForm"
-                      method="post"
-                      asp-controller="Admin"
-                      asp-action="EditClass">
-                    <div class="modal-body">
-
-                        
-                        <div class="form-group">
-                            <label for="ProgramId" class="font-weight-medium">Program<span class="text-danger">*</span></label>
-                            <select asp-for="RoomId" id="test"
-                                    asp-items="ViewBag.RoomList"
-                                    class="select2" required>
-                            </select>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="day" class="font-weight-medium">Day <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="Day" name="Day" required>
-                                        <option value="">Day</option>
-                                        <option value="Monday">Monday</option>
-                                        <option value="Tuesday">Tuesday</option>
-                                        <option value="Wednesday">Wednesday</option>
-                                        <option value="Thursday">Thursday</option>
-                                        <option value="Friday">Friday</option>
-                                    </select>
-
-                                    <div class="invalid-feedback">Please select Day.</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="semester" class="font-weight-medium">Semester <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="StartTime" name="StartTime" required>
-                                        <option value="">Start Time</option>
-                                        <option value="08:00">08:00 AM</option>
-                                        <option value="09:30">09:30 AM</option>
-                                        <option value="11:00">11:00 AM</option>
-                                        <option value="13:00">01:00 PM</option>
-                                        <option value="14:30">02:30 PM</option>
-                                        <option value="16:00">04:00 PM</option>
-                                        <option value="18:00">06:00 PM</option>
-                                    </select>
-
-                                    <div class="invalid-feedback">Please select start time.</div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn closeBtn" type="button" data-dismiss="modal">
-                            <i class="fas fa-times mr-1"></i> Cancel
-                        </button>
-                        <button class="btn btn-primary" type="submit" id="saveBtn">
-                            <i class="fas fa-save mr-1"></i> Add Program
-                        </button>
-                    </div>
-                </form>
+                <partial name="_EditClassForm" />
             </div>
 
         </div>
@@ -228,6 +164,16 @@
 
              $("#program").empty().append('<option value="">Select Program</option>');
              $("#program").prop("disabled", true);
+             $("#classTableBody").html(
+                 ` <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fas fa-user-graduate fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-0">Please Select Program To View</p>
+                        </td>
+                    </tr>`
+             );
+             $("#SemesetId").val("").trigger("change");
+             $("#type").val("");
              if (!facultyId) return;
 
              $.ajax({

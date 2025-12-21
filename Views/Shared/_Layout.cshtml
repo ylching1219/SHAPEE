@@ -179,44 +179,8 @@
                         </div>
                     </li>
 
-                    <!-- Nav Item - Reports -->
-                    <li class="nav-item">
-                        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReports" aria-expanded="true" aria-controls="collapseReports">
-                            <i class="fas fa-fw fa-chart-bar"></i>
-                            <span>Reports & Analytics</span>
-                        </a>
-                        <div id="collapseReports" class="collapse" aria-labelledby="headingReports" data-parent="#accordionSidebar">
-                            <div class="bg-white py-2 collapse-inner rounded">
-                                <h6 class="collapse-header">Reports</h6>
-                                <a class="collapse-item" href="#">Student Reports</a>
-                                <a class="collapse-item" href="#">System Reports</a>
-                            </div>
-                        </div>
-                    </li>
 
-                    <!-- Divider -->
-                    <hr class="sidebar-divider">
-
-                    <!-- Heading -->
-                    <div class="sidebar-heading">
-                        System
-                    </div>
-
-                    <!-- Nav Item - System Settings -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-fw fa-cog"></i>
-                            <span>System Settings</span>
-                        </a>
-                    </li>
-
-                    <!-- Nav Item - Activity Log -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-fw fa-list"></i>
-                            <span>Activity Log</span>
-                        </a>
-                    </li>
+                    
                 }
                 else if (User.IsInRole("Staff"))
                 {
@@ -363,11 +327,11 @@
                         </a>
                     </li>
 
-                    <!-- Nav Item - Grades -->
+                    <!-- Nav Item - Leave History -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-fw fa-graduation-cap"></i>
-                            <span>My Grades</span>
+                        <a class="nav-link" href="@Url.Action("LeaveHistory", "Home")">
+                            <i class="fas fa-fw fa-history"></i>
+                            <span>Leave History</span>
                         </a>
                     </li>
 

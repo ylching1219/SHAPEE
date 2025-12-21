@@ -139,6 +139,7 @@ namespace SHAPEE.Models
         public List<int>? GroupList { get; set; } = [];
         public List<ClassSection>? ClassSections { get; set; } = [];
         public ClassSection? EditClassSection { get; set; }
+        public string? SectionId { get; set; }
         public string? SemesterId { get; set; }
         public string? RoomId { get; set; }
         public string? FacultyId { get; set; }
@@ -234,10 +235,20 @@ namespace SHAPEE.Models
     public class StudentDashboardVM
     {
         public List<SubjectAttendanceSummaryVM> SubjectAttendances { get; set; } = new();
-
         public List<Announcement> LatestAnnouncements { get; set; } = new();
+        public List<TodayScheduleItemVM> TodaySchedule { get; set; } = new();
     }
-    
+
+    public class TodayScheduleItemVM
+    {
+        public string CourseId { get; set; }
+        public string CourseName { get; set; }
+        public string RoomLocation { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public string Status { get; set; } // Upcoming, Inprogress, Completed, Absent
+    }
+
     // student view attendacne
     public class StudentAttendanceVM
     {
@@ -607,6 +618,7 @@ namespace SHAPEE.Models
         public int SelectedWeekNumber { get; set; }
         public DateTime? WeekStartDate { get; set; }
         public DateTime? WeekEndDate { get; set; }
+        public Dictionary<string, double> AttendancePercentages { get; set; } = new();
     }
 
 

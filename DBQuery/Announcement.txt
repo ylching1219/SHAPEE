@@ -1,9 +1,0 @@
-A001	Final Exam Schedule Released	The final examination schedule for Semester 202501 is now available on the student portal.	11/15/2025 9:00:00 AM	NULL	Academic Office
-A002	Student Portal Maintenance	Please be informed that the student portal will be under maintenance this Sunday from 2 AM to 6 AM.	11/16/2025 2:20:00 PM	11/16/2025 4:00:00 PM	IT Support
-A003	Convocation Ceremony 2025	Registration for the upcoming convocation ceremony is now open for all eligible final year students.	11/17/2025 10:00:00 AM	NULL	Registrar Department
-A004	Inter-Faculty Sports Meet	Join the annual sports meet next month. Registrations are open at the sports complex until Friday.	11/18/2025 11:30:00 AM	NULL	Sports Club
-A005	Library Extended Hours	The library will remain open until midnight during the upcoming exam preparation weeks.	11/19/2025 8:00:00 AM	11/20/2025 9:15:00 AM	Library Admin
-A006	Tuition Fee Payment Reminder	This is a reminder to settle all outstanding tuition fees by Friday to avoid account locking.	11/21/2025 3:45:00 PM	NULL	Finance Office
-A007	New Elective Courses	A list of new elective courses for the next academic year has been published for student review.	11/22/2025 9:00:00 AM	NULL	Faculty Dean
-A008	Security Alert: Phishing Scams	Please be cautious of suspicious emails asking for your login credentials. We will never ask for your password.	11/23/2025 1:10:00 PM	11/23/2025 2:00:00 PM	Security Division
-A009	Campus Green Initiative	Volunteer for the campus tree planting event this Saturday. Equipment and lunch will be provided.	11/24/2025 10:30:00 AM	NULL	Green Club

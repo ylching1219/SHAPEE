@@ -22,11 +22,281 @@ namespace SHAPEE.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController(DB db, Helper hp, LeaveService _leaveService) : Controller
     {
-        // Dashboard
+        // Add this method to your AdminController.cs
+
         public IActionResult Dashboard()
         {
             ViewData["Title"] = "Admin Dashboard";
+
+            // Get total counts
+            var totalStudents = db.Students.Count();
+            var totalStaff = db.Staffs.Count();
+            var totalClasses = db.ClassSections.Count();
+
+            // Calculate monthly growth percentages
+            var lastMonth = DateTime.Now.AddMonths(-1);
+            var studentsLastMonth = db.Students.Count(s => s.DateJoin < DateOnly.FromDateTime(lastMonth));
+            var staffLastMonth = db.Staffs.Count(s => s.DateJoin < DateOnly.FromDateTime(lastMonth));
+
+            var studentGrowth = studentsLastMonth > 0
+                ? ((totalStudents - studentsLastMonth) / (double)studentsLastMonth * 100)
+                : 0;
+            var staffGrowth = staffLastMonth > 0
+                ? ((totalStaff - staffLastMonth) / (double)staffLastMonth * 100)
+                : 0;
+
+            // Get recent activities (last 10)
+            var recentActivities = new List<dynamic>();
+
+            // Recent student registrations
+            var recentStudents = db.Students
+                .OrderByDescending(s => s.DateJoin)
+                .Take(3)
+                .Select(s => new {
+                    Date = s.DateJoin,
+                    Activity = "New student registered",
+                    User = s.FirstName + " " + s.LastName,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Recent staff additions
+            var recentStaff = db.Staffs
+                .OrderByDescending(s => s.DateJoin)
+                .Take(3)
+                .Select(s => new {
+                    Date = s.DateJoin,
+                    Activity = "New staff member added",
+                    User = s.FirstName + " " + s.LastName,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Recent announcements
+            var recentAnnouncements = db.Announcements
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(2)
+                .Select(a => new {
+                    Date = DateOnly.FromDateTime(a.CreatedAt),
+                    Activity = "New announcement posted",
+                    User = a.Author,
+                    Status = "Completed"
+                })
+                .ToList();
+
+            // Combine and sort all activities
+            recentActivities.AddRange(recentStudents.Cast<dynamic>());
+            recentActivities.AddRange(recentStaff.Cast<dynamic>());
+            recentActivities.AddRange(recentAnnouncements.Cast<dynamic>());
+            recentActivities = recentActivities
+                .OrderByDescending(a => a.Date)
+                .Take(10)
+                .ToList();
+
+            // Pass data to view
+            ViewBag.TotalStudents = totalStudents;
+            ViewBag.TotalStaff = totalStaff;
+            ViewBag.TotalClasses = totalClasses;
+            ViewBag.StudentGrowth = Math.Round(studentGrowth, 1);
+            ViewBag.StaffGrowth = Math.Round(staffGrowth, 1);
+            ViewBag.RecentActivities = recentActivities;
+
             return View();
+        }
+
+        // Add this new action method for AJAX chart data
+        [HttpGet]
+        public IActionResult GetChartData(string dataType, string timeline)
+        {
+            var now = DateTime.Now;
+            var labels = new List<string>();
+            var data = new List<int>();
+
+            switch (dataType)
+            {
+                case "students":
+                    data = GetStudentChartData(timeline, out labels);
+                    break;
+                case "staff":
+                    data = GetStaffChartData(timeline, out labels);
+                    break;
+                case "classes":
+                    data = GetClassChartData(timeline, out labels);
+                    break;
+            }
+
+            return Json(new { labels, data });
+        }
+
+        private List<int> GetStudentChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        var date = DateOnly.FromDateTime(now.AddDays(-i));
+                        labels.Add(date.ToString("dd MMM"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= date));
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var weekStart = DateOnly.FromDateTime(now.AddDays(-i * 7));
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.Students.Count(s => s.DateJoin <= weekStart));
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.Students.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var quarterStart = DateOnly.FromDateTime(now.AddMonths(-i * 3));
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.Students.Count(s => s.DateJoin <= quarterStart));
+                    }
+                    break;
+            }
+
+            return data;
+        }
+
+        private List<int> GetStaffChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        var date = DateOnly.FromDateTime(now.AddDays(-i));
+                        labels.Add(date.ToString("dd MMM"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= date));
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var weekStart = DateOnly.FromDateTime(now.AddDays(-i * 7));
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= weekStart));
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = DateOnly.FromDateTime(now.AddMonths(-i));
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= monthStart));
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        var quarterStart = DateOnly.FromDateTime(now.AddMonths(-i * 3));
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.Staffs.Count(s => s.DateJoin <= quarterStart));
+                    }
+                    break;
+            }
+
+            return data;
+        }
+
+        private List<int> GetClassChartData(string timeline, out List<string> labels)
+        {
+            labels = new List<string>();
+            var data = new List<int>();
+            var now = DateTime.Now;
+
+            // Note: ClassSection doesn't have a creation date, so we'll use semester data
+            var activeSemester = db.Semesters.FirstOrDefault(s => s.IsActive);
+
+            switch (timeline)
+            {
+                case "7days":
+                    for (int i = 6; i >= 0; i--)
+                    {
+                        labels.Add($"Day {7 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "30days":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        labels.Add($"Week {4 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "3months":
+                    for (int i = 2; i >= 0; i--)
+                    {
+                        var monthStart = now.AddMonths(-i);
+                        labels.Add(monthStart.ToString("MMM yyyy"));
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "6months":
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var monthStart = now.AddMonths(-i);
+                        labels.Add(monthStart.ToString("MMM"));
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+
+                case "1year":
+                    for (int i = 3; i >= 0; i--)
+                    {
+                        labels.Add($"Q{4 - i}");
+                        data.Add(db.ClassSections.Count());
+                    }
+                    break;
+            }
+
+            return data;
         }
 
         public IActionResult StudentManagement(string? name, string? filter1, string? filter2, string? filter3)
@@ -1835,7 +2105,7 @@ namespace SHAPEE.Controllers
         }
 
         //Class Section Management
-        public IActionResult ViewClass(string? FacultyId, string? ProgramId, string? SemesterId, string? type ,string? editId)
+        public IActionResult ViewClass(string? ProgramId, string? SemesterId, string? type, string? editId)
         {
             ViewData["Title"] = "View Class Sections";
             var classSections = db.ClassSections
@@ -1858,14 +2128,6 @@ namespace SHAPEE.Controllers
 
             var lectureClassSec = classSections;
 
-            if (!string.IsNullOrEmpty(FacultyId))
-            {
-                classSections = classSections
-                    .Where(c =>
-                        c.TutorialGroup != null &&
-                        c.TutorialGroup.Program.FacultyId == FacultyId
-                    );
-            }
 
             if (!string.IsNullOrEmpty(ProgramId))
             {
@@ -1895,19 +2157,26 @@ namespace SHAPEE.Controllers
                     .Where(c => c.SectionType == type);
             }
 
-            if(!string.IsNullOrEmpty(editId))
+            if (!string.IsNullOrEmpty(editId))
             {
                 var classToEdit = classSections
                     .FirstOrDefault(c => c.SectionId == editId);
 
-                Console.WriteLine("Editing Class Section: " + GetRoomType(classToEdit!.SectionType));
+
                 var rooms = db.Rooms
                     .Where(r => r.Type == GetRoomType(classToEdit!.SectionType))
                     .OrderBy(r => r.Id)
                     .ToList();
 
-                Console.WriteLine(rooms.Count);
-                ViewBag.RoomList = new SelectList(rooms, "Id", "Id",classToEdit!.RoomId);
+                ViewBag.RoomList = new SelectList(rooms, "Id", "Id", classToEdit!.RoomId);
+
+                var vmEdit = new ClassSectionVM
+                {
+                    ClassSections = classSections.ToList(),
+                    EditClassSection = classToEdit
+                };
+
+                return PartialView("_EditClassForm", vmEdit);
             }
             classSections = classSections.OrderBy(c => c.SectionId);
             ViewBag.FacultyList = new SelectList(faculty, "Id", "Name");
@@ -2001,18 +2270,13 @@ namespace SHAPEE.Controllers
 
                         // check if lecture class exists for the course in the year level and semester
                         bool lectureExists = db.ClassSections
-                                                .Join(db.TutorialGroups,
-                                                      c => c.TutorialGroupId,
-                                                      g => g.Id,
-                                                      (c, g) => new { c, g })
-                                                .Where(x => x.c.CourseId == pc.CourseId &&
-                                                            x.c.YearLevel == group.YearLevel &&
-                                                            x.c.Sem == group.Semester &&
-                                                            x.c.SectionType == "Lecture" &&
-                                                            x.g != null &&
-                                                            x.g.Program.FacultyId == group.Program.FacultyId)
-                                                .Any();
-
+                            .Any(c =>
+                                c.CourseId == pc.CourseId &&
+                                c.YearLevel == group.YearLevel &&
+                                c.Sem == group.Semester &&
+                                c.SectionType == "Lecture" &&
+                                c.TutorialGroupId == null
+                            );
 
                         var staffs = db.Staffs
                             .Where(s => s.FacultyId == group.Program.FacultyId)
@@ -2090,10 +2354,11 @@ namespace SHAPEE.Controllers
             var successClassDto = successClass.Select(c => new
             {
                 c.SectionId,
+                c.TutorialGroup?.GroupName,
+                c.SectionType,
                 c.CourseId,
-                c.StaffId,
-                c.SemesterId,
-                c.YearLevel
+                c.Staff.FullName,
+                c.RoomId
             }).ToList();
 
             return Json(new
@@ -2104,6 +2369,41 @@ namespace SHAPEE.Controllers
                 successClass = successClassDto,
                 failedClass = failedClass
             });
+        }
+
+        public IActionResult EditClass(ClassSection vm)
+        {
+
+            ClassSection? cs = db.ClassSections
+                .Include(c => c.Course) 
+                .FirstOrDefault(c => c.SectionId == vm.SectionId);
+
+
+            if (cs != null)
+            {
+                cs.RoomId = vm.RoomId;
+                cs.Day = vm.Day;
+                cs.StartTime = vm.StartTime;
+                cs.EndTime = cs.StartTime.AddHours(GetDuration(cs.Course, cs.SectionType));
+
+
+                if (IsScheduleConflict(cs))
+                {
+                    TempData["ErrorMessage"] = "Class Section have conflict with other !";
+                }
+                else
+                {
+                    db.SaveChanges();
+                    TempData["SuccessMessage"] = "Class Section edited successfully";
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Class Section not found !";
+            }
+
+
+            return RedirectToAction(nameof(ViewClass));
         }
 
         private ClassSection CreateAndSaveClassSection(TutorialGroup group, ProgramCourse pc, Staff staff, string sectionType, List<string> possibleDays, List<TimeOnly> possibleStartTimes)
@@ -2157,7 +2457,7 @@ namespace SHAPEE.Controllers
                     CourseId = pc.CourseId,
                     StaffId = staff.Id,
                     SemesterId = semester!,
-                    TutorialGroupId = group.Id,
+                    TutorialGroupId = (sectionType=="Lecture"?null:group.Id),
                     SectionType = sectionType,
                     YearLevel = group.YearLevel,
                     Sem = group.Semester,
@@ -2206,6 +2506,17 @@ namespace SHAPEE.Controllers
                 "Lecture" => pc.Course.LectureHours,
                 "Tutorial" => pc.Course.TutorialHours,
                 "Practical" => pc.Course.PracticalHours.GetValueOrDefault(),
+                _ => 1
+            };
+        }
+
+        private double GetDuration(Course c, string sectionType)
+        {
+            return sectionType switch
+            {
+                "Lecture" => c.LectureHours,
+                "Tutorial" => c.TutorialHours,
+                "Practical" => c.PracticalHours.GetValueOrDefault(),
                 _ => 1
             };
         }
@@ -3017,7 +3328,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students for any event change
-                var eventDateRange = startTime.Date == endTime.Date 
+                var eventDateRange = startTime.Date == endTime.Date
                     ? startTime.ToString("dd MMM yyyy")
                     : $"{startTime:dd MMM yyyy} to {endTime:dd MMM yyyy}";
 
@@ -3094,7 +3405,7 @@ namespace SHAPEE.Controllers
                 db.SaveChanges();
 
                 //notify all students when event date is changed
-                var eventDateRange = newStart.Date == updatedEnd.Date 
+                var eventDateRange = newStart.Date == updatedEnd.Date
                     ? newStart.ToString("dd MMM yyyy")
                     : $"{newStart:dd MMM yyyy} to {updatedEnd:dd MMM yyyy}";
 
@@ -3762,7 +4073,7 @@ namespace SHAPEE.Controllers
                 // Find unpaid invoices that are due in 3 days or less (not overdue)
                 var invoicesToRemind = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date >= today  // Not overdue
                         && i.DueDate.Date <= threeDaysFromNow  // Due in 3 days or less
                         && i.Student != null
@@ -3790,11 +4101,11 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     // Calculate days until due for the message
                     var daysUntilDue = (invoice.DueDate.Date - today).Days;
-                    var daysText = daysUntilDue == 0 ? "today" : 
-                                   daysUntilDue == 1 ? "1 day" : 
+                    var daysText = daysUntilDue == 0 ? "today" :
+                                   daysUntilDue == 1 ? "1 day" :
                                    $"{daysUntilDue} days";
 
                     // Send email
@@ -3830,9 +4141,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3847,7 +4158,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });
@@ -3869,7 +4180,7 @@ namespace SHAPEE.Controllers
                 //find unpaid invoices that are overdue (due date < today)
                 var overdueInvoices = db.Invoices
                     .Include(i => i.Student)
-                    .Where(i => !i.IsPaid 
+                    .Where(i => !i.IsPaid
                         && i.DueDate.Date < today  //overdue
                         && i.Student != null
                         && !string.IsNullOrEmpty(i.Student.Email))
@@ -3882,7 +4193,7 @@ namespace SHAPEE.Controllers
                 foreach (var invoice in overdueInvoices)
                 {
                     var daysOverdue = (today - invoice.DueDate.Date).Days;
-                    
+
                     //check if overdue reminder notification was already sent today
                     var reminderSentToday = db.Notification
                         .Any(n => n.UserId == invoice.StudentId
@@ -3898,7 +4209,7 @@ namespace SHAPEE.Controllers
 
                     var student = invoice.Student;
                     var studentName = student.FullName?.Trim() ?? student.Id;
-                    
+
                     var daysText = daysOverdue == 1 ? "1 day" : $"{daysOverdue} days";
 
                     //send email
@@ -3935,9 +4246,9 @@ namespace SHAPEE.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
-                    return Json(new 
-                    { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = message,
                         successCount = successCount,
                         failCount = failCount,
@@ -3952,7 +4263,7 @@ namespace SHAPEE.Controllers
             catch (Exception ex)
             {
                 var errorMessage = $"Error sending overdue reminders: {ex.Message}";
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Method == "POST")
                 {
                     return Json(new { success = false, message = errorMessage });
