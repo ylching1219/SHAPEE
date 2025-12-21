@@ -247,6 +247,7 @@ VALUES
 ('BF202', 'Business Statistics', 3, 2, NULL, 2),
 ('BF301', 'Investment Analysis', 3, 2, NULL, 2),
 ('BF302', 'Auditing and Assurance', 3, 2, NULL, 2),
+('BF303', 'Money & Banking', 3, 2, NULL, 2),
 
 -- Civil / Mechanical Engineering
 ('EN101', 'Engineering Drawing', 2, 2, 1, 1),
@@ -271,9 +272,11 @@ VALUES
 ('IT301', 'Software Engineering', 3, 2, 1, 1),
 ('IT302', 'Web Application Development', 4, 2, 2, 2),
 ('IT303', 'Mobile Application Development', 4, 2, 2, 2),
+('IT304', 'Network Security', 3, 2, NULL, 2),
 ('PR101', 'Programming Fundamentals', 3, 2, 2, 2),
 ('PR102', 'Object-Oriented Programming', 3, 2, 2, 2),
 ('PR201', 'Data Structures and Algorithms', 4, 2, 2, 2),
+('CA101', 'Computer Organization & Architecture', 3, 2, 1, 2),
 
 -- Science & Mathematics
 ('SC101', 'Introduction to Physics', 3, 2, NULL, 2),
@@ -282,8 +285,8 @@ VALUES
 ('SC202', 'Organic Chemistry', 3, 2, 2, 1),
 ('SC203', 'Applied Mathematics', 4, 2, NULL, 2),
 ('SC301', 'Analytical Chemistry', 4, 2, 2, 1),
-('SC302', 'Quantum Mechanics', 4, 2, NULL, 2);
-
+('SC302', 'Quantum Mechanics', 4, 2, NULL, 2),
+('SC303', 'Modern Physics', 4, 2, 2, 2);
 
 
 
@@ -352,6 +355,7 @@ VALUES
 ('DCH','SC201',1,1),
 ('DCS','PR201',2,1),
 ('DCS','IT202',2,1),
+('DCS','CA101',2,2),
 ('DEE','EN301',2,1),
 ('DEE','EN302',2,1),
 ('DFI','BF201',2,1),
@@ -365,5 +369,4 @@ VALUES
 ('BCS','IT301',3,1),
 ('BCS','IT303',3,2),
 ('BCE','EN303',3,1);
-
 
