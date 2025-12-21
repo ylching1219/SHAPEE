@@ -345,6 +345,7 @@ namespace SHAPEE.Controllers
                         Course = section.Course,
                         PresentCount = sectionAttendances.Count(x => x.Status == "Present"),
                         AbsentCount = sectionAttendances.Count(x => x.Status == "Absent"),
+                        LeaveCount = sectionAttendances.Count(x => x.Status == "Leave"),
                         TotalSessions = sectionAttendances.Count,
                         AttendancePercentage = sectionAttendances.Any()
                             ? Math.Round((double)sectionAttendances.Count(x => x.Status == "Present") / sectionAttendances.Count * 100, 2)
@@ -475,6 +476,7 @@ namespace SHAPEE.Controllers
 
             var presentCount = attendances.Count(a => a.Status == "Present");
             var absentCount = attendances.Count(a => a.Status == "Absent");
+            var leaveCount = attendances.Count(a => a.Status == "Leave");
             var totalSessions = attendances.Count;
             var consideredTotal = presentCount + absentCount;
             var attendancePercentage = consideredTotal > 0
@@ -489,6 +491,7 @@ namespace SHAPEE.Controllers
                 Attendances = attendances,
                 PresentCount = presentCount,
                 AbsentCount = absentCount,
+                LeaveCount = leaveCount,
                 TotalSessions = totalSessions,
                 AttendancePercentage = attendancePercentage
             };
