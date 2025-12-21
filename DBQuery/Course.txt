@@ -31,3 +31,7 @@ SC202	Organic Chemistry	3	2	2	1
 SC203	Applied Mathematics	4	2	NULL	2
 SC301	Analytical Chemistry	4	2	2	1
 SC302	Quantum Mechanics	4	2	NULL	2
+CA101	Computer Organization & Architecture	3	2	1	2
+BF303	Money & Banking	3	2	NULL	2
+IT304	Network Security	3	2	NULL	2
+SC303	Modern Physics	4	2	2	2
