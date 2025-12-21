@@ -3,7 +3,7 @@ Username: Admin01
 Password: 123456
 
 Staff Account
-Username: Stf002
+Username: STF002
 Password: 123456
 
 Student Account
