@@ -158,7 +158,8 @@
                 refreshChat();
             }
         }, 3000);
-
+        setInterval(updateSidebarBadges, 3000);
+        updateSidebarBadges();
         // Handle Enter Key correctly
         $('#msgContent').on('keydown', function (e) {
             if (e.which == 13) {
@@ -167,4 +168,33 @@
             }
         });
     });
+        function updateSidebarBadges() {
+        $.ajax({
+            url: '@Url.Action("GetUnreadCounts", "Staff")',
+            type: 'GET',
+            cache: false,
+            success: function (data) {
+                //  Reset all current badges to 0/hide them
+                $('.unread-badge').hide().text('0');
+
+                //  Update badges based on the new JSON data
+                data.forEach(function (item) {
+                    // Don't show a badge for the student the staff is currently talking to
+                    if (item.studentId === activeChatId) return;
+
+                    var badge = $('#list-' + item.studentId + ' .unread-badge');
+
+                    // If badge doesn't exist in the HTML yet, add it
+                    if (badge.length === 0) {
+                        $('#list-' + item.studentId + ' .d-flex').append(
+                            `<span class="badge bg-danger rounded-pill unread-badge">${item.count}</span>`
+                        );
+                    } else {
+                        // Update existing badge
+                        badge.text(item.count).show();
+                    }
+                });
+            }
+        });
+    }
 </script>

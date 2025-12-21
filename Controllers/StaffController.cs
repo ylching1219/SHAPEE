@@ -1518,35 +1518,38 @@
                 return Json(savedMaterials);
             }
 
-            // =======================
-            // DELETE MATERIAL
-            // =======================
-            [HttpPost]
-            public IActionResult DeleteMaterial(string id)
+        // =======================
+        // DELETE MATERIAL
+        // =======================
+        [HttpPost]
+        public IActionResult DeleteMaterial(string id)
+        {
+            //  Find the material
+            var material = db.Materials.FirstOrDefault(m => m.Id == id);
+            if (material == null) return NotFound();
+
+            //  Remove any links in the junction table first
+            var taskLinks = db.TaskMaterials.Where(tm => tm.MaterialId == id);
+            db.TaskMaterials.RemoveRange(taskLinks);
+
+            //  Handle physical file deletion
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", material.FileUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
             {
-                var material = db.Materials.FirstOrDefault(m => m.Id == id);
-                if (material != null)
-                {
-                    var filePath = Path.Combine(
-                        Directory.GetCurrentDirectory(),
-                        "wwwroot",
-                        material.FileUrl.TrimStart('/')
-                    );
-
-                    if (System.IO.File.Exists(filePath))
-                        System.IO.File.Delete(filePath);
-
-                    db.Materials.Remove(material);
-                    db.SaveChanges();
-                }
-
-                return Ok();
+                System.IO.File.Delete(filePath);
             }
 
-            // =======================
-            // STAFF CLASSROOM UI
-            // =======================
-            public IActionResult StaffClassroomUI()
+            //  Remove the material and save
+            db.Materials.Remove(material);
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        // =======================
+        // STAFF CLASSROOM UI
+        // =======================
+        public IActionResult StaffClassroomUI()
             {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var coursesHeTeaches = db.ClassSections
@@ -1952,22 +1955,48 @@
         {
             var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        
+            // Get the list of students for this class
             var students = db.ClassSections
                 .Include(cs => cs.TutorialGroup)
                     .ThenInclude(tg => tg.Students)
                 .Where(cs => cs.CourseId == classId && cs.StaffId == staffId)
-                .SelectMany(cs => cs.TutorialGroup.Students) // list of students
+                .SelectMany(cs => cs.TutorialGroup.Students)
                 .Distinct()
                 .ToList();
 
+            //  Calculate unread counts for each student
+            var unreadCounts = db.ChatMessages
+                .Where(m => m.ReceiverId == staffId && m.IsRead == false)
+                .GroupBy(m => m.SenderId)
+                .Select(g => new { StudentId = g.Key, Count = g.Count() })
+                .ToDictionary(x => x.StudentId, x => x.Count);
+
+            ViewBag.UnreadCounts = unreadCounts; //  the Sidebar badges
             ViewBag.ClassId = classId;
             ViewBag.UserId = staffId;
             ViewBag.SelectedStudentId = studentId;
 
-            return View(students); //  Sidebar
+            return View(students);
         }
+        //get unread
+        [HttpGet]
+        public IActionResult GetUnreadCounts()
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Count messages sent TO the staff that are still marked as IsRead = false
+            var unreadCounts = db.ChatMessages
+                .Where(m => m.ReceiverId == staffId && m.IsRead == false)
+                .GroupBy(m => m.SenderId)
+                .Select(g => new {
+                    studentId = g.Key,
+                    count = g.Count()
+                })
+                .ToList();
+
+            return Json(unreadCounts);
+        }
+        //get msg
         [HttpGet]
         public IActionResult GetMessages(string targetUserId)
         {
