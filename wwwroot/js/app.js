@@ -712,6 +712,50 @@ $(document).ready(function() {
         $('#notificationsDropdown').dropdown('hide');
     });
 
+    //mark all as read button
+    $(document).on('click', '#markAllReadDropdownBtn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        SweetAlert.confirm(
+            'Mark All as Read?',
+            'Are you sure you want to mark all notifications as read?',
+            {
+                confirmButtonText: 'Yes, mark all as read',
+                cancelButtonText: 'Cancel',
+                onConfirm: function() {
+                    $.ajax({
+                        url: '/Home/MarkAllAsRead',
+                        type: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function() {
+                            SweetAlert.success(
+                                'Success!',
+                                'All notifications have been marked as read.',
+                                {
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }
+                            );
+                            // Reload notifications and update badge
+                            updateUnreadCount();
+                            loadNotifications(currentFilter);
+                        },
+                        error: function() {
+                            SweetAlert.error(
+                                'Error!',
+                                'Failed to mark notifications as read. Please try again.'
+                            );
+                        }
+                    });
+                }
+            }
+        );
+    });
+
     //initial load
     updateUnreadCount();
     loadNotifications('all');
