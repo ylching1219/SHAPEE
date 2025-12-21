@@ -256,7 +256,7 @@
                     sectionsQuery = sectionsQuery.Where(s => s.SemesterId == semester);
                 }
 
-                                //sort
+                //sort
                 sort = sort?.Trim() ?? "";
                 sectionsQuery = sort switch
                 {
@@ -675,7 +675,7 @@
             }
 
 
-            public IActionResult AttendanceManagement(string sectionId, string? search = null, string? date = null, string? status = null, string? sort = null)
+            public IActionResult AttendanceManagement(string sectionId, string? search = null, string? date = null, string? status = null, string? sort = null, int? week = null)
             {
                 if (string.IsNullOrEmpty(sectionId))
                     return RedirectToAction("ClassSelection", new { mode = "view" });
@@ -691,26 +691,51 @@
                 if (section == null)
                     return RedirectToAction("ClassSelection", new { mode = "view" });
 
-                var today = DateOnly.FromDateTime(DateTime.Now);
-                var nowTime = TimeOnly.FromDateTime(DateTime.Now);
-                var todayName = DateTime.Now.DayOfWeek.ToString();
-
-                if (string.Equals(section.Day, todayName, StringComparison.OrdinalIgnoreCase)
-                    && nowTime >= section.EndTime)
-                {
-                    AutoMarkAbsents(sectionId, today, staffId);
-                }
-
                 var enrolledStudentsQuery = GetEnrolledStudentsQuery(section);
                 var enrolledStudents = enrolledStudentsQuery.ToList();
-
                 var totalStudents = enrolledStudents.Count;
 
-                //get all attendance records for this class section with filters
+                // Get semester start date
+                var semesterStart = GetSemesterStartDate(section.Semester);
+                var semesterEnd = section.Semester?.EndDate ?? DateOnly.FromDateTime(DateTime.Now);
+                
+                // Calculate total weeks in semester
+                var totalDays = (semesterEnd.ToDateTime(TimeOnly.MinValue) - semesterStart.ToDateTime(TimeOnly.MinValue)).Days;
+                var totalWeeks = (int)Math.Ceiling(totalDays / 7.0);
+                
+                // Calculate week dates
+                DateOnly weekStartDate, weekEndDate;
+                if (week.HasValue && week.Value > 0)
+                {
+                    var weekNumber = week.Value;
+                    var daysOffset = (weekNumber - 1) * 7;
+                    weekStartDate = semesterStart.AddDays(daysOffset);
+                    weekEndDate = weekStartDate.AddDays(6);
+                    
+                    // Don't go beyond semester end
+                    if (weekEndDate > semesterEnd)
+                        weekEndDate = semesterEnd;
+                }
+                else
+                {
+                    // If no week selected, don't default - set week to null
+                    week = null;
+                    weekStartDate = semesterStart; // Set defaults but don't use them for filtering
+                    weekEndDate = semesterEnd;
+                }
+
+                // Get all attendance records for this class section
                 var attendancesQuery = db.Attendances
                     .Include(a => a.Student)
                     .Where(a => a.ClassSectionId == sectionId)
                     .AsQueryable();
+
+                // Apply week filter instead of single date
+                if (week.HasValue)
+                {
+                    attendancesQuery = attendancesQuery.Where(a => 
+                        a.Date >= weekStartDate && a.Date <= weekEndDate);
+                }
 
                 //apply search filter
                 search = search?.Trim() ?? "";
@@ -758,7 +783,26 @@
 
                 var filteredAttendances = attendancesQuery.ToList();
 
-                //get all attendances for statistics (before filterd)
+                // Check if there are any attendance records for this week
+                var hasAttendanceForWeek = false;
+                if (week.HasValue)
+                {
+                    // Check attendance records for the week without search/status filters
+                    hasAttendanceForWeek = db.Attendances
+                        .Where(a => a.ClassSectionId == sectionId &&
+                                   a.Date >= weekStartDate &&
+                                   a.Date <= weekEndDate)
+                        .Any();
+                }
+                else
+                {
+                    // If no week selected, check if there are any attendance records at all
+                    hasAttendanceForWeek = db.Attendances
+                        .Where(a => a.ClassSectionId == sectionId)
+                        .Any();
+                }
+
+                // Get all attendances for statistics (before filtering)
                 var allAttendances = db.Attendances
                     .Include(a => a.Student)
                     .Where(a => a.ClassSectionId == sectionId)
@@ -775,8 +819,7 @@
                 //calculate flaged count
                 var flaggedCount = allAttendances.Count(a => a.IsFlaged);
 
-                //count total absences this semester
-                var semesterStart = GetSemesterStartDate(section.Semester);
+                //count total absences this 
 
                 var semesterAttendances = allAttendances.Where(a => a.Date >= semesterStart).ToList();
                 var totalAbsences = totalAbsent;
@@ -791,7 +834,12 @@
                     TotalAbsences = totalAbsences,
                     FlaggedCount = flaggedCount,
                     Attendances = filteredAttendances,
-                    EnrolledStudents = enrolledStudents
+                    EnrolledStudents = enrolledStudents,
+                    SelectedWeek = week,
+                    TotalWeeks = totalWeeks,
+                    WeekStartDate = weekStartDate,
+                    WeekEndDate = weekEndDate,
+                    HasAttendanceForWeek = hasAttendanceForWeek
                 };
 
                 ViewData["Title"] = "Attendance Management";
@@ -2150,5 +2198,194 @@
            
             return RedirectToAction("TaskList");
         }
+
+        //mark all as absent for a week
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        public IActionResult MarkAllAsAbsentForWeek(string sectionId, int week)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sectionId) || week <= 0)
+                {
+                    return Json(new { success = false, message = "Invalid request parameters." });
+                }
+
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                
+                var section = db.ClassSections
+                    .Include(c => c.Semester)
+                    .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+                if (section == null)
+                    return Json(new { success = false, message = "Section not found or unauthorized." });
+
+                if (section.Semester == null || !section.Semester.IsActive)
+                    return Json(new { success = false, message = "Semester is not active." });
+
+                var semesterStart = GetSemesterStartDate(section.Semester);
+                var semesterEnd = section.Semester.EndDate;
+                
+                //calculate week dates
+                var daysOffset = (week - 1) * 7;
+                var weekStartDate = semesterStart.AddDays(daysOffset);
+                var weekEndDate = weekStartDate.AddDays(6);
+                if (weekEndDate > semesterEnd)
+                    weekEndDate = semesterEnd;
+
+                //get enrolled students
+                var enrolledStudents = GetEnrolledStudentsQuery(section).ToList();
+                if (!enrolledStudents.Any())
+                    return Json(new { success = false, message = "No enrolled students found." });
+
+                //get all approved leave applications for the date range
+                var approvedLeaves = db.LeaveApplications
+                    .Where(la => la.Status == "Approved" &&
+                                la.StartDate <= weekEndDate &&
+                                la.EndDate >= weekStartDate)
+                    .ToList();
+
+                //get existing attendance records for this week
+                var existingAttendances = db.Attendances
+                    .Where(a => a.ClassSectionId == sectionId &&
+                               a.Date >= weekStartDate &&
+                               a.Date <= weekEndDate)
+                    .Select(a => new { a.StudentId, a.Date })
+                    .ToList();
+
+                //day mapping for section
+                var dayMapping = new Dictionary<DayOfWeek, string>
+                {
+                    { DayOfWeek.Monday, "Monday" },
+                    { DayOfWeek.Tuesday, "Tuesday" },
+                    { DayOfWeek.Wednesday, "Wednesday" },
+                    { DayOfWeek.Thursday, "Thursday" },
+                    { DayOfWeek.Friday, "Friday" },
+                    { DayOfWeek.Saturday, "Saturday" },
+                    { DayOfWeek.Sunday, "Sunday" }
+                };
+
+                var dayNameVariations = new Dictionary<string, List<string>>
+                {
+                    { "Monday", new List<string> { "Monday", "Mon" } },
+                    { "Tuesday", new List<string> { "Tuesday", "Tues", "Tue" } },
+                    { "Wednesday", new List<string> { "Wednesday", "Wed" } },
+                    { "Thursday", new List<string> { "Thursday", "Thurs", "Thu" } },
+                    { "Friday", new List<string> { "Friday", "Fri" } },
+                    { "Saturday", new List<string> { "Saturday", "Sat" } },
+                    { "Sunday", new List<string> { "Sunday", "Sun" } }
+                };
+
+                int recordsCreated = 0;
+
+                //iterate through each day in the week
+                for (var date = weekStartDate; date <= weekEndDate; date = date.AddDays(1))
+                {
+                    var dayOfWeek = date.DayOfWeek;
+                    var dayName = dayMapping[dayOfWeek];
+                    
+                    //check if section occurs on this day
+                    var sectionDayMatches = dayNameVariations.ContainsKey(dayName) &&
+                                           dayNameVariations[dayName].Any(variant =>
+                                               section.Day?.Equals(variant, StringComparison.OrdinalIgnoreCase) == true);
+
+                    if (!sectionDayMatches) continue;
+
+                    //for each enrolled student
+                    foreach (var student in enrolledStudents)
+                    {
+                        //skip if attendance already exists for this date
+                        var hasExisting = existingAttendances.Any(ea => 
+                            ea.StudentId == student.Id && ea.Date == date);
+                        
+                        if (hasExisting) continue;
+
+                        //check if student has approved leave for this date
+                        var hasApprovedLeave = approvedLeaves.Any(la =>
+                            la.UserId == student.Id &&
+                            la.StartDate <= date &&
+                            la.EndDate >= date);
+
+                        //determine status
+                        var attendanceStatus = hasApprovedLeave ? "Leave" : "Absent";
+                        var flagReason = hasApprovedLeave ? "Approved leave" : "No Session Started";
+
+                        //randomize time between class start and end time
+                        var random = new Random();
+                        var startTimeMinutes = section.StartTime.Hour * 60 + section.StartTime.Minute;
+                        var endTimeMinutes = section.EndTime.Hour * 60 + section.EndTime.Minute;
+                        var timeSpanMinutes = endTimeMinutes - startTimeMinutes;
+                        
+                        //generate random minutes within the class duration
+                        var randomMinutes = random.Next(0, timeSpanMinutes + 1);
+                        var randomizedTime = section.StartTime.AddMinutes(randomMinutes);
+                        
+                        //create attendance record with randomized class date and time
+                        var classDateTime = date.ToDateTime(randomizedTime);
+                        
+                        db.Attendances.Add(new Attendance
+                        {
+                            Id = Guid.NewGuid().ToString("N"),
+                            ClassSectionId = sectionId,
+                            StudentId = student.Id,
+                            Date = date,
+                            RegisteredAt = classDateTime, //use randomized time within class period
+                            Status = attendanceStatus,
+                            IpAddress = "SYSTEM",
+                            UserAgent = hasApprovedLeave ? "LEAVE||SYSTEM" : "AUTO_ABSENT_WEEK_MARK",
+                            IsFlaged = false,
+                            FlagReason = flagReason
+                        });
+
+                        recordsCreated++;
+                    }
+                }
+
+                db.SaveChanges();
+
+                return Json(new { 
+                    success = true, 
+                    message = $"Successfully marked {recordsCreated} attendance records for Week {week}.",
+                    recordsCreated = recordsCreated
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        //check if week attendance is marked
+        [HttpGet]
+        [Authorize(Roles = "Staff")]
+        public IActionResult CheckWeekAttendance(string sectionId, int week)
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var section = db.ClassSections
+                .Include(c => c.Semester)
+                .FirstOrDefault(c => c.SectionId == sectionId && c.StaffId == staffId);
+
+            if (section == null)
+                return Json(new { hasAttendance = true }); // Default to true to hide button
+
+            var semesterStart = GetSemesterStartDate(section.Semester);
+            var semesterEnd = section.Semester?.EndDate ?? DateOnly.FromDateTime(DateTime.Now);
+            
+            var daysOffset = (week - 1) * 7;
+            var weekStartDate = semesterStart.AddDays(daysOffset);
+            var weekEndDate = weekStartDate.AddDays(6);
+            if (weekEndDate > semesterEnd)
+                weekEndDate = semesterEnd;
+
+            var hasAttendance = db.Attendances
+                .Where(a => a.ClassSectionId == sectionId &&
+                           a.Date >= weekStartDate &&
+                           a.Date <= weekEndDate)
+                .Any();
+
+            return Json(new { hasAttendance = hasAttendance });
+        }
     }
+
     }

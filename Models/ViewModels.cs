@@ -229,6 +229,12 @@ namespace SHAPEE.Models
         public int FlaggedCount { get; set; }
         public List<Attendance> Attendances { get; set; } = [];
         public List<Student> EnrolledStudents { get; set; } = [];
+
+        public int? SelectedWeek { get; set; }
+        public int TotalWeeks { get; set; }
+        public DateOnly WeekStartDate { get; set; }
+        public DateOnly WeekEndDate { get; set; }
+        public bool HasAttendanceForWeek { get; set; }
     }
 
     //student dashboard

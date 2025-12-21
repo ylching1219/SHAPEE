@@ -211,7 +211,13 @@ else
                         </div>
                     </div>
                     <div class="col-12 col-md-2">
-                        <input type="date" class="form-control" name="date" id="dateFilter" />
+                        <select class="form-control" name="week" id="weekFilter">
+                            <option value="">All Weeks</option>
+                            @for (int i = 1; i <= Model.TotalWeeks; i++)
+                            {
+                                <option value="@i" selected="@(Model.SelectedWeek == i)">Week @i</option>
+                            }
+                        </select>
                     </div>
                     <div class="col-12 col-md-2">
                         <select class="form-control" name="status" id="statusFilter">
@@ -239,7 +245,27 @@ else
                             <i class="fas fa-undo"></i>
                         </button>
                     </div>
+                    @if (Model.SelectedWeek.HasValue && !Model.HasAttendanceForWeek)
+                    {
+                        <div class="col-12 col-md-2">
+                            <button type="button" class="btn btn-warning w-100" id="markAllAbsentBtn" 
+                                    data-section-id="@Model.Section.SectionId" 
+                                    data-week="@Model.SelectedWeek.Value">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Mark All as Absent
+                            </button>
+                        </div>
+                    }
                 </div>
+                @if (Model.SelectedWeek.HasValue)
+                {
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                Week @Model.SelectedWeek.Value: @Model.WeekStartDate.ToString("dd MMM yyyy") - @Model.WeekEndDate.ToString("dd MMM yyyy")
+                            </small>
+                        </div>
+                    </div>
+                }
             </form>
         </div>
 
@@ -434,15 +460,16 @@ else
             //update attendance list with filters
             function refreshAttendanceList() {
                 const searchTerm = $('#searchInput').val();
-                const selectedDate = $('#dateFilter').val();
+                const selectedDate = $('#dateFilter').val(); // This will be removed
                 const selectedStatus = $('#statusFilter').val();
                 const sortOption = $('#attendanceSort').val();
+                const selectedWeek = $('#weekFilter').val(); // New week filter
                 const sectionId = '@Model?.Section?.SectionId';
 
                 const queryParams = new URLSearchParams();
                 queryParams.append('sectionId', sectionId);
                 if (searchTerm) queryParams.append('search', searchTerm);
-                if (selectedDate) queryParams.append('date', selectedDate);
+                if (selectedWeek) queryParams.append('week', selectedWeek); // Add week filter
                 if (selectedStatus) queryParams.append('status', selectedStatus);
                 if (sortOption) queryParams.append('sort', sortOption);
 
@@ -608,7 +635,7 @@ else
             }
 
             //listen for filter changes
-            $('#searchInput, #dateFilter, #statusFilter, #attendanceSort').on('change keyup', function() {
+            $('#searchInput, #weekFilter, #statusFilter, #attendanceSort').on('change keyup', function() {
                 const inputId = $(this).attr('id');
                 //delay search input to prevent high request
                 if (inputId === 'searchInput') {
@@ -622,7 +649,7 @@ else
             //reset button click
             $('button[type="reset"]').on('click', function() {
                 $('#searchInput').val('');
-                $('#dateFilter').val('');
+                $('#weekFilter').val(''); // Reset week filter
                 $('#statusFilter').val('');
                 $('#attendanceSort').val('');
 
@@ -736,6 +763,117 @@ else
                     }
                 });
             }
+
+            // Handle AJAX form completion to update button visibility
+            $('#filterForm').on('ajax:complete', function(event, xhr, status) {
+                // The response contains the partial view, but we need to check if button should show
+                // We'll make a separate call to get button visibility info, or include it in response
+                
+                // Alternative: Check via a data attribute or make a separate AJAX call
+                updateMarkAllButton();
+            });
+            
+            // Also handle week filter change directly
+            $('#weekFilter').on('change', function() {
+                var selectedWeek = $(this).val();
+                updateMarkAllButton(selectedWeek);
+            });
+            
+            function updateMarkAllButton(week) {
+                if (!week) {
+                    week = $('#weekFilter').val();
+                }
+                
+                if (!week || week === '') {
+                    $('#markAllAbsentBtn').closest('div.col-12.col-md-2').hide();
+                    return;
+                }
+                
+                var sectionId = '@Model.Section.SectionId';
+                
+                // Check if attendance exists for this week
+                $.ajax({
+                    url: '/Staff/CheckWeekAttendance',
+                    method: 'GET',
+                    data: {
+                        sectionId: sectionId,
+                        week: week
+                    },
+                    success: function(response) {
+                        if (response.hasAttendance === false) {
+                            // Show button
+                            var buttonHtml = '<div class="col-12 col-md-2">' +
+                                '<button type="button" class="btn btn-warning w-100" id="markAllAbsentBtn" ' +
+                                'data-section-id="' + sectionId + '" data-week="' + week + '">' +
+                                '<i class="fas fa-exclamation-triangle mr-1"></i> Mark All as Absent' +
+                                '</button></div>';
+                            
+                            // Remove existing button if any
+                            $('#markAllAbsentBtn').closest('div.col-12.col-md-2').remove();
+                            
+                            // Add button before reset button
+                            $('button[type="reset"]').closest('div.col-12.col-md-1').after(buttonHtml);
+                        } else {
+                            // Hide button
+                            $('#markAllAbsentBtn').closest('div.col-12.col-md-2').hide();
+                        }
+                    }
+                });
+            }
+
+            // Mark all as absent for a week
+            $(document).on('click', '#markAllAbsentBtn', function() {
+                const sectionId = $(this).data('section-id');
+                const week = $(this).data('week');
+
+                SweetAlert.confirm(
+                    'Mark All as Absent?',
+                    `Are you sure you want to mark all students as absent for Week ${week}? This action cannot be undone.`,
+                    {
+                        confirmButtonText: 'Yes, Mark All',
+                        cancelButtonText: 'No, Cancel',
+                        onConfirm: function() {
+                            $.ajax({
+                                url: '@Url.Action("MarkAllAsAbsentForWeek", "Staff")',
+                                type: 'POST',
+                                // Change data to form-encoded format
+                                data: {
+                                    sectionId: sectionId,
+                                    week: week
+                                },
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function(response) {
+                                    if (response.success) {
+                                        SweetAlert.success(
+                                            'Success!',
+                                            response.message || `Successfully marked all students as absent for Week ${week}.`,
+                                            {
+                                                timer: 2000,
+                                                onConfirm: function() {
+                                                    refreshAttendanceList();
+                                                }
+                                            }
+                                        );
+                                    } else {
+                                        SweetAlert.error('Error', response.message || 'Failed to mark all students as absent.');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    SweetAlert.error('Error', 'An error occurred: ' + (xhr.responseJSON?.message || error));
+                                }
+                            });
+                        },
+                        onCancel: function() {
+                            SweetAlert.info('Cancelled', 'Mark all as absent has been cancelled.');
+                        }
+                    }
+                );
+            });
+
+
         });
     </script>
 }
