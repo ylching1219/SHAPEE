@@ -32,18 +32,18 @@ public class AccountController(DB db, Helper hp) : Controller
         {
             if (u.Status == "Locked")
             {
-                ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration.");
+                ModelState.AddModelError("", "Your account is locked due to too many failed attempts. Please contact Administration. (Admin01@gmail.com)");
                 return View(vm);
             }
             else if (u.Status == "Suspended")
             {
-                ModelState.AddModelError("", "Your account has been suspended. Please contact Administration.");
+                ModelState.AddModelError("", "Your account has been suspended. Please contact Administration. (Admin01@gmail.com)");
                 return View(vm);
             }
         }
         else
         {
-            ModelState.AddModelError("", "This ID is not registered yet. Please contact Administration.");
+            ModelState.AddModelError("", "This ID is not registered yet. Please contact Administration. (Admin01@gmail.com)");
             return View(vm);
         }
 
@@ -213,7 +213,7 @@ public class AccountController(DB db, Helper hp) : Controller
 
             if (user.Status == "Suspended")
             {
-                TempData["ErrorMessage"] = "Your account is suspended. Please contact administrator.";
+                TempData["ErrorMessage"] = "Your account is suspended. Please contact administrator. (Admin01@gmail.com)";
                 return RedirectToAction("ForgotPassword");
             }
 
@@ -378,7 +378,7 @@ public class AccountController(DB db, Helper hp) : Controller
                 db,
                 user.Id,
                 "Password Reset Successful",
-                "Your account password has been reset successfully. If you didn't make this change, please contact administration immediately.",
+                "Your account password has been reset successfully. If you didn't make this change, please contact administration immediately. (Admin01@gmail.com)",
                 "warning",
                 "/Account/ChangePassword"
             );
@@ -468,7 +468,7 @@ public class AccountController(DB db, Helper hp) : Controller
                 db,
                 userId,
                 "Password Changed",
-                "Your account password was updated successfully. If you didn't make this change, please contact administration immediately.",
+                "Your account password was updated successfully. If you didn't make this change, please contact administration immediately. (Admin01@gmail.com)",
                 "warning",
                 "/Account/ChangePassword"
             );
