@@ -14,10 +14,25 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Students</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">1,245</div>
-                        <div class="text-xs text-success mt-1">
-                            <i class="fas fa-arrow-up"></i> 5% increase this month
-                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalStudents</div>
+                        @if (ViewBag.StudentGrowth > 0)
+                        {
+                            <div class="text-xs text-success mt-1">
+                                <i class="fas fa-arrow-up"></i> @ViewBag.StudentGrowth% increase this month
+                            </div>
+                        }
+                        else if (ViewBag.StudentGrowth < 0)
+                        {
+                            <div class="text-xs text-danger mt-1">
+                                <i class="fas fa-arrow-down"></i> @Math.Abs(ViewBag.StudentGrowth)% decrease this month
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-xs text-muted mt-1">
+                                No change this month
+                            </div>
+                        }
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-users fa-2x text-gray-300"></i>
@@ -27,17 +42,32 @@
         </div>
     </div>
 
-    <!--total teachers-->
+    <!--total staff-->
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Teachers</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">45</div>
-                        <div class="text-xs text-success mt-1">
-                            <i class="fas fa-arrow-up"></i> 3% increase this month
-                        </div>
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Staff</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalStaff</div>
+                        @if (ViewBag.StaffGrowth > 0)
+                        {
+                            <div class="text-xs text-success mt-1">
+                                <i class="fas fa-arrow-up"></i> @ViewBag.StaffGrowth% increase this month
+                            </div>
+                        }
+                        else if (ViewBag.StaffGrowth < 0)
+                        {
+                            <div class="text-xs text-danger mt-1">
+                                <i class="fas fa-arrow-down"></i> @Math.Abs(ViewBag.StaffGrowth)% decrease this month
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-xs text-muted mt-1">
+                                No change this month
+                            </div>
+                        }
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
@@ -54,9 +84,9 @@
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Classes</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">128</div>
-                        <div class="text-xs text-success mt-1">
-                            <i class="fas fa-arrow-up"></i> 8% increase this month
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalClasses</div>
+                        <div class="text-xs text-muted mt-1">
+                            Active class sections
                         </div>
                     </div>
                     <div class="col-auto">
@@ -75,6 +105,9 @@
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">System Status</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">Active</div>
+                        <div class="text-xs text-success mt-1">
+                            <i class="fas fa-check-circle"></i> All systems operational
+                        </div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-server fa-2x text-gray-300"></i>
@@ -119,12 +152,17 @@
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="analyticsChart" height="80"></canvas>
+                <div class="text-center py-5" id="chartLoader">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading chart data...</p>
+                </div>
+                <canvas id="analyticsChart" height="80" style="display: none;"></canvas>
             </div>
         </div>
     </div>
 </div>
-
 
 <div class="row">
     <!--recent activity-->
@@ -145,31 +183,31 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>24 Nov 2025</td>
-                                <td>New student registered</td>
-                                <td>John Doe</td>
-                                <td><span class="badge badge-success">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td>24 Nov 2025</td>
-                                <td>Class schedule updated</td>
-                                <td>Admin</td>
-                                <td><span class="badge badge-success">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td>23 Nov 2025</td>
-                                <td>Teacher assigned to class</td>
-                                <td>Admin</td>
-                                <td><span class="badge badge-success">Completed</span></td>
-                            </tr>
+                            @if (ViewBag.RecentActivities != null && ViewBag.RecentActivities.Count > 0)
+                            {
+                                @foreach (var activity in ViewBag.RecentActivities)
+                                {
+                                    <tr>
+                                        <td>@activity.Date.ToString("dd MMM yyyy")</td>
+                                        <td>@activity.Activity</td>
+                                        <td>@activity.User</td>
+                                        <td><span class="badge badge-success">@activity.Status</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No recent activities</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!--quick actions-->
     <div class="col-lg-4 mb-4">
         <div class="card shadow h-100">
@@ -177,20 +215,31 @@
                 <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
             </div>
             <div class="card-body d-flex flex-column">
-                <a href="#" class="btn btn-primary btn-block mb-2">
-                    <i class="fas fa-user-plus"></i> Add Student
+                <a href="@Url.Action("StudentManagement", "Admin")" class="btn btn-primary btn-block mb-2">
+                    <i class="fas fa-user-plus"></i> Manage Students
                 </a>
-                <a href="#" class="btn btn-success btn-block mb-2">
-                    <i class="fas fa-chalkboard-teacher"></i> Add Teacher
+                <a href="@Url.Action("StaffManagement", "Admin")" class="btn btn-success btn-block mb-2">
+                    <i class="fas fa-chalkboard-teacher"></i> Manage Staff
                 </a>
-                <a href="#" class="btn btn-info btn-block mb-2">
-                    <i class="fas fa-book"></i> Create Class
+                <a href="@Url.Action("ClassSection", "Admin")" class="btn btn-info btn-block mb-2">
+                    <i class="fas fa-book"></i> Create Classes
                 </a>
-                <a href="#" class="btn btn-warning btn-block mb-2">
-                    <i class="fas fa-cog"></i> System Settings
+                <a href="@Url.Action("RoomManagement", "Admin")" class="btn btn-dark btn-block mb-2">
+                    <i class="fas fa-door-open"></i> Manage Rooms
+                </a>
+                <a href="@Url.Action("LeaveManagement", "Admin")" class="btn btn-warning btn-block mb-2">
+                    <i class="fas fa-calendar-check"></i> Approve/Reject Leave
+                </a>
+                <a href="@Url.Action("PaymentMonitoring", "Admin")" class="btn btn-danger btn-block mb-2">
+                    <i class="fas fa-money-bill-wave"></i> Monitor Payment
+                </a>
+                <a href="@Url.Action("FacultyManagement", "Admin")" class="btn btn-secondary btn-block mb-2">
+                    <i class="fas fa-university"></i> Manage Faculties
+                </a>
+                <a href="@Url.Action("ProgramManagement", "Admin")" class="btn btn-outline-primary btn-block mb-2">
+                    <i class="fas fa-graduation-cap"></i> Manage Programs
                 </a>
                 <div class="mt-auto">
-                    
                 </div>
             </div>
         </div>
@@ -200,76 +249,6 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // dummydata (temporary data) will change when database is implemented
-        const dummyData = {
-            students: {
-                '7days': {
-                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-                    data: [1200, 1210, 1215, 1220, 1230, 1235, 1245]
-                },
-                '30days': {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    data: [1180, 1200, 1215, 1245]
-                },
-                '3months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3'],
-                    data: [1150, 1200, 1245]
-                },
-                '6months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'],
-                    data: [1100, 1130, 1160, 1190, 1215, 1245]
-                },
-                '1year': {
-                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-                    data: [1050, 1120, 1180, 1245]
-                }
-            },
-            staff: {
-                '7days': {
-                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-                    data: [42, 43, 43, 44, 44, 45, 45]
-                },
-                '30days': {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    data: [40, 42, 43, 45]
-                },
-                '3months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3'],
-                    data: [38, 41, 45]
-                },
-                '6months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'],
-                    data: [35, 38, 40, 42, 43, 45]
-                },
-                '1year': {
-                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-                    data: [32, 38, 42, 45]
-                }
-            },
-            classes: {
-                '7days': {
-                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-                    data: [120, 122, 123, 124, 125, 126, 128]
-                },
-                '30days': {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    data: [115, 120, 124, 128]
-                },
-                '3months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3'],
-                    data: [110, 119, 128]
-                },
-                '6months': {
-                    labels: ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'],
-                    data: [105, 110, 115, 120, 124, 128]
-                },
-                '1year': {
-                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-                    data: [100, 110, 119, 128]
-                }
-            }
-        };
-
         //color mapping for different data
         const colorMap = {
             students: {
@@ -293,110 +272,128 @@
         function updateChart() {
             const dataType = document.getElementById('dataTypeSelect').value;
             const timeline = document.getElementById('timelineSelect').value;
-            const chartData = dummyData[dataType][timeline];
-            const colors = colorMap[dataType];
 
-            if (analyticsChart) {
-                analyticsChart.destroy();
-            }
+            // Show loader
+            document.getElementById('chartLoader').style.display = 'block';
+            document.getElementById('analyticsChart').style.display = 'none';
 
-            analyticsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: dataType.charAt(0).toUpperCase() + dataType.slice(1),
-                        data: chartData.data,
-                        borderColor: colors.border,
-                        backgroundColor: colors.background,
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4, //smooth curve for 
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        pointBackgroundColor: colors.border,
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointHoverBackgroundColor: colors.border,
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 15,
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            titleFont: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            bodyFont: {
-                                size: 13
-                            },
-                            displayColors: true,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)',
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                },
-                                callback: function(value) {
-                                    return value.toLocaleString();
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
+            // Fetch data from server
+            fetch(`@Url.Action("GetChartData", "Admin")?dataType=${dataType}&timeline=${timeline}`)
+                .then(response => response.json())
+                .then(chartData => {
+                    const colors = colorMap[dataType];
+
+                    if (analyticsChart) {
+                        analyticsChart.destroy();
                     }
-                }
-            });
+
+                    // Hide loader and show chart
+                    document.getElementById('chartLoader').style.display = 'none';
+                    document.getElementById('analyticsChart').style.display = 'block';
+
+                    analyticsChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartData.labels,
+                            datasets: [{
+                                label: dataType.charAt(0).toUpperCase() + dataType.slice(1),
+                                data: chartData.data,
+                                borderColor: colors.border,
+                                backgroundColor: colors.background,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: colors.border,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointHoverBackgroundColor: colors.border,
+                                pointHoverBorderColor: '#fff',
+                                pointHoverBorderWidth: 3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 15,
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    titleFont: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    bodyFont: {
+                                        size: 13
+                                    },
+                                    displayColors: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)',
+                                        drawBorder: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 11
+                                        },
+                                        callback: function(value) {
+                                            return value.toLocaleString();
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false,
+                                        drawBorder: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            },
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeInOutQuart'
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    document.getElementById('chartLoader').innerHTML =
+                        '<p class="text-danger">Error loading chart data. Please try again.</p>';
+                });
         }
 
-        
+
         document.getElementById('dataTypeSelect').addEventListener('change', updateChart);
         document.getElementById('timelineSelect').addEventListener('change', updateChart);
 
