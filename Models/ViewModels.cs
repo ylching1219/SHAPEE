@@ -339,6 +339,7 @@ namespace SHAPEE.Models
 
         public int PresentCount { get; set; }
         public int AbsentCount { get; set; }
+        public int LeaveCount { get; set; }
         public int TotalSessions { get; set; }
         public double AttendancePercentage { get; set; }
     }
@@ -353,6 +354,7 @@ namespace SHAPEE.Models
         
         public int PresentCount { get; set; }
         public int AbsentCount { get; set; }
+        public int LeaveCount { get; set; }
         public int TotalSessions { get; set; }
         public double AttendancePercentage { get; set; }
         public List<Attendance> Attendances { get; set; } = [];

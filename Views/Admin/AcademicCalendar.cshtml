@@ -88,11 +88,12 @@
                                    pattern="[0-9]{6}" title="Format: YYYYMM" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="small font-weight-bold text-uppercase text-gray-500">Type</label>
-                            <select class="form-select" id="semesterType" required>
-                                <option value="">Select Type</option>
-                                <option value="Long">Long (14 weeks)</option>
-                                <option value="Short">Short (7 weeks)</option>
+                            <label class="small font-weight-bold text-uppercase text-gray-500">Category</label>
+                            <select class="form-control" id="eventType">
+                                <option>Public Holiday</option>
+                                <option>Exam Period</option>
+                                <option>Academic Event</option>
+                                <option>Semester Break</option>
                             </select>
                         </div>
                     </div>
@@ -157,7 +158,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="small font-weight-bold text-uppercase text-gray-500">Category</label>
-                            <select class="form-select" id="eventType">
+                            <select class="form-control" id="eventType">
                                 <option>Public Holiday</option>
                                 <option>Exam Period</option>
                                 <option>Academic Event</option>
