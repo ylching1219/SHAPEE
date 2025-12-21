@@ -1281,6 +1281,7 @@ namespace SHAPEE.Controllers
             }
         }
 
+
         //Delete Admin
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1288,7 +1289,7 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                var admin = await db.Admins.FindAsync(id);
+                var admin = await db.Users.FindAsync(id);
 
                 if (admin == null)
                 {
@@ -1296,9 +1297,16 @@ namespace SHAPEE.Controllers
                     return RedirectToAction(nameof(AdminManagement));
                 }
 
-                var adminName = admin.FullName;
+                var currentUserName = User.Identity.Name;
 
-                db.Admins.Remove(admin);
+                if (admin.FullName == currentUserName)
+                {
+                    TempData["ErrorMessage"] = "Security Alert: You cannot delete your own account while logged in.";
+                    return RedirectToAction("AdminManagement");
+                }
+
+                var adminName = admin.FullName;
+                db.Users.Remove(admin);
                 await db.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Admin '{adminName}' deleted successfully!";
@@ -1318,14 +1326,20 @@ namespace SHAPEE.Controllers
         {
             try
             {
-                var admin = await db.Admins.FindAsync(id);
+                var admin = await db.Users.FindAsync(id);
 
                 if (admin == null)
                 {
                     return Json(new { success = false, message = "Admin not found." });
                 }
 
-                // Toggle status between Active and Suspended
+                var currentUserName = User.Identity.Name;
+
+                if (admin.FullName == currentUserName)
+                {
+                    return Json(new { success = false, message = "You cannot suspend your own account." });
+                }
+
                 if (admin.Status?.Trim().Equals("Suspended", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     admin.Status = "Active";
@@ -1335,7 +1349,7 @@ namespace SHAPEE.Controllers
                     admin.Status = "Suspended";
                 }
 
-                db.Admins.Update(admin);
+                db.Users.Update(admin);
                 await db.SaveChangesAsync();
 
                 return Json(new { success = true, message = $"Admin status updated to {admin.Status}." });

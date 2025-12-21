@@ -457,6 +457,7 @@
                 section.IsAttendanceSessionActive = false;
                 section.CurrentQrToken = null;
                 section.CurrentQrExpiry = null;
+                section.AttendanceCode = null;
                 db.SaveChanges();
 
                 var today = DateOnly.FromDateTime(DateTime.Now);
@@ -703,26 +704,37 @@
                 var totalDays = (semesterEnd.ToDateTime(TimeOnly.MinValue) - semesterStart.ToDateTime(TimeOnly.MinValue)).Days;
                 var totalWeeks = (int)Math.Ceiling(totalDays / 7.0);
                 
-                // Calculate week dates
-                DateOnly weekStartDate, weekEndDate;
-                if (week.HasValue && week.Value > 0)
+                // Calculate current week if no week is provided
+                if (!week.HasValue || week.Value <= 0)
                 {
-                    var weekNumber = week.Value;
-                    var daysOffset = (weekNumber - 1) * 7;
-                    weekStartDate = semesterStart.AddDays(daysOffset);
-                    weekEndDate = weekStartDate.AddDays(6);
-                    
-                    // Don't go beyond semester end
-                    if (weekEndDate > semesterEnd)
-                        weekEndDate = semesterEnd;
+                    var today = DateOnly.FromDateTime(DateTime.Now);
+                    if (today >= semesterStart && today <= semesterEnd)
+                    {
+                        // Calculate which week we're in (1-based)
+                        var daysSinceStart = (today.ToDateTime(TimeOnly.MinValue) - semesterStart.ToDateTime(TimeOnly.MinValue)).Days;
+                        week = (int)Math.Floor(daysSinceStart / 7.0) + 1;
+                        
+                        // Ensure week doesn't exceed total weeks
+                        if (week > totalWeeks)
+                            week = totalWeeks;
+                    }
+                    else if (today < semesterStart)
+                    {
+                        // Before semester starts, default to week 1
+                        week = 1;
+                    }
+                    else
+                    {
+                        // After semester ends, default to last week
+                        week = totalWeeks;
+                    }
                 }
-                else
-                {
-                    // If no week selected, don't default - set week to null
-                    week = null;
-                    weekStartDate = semesterStart; // Set defaults but don't use them for filtering
-                    weekEndDate = semesterEnd;
-                }
+                
+                // Calculate week dates (week will always have a value now)
+                var weekNumber = week.Value;
+                var daysOffset = (weekNumber - 1) * 7;
+                var weekStartDate = semesterStart.AddDays(daysOffset);
+                var weekEndDate = weekStartDate.AddDays(6);
 
                 // Get all attendance records for this class section
                 var attendancesQuery = db.Attendances
