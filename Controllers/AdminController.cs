@@ -2089,6 +2089,7 @@ namespace SHAPEE.Controllers
                     studentsUpdated++;
                 }
                 groupsUpdated++;
+                group.GroupName = group.ProgramId + "Y" + group.YearLevel + "S" + group.Semester + "G" + group.GroupNumber;
 
             }
             if(groupsUpdated == 0 && groupsDeleted == 0 && studentsUpdated == 0 && studentsDeactivated == 0)
@@ -2096,6 +2097,7 @@ namespace SHAPEE.Controllers
                 TempData["ErrorMessage"] = "No groups or students were updated.";
                 return RedirectToAction(nameof(GroupManagement));
             }
+
             TempData["SuccessMessage"] = $"Groups Updated: {groupsUpdated}, Groups Deleted: {groupsDeleted}, Students Updated: {studentsUpdated}, Students Deactivated: {studentsDeactivated}";
             db.SaveChanges();
             return RedirectToAction(nameof(GroupManagement));
