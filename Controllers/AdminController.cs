@@ -52,7 +52,8 @@ namespace SHAPEE.Controllers
             var recentStudents = db.Students
                 .OrderByDescending(s => s.DateJoin)
                 .Take(3)
-                .Select(s => new {
+                .Select(s => new
+                {
                     Date = s.DateJoin,
                     Activity = "New student registered",
                     User = s.FirstName + " " + s.LastName,
@@ -64,7 +65,8 @@ namespace SHAPEE.Controllers
             var recentStaff = db.Staffs
                 .OrderByDescending(s => s.DateJoin)
                 .Take(3)
-                .Select(s => new {
+                .Select(s => new
+                {
                     Date = s.DateJoin,
                     Activity = "New staff member added",
                     User = s.FirstName + " " + s.LastName,
@@ -76,7 +78,8 @@ namespace SHAPEE.Controllers
             var recentAnnouncements = db.Announcements
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(2)
-                .Select(a => new {
+                .Select(a => new
+                {
                     Date = DateOnly.FromDateTime(a.CreatedAt),
                     Activity = "New announcement posted",
                     User = a.Author,
@@ -1506,7 +1509,9 @@ namespace SHAPEE.Controllers
 
 
             var bytes = Helper.ExportToCsv(data);
-            return File(bytes, "text/csv", "Programs.csv");
+            string fileName = $"Programs_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            return File(bytes, "text/csv", fileName);
+
         }
 
 
@@ -1671,7 +1676,9 @@ namespace SHAPEE.Controllers
 
 
             var bytes = Helper.ExportToCsv(data);
-            return File(bytes, "text/csv", "Course.csv");
+            string fileName = $"Course_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            return File(bytes, "text/csv", fileName);
+
         }
 
         //Group Management
@@ -1705,6 +1712,7 @@ namespace SHAPEE.Controllers
 
             ViewBag.Program = program;
             ViewBag.ProgramList = new SelectList(program, "Id", "Name");
+
             var vm = new GroupManageVM
             {
                 Groups = groupList.ToList()
@@ -1712,6 +1720,8 @@ namespace SHAPEE.Controllers
 
             if (Request.IsAjax())
             {
+                Console.WriteLine("AJAX request for GroupManagement");
+                Console.WriteLine("Number of groups: " + vm.Groups.Count);
                 return PartialView("_Group", vm);
             }
             return View(vm);
@@ -1778,6 +1788,87 @@ namespace SHAPEE.Controllers
             return RedirectToAction(nameof(GroupManagement));
         }
 
+        public IActionResult UpdateAllYearSem()
+        {
+            int groupsUpdated = 0;
+            int groupsDeleted = 0;
+            int studentsUpdated = 0;
+            int studentsDeactivated = 0;
+
+            var groups = db.TutorialGroups
+                .Include(g => g.Program)
+                .ToList();
+
+            foreach (var group in groups)
+            {
+                var program = group.Program;
+                int maxYear, maxSemester;
+
+                if (program.Name.StartsWith("Diploma"))
+                {
+                    maxYear = 2;
+                    maxSemester = 3;
+                }
+                else if (program.Name.StartsWith("Bachelor"))
+                {
+                    maxYear = 3;
+                    maxSemester = 3;
+                }
+                else
+                {
+                    maxYear = 3;
+                    maxSemester = 3;
+                }
+
+                group.Semester += 1;
+
+                if (group.Semester > maxSemester)
+                {
+                    group.Semester = 1;
+                    group.YearLevel += 1;
+                }
+
+                if (group.YearLevel > maxYear)
+                {
+                    var students = db.Students.Where(s => s.TutorialGroupId == group.Id).ToList();
+                    foreach (var student in students)
+                    {
+                        student.Status = "Inactive";
+                        student.TutorialGroupId = null;
+                        studentsDeactivated++;
+                    }
+
+                    var classSections = db.ClassSections.Where(cs => cs.TutorialGroupId == group.Id).ToList();
+                    foreach (var cs in classSections)
+                    {
+                        cs.TutorialGroupId = null; 
+                    }
+
+                    db.TutorialGroups.Remove(group);
+                    groupsDeleted++;
+                    continue; 
+                }
+
+                var activeStudents = db.Students.Where(s => s.TutorialGroupId == group.Id).ToList();
+                foreach (var student in activeStudents)
+                {
+                    student.YearLevel = group.YearLevel;
+                    student.Semester = group.Semester;
+                    studentsUpdated++;
+                }
+                groupsUpdated++;
+
+            }
+            if(groupsUpdated == 0 && groupsDeleted == 0 && studentsUpdated == 0 && studentsDeactivated == 0)
+            {
+                TempData["ErrorMessage"] = "No groups or students were updated.";
+                return RedirectToAction(nameof(GroupManagement));
+            }
+            TempData["SuccessMessage"] = $"Groups Updated: {groupsUpdated}, Groups Deleted: {groupsDeleted}, Students Updated: {studentsUpdated}, Students Deactivated: {studentsDeactivated}";
+            db.SaveChanges();
+            return RedirectToAction(nameof(GroupManagement));
+        }
+
         public IActionResult ExportGroupsCsv(string? ProgramId, int? yearLevel, int? semester)
         {
             var query = db.TutorialGroups
@@ -1815,7 +1906,9 @@ namespace SHAPEE.Controllers
 
 
             var bytes = Helper.ExportToCsv(data);
-            return File(bytes, "text/csv", "TutorialGroups.csv");
+            string fileName = $"TutorialGroups_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            return File(bytes, "text/csv", fileName);
+
         }
 
         //Group Assignment 
@@ -1893,7 +1986,7 @@ namespace SHAPEE.Controllers
             var query = db.Students.AsQueryable();
 
             Console.WriteLine("ProramId: " + programId);
-            query = query.Where(s => s.TutorialGroupId == null);
+            query = query.Where(s => s.TutorialGroupId == null && s.Status == "Active");
 
             // Apply filters if provided
             if (!string.IsNullOrEmpty(programId))
@@ -2375,7 +2468,7 @@ namespace SHAPEE.Controllers
         {
 
             ClassSection? cs = db.ClassSections
-                .Include(c => c.Course) 
+                .Include(c => c.Course)
                 .FirstOrDefault(c => c.SectionId == vm.SectionId);
 
 
@@ -2457,7 +2550,7 @@ namespace SHAPEE.Controllers
                     CourseId = pc.CourseId,
                     StaffId = staff.Id,
                     SemesterId = semester!,
-                    TutorialGroupId = (sectionType=="Lecture"?null:group.Id),
+                    TutorialGroupId = (sectionType == "Lecture" ? null : group.Id),
                     SectionType = sectionType,
                     YearLevel = group.YearLevel,
                     Sem = group.Semester,
