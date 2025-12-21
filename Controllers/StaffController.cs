@@ -2150,5 +2150,286 @@
            
             return RedirectToAction("TaskList");
         }
+
+         // Staff Timetable
+        public IActionResult Timetable(string? semesterId = null, int? weekNumber = null)
+        {
+            ViewData["Title"] = "My Timetable";
+
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var staff = db.Staffs
+                .Include(s => s.Faculty)
+                .FirstOrDefault(s => s.Id == staffId);
+
+            if (staff == null)
+            {
+                TempData["ErrorMessage"] = "Staff not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Get available semesters
+            var semesters = db.Semesters
+                .OrderByDescending(s => s.Id)
+                .ToList();
+
+            // Use active semester if no semester selected
+            if (string.IsNullOrEmpty(semesterId))
+            {
+                semesterId = semesters.FirstOrDefault(s => s.IsActive)?.Id;
+            }
+
+            var selectedSemester = semesters.FirstOrDefault(s => s.Id == semesterId);
+
+            // Calculate weeks
+            int totalWeeks = 0;
+            DateTime? weekStartDate = null;
+            DateTime? weekEndDate = null;
+
+            if (selectedSemester != null)
+            {
+                var semesterDuration = (selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                       selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+                totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+                // Default to week 1 if not specified
+                if (!weekNumber.HasValue || weekNumber < 1 || weekNumber > totalWeeks)
+                {
+                    weekNumber = 1;
+                }
+
+                // Calculate week date range
+                weekStartDate = selectedSemester.StartDate.ToDateTime(TimeOnly.MinValue)
+                    .AddDays((weekNumber.Value - 1) * 7);
+                weekEndDate = weekStartDate.Value.AddDays(6);
+
+                // Ensure we don't exceed semester end date
+                if (weekEndDate > selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue))
+                {
+                    weekEndDate = selectedSemester.EndDate.ToDateTime(TimeOnly.MaxValue);
+                }
+            }
+
+            // Get class sections for the staff
+            var classSections = db.ClassSections
+                .Include(cs => cs.Course)
+                .Include(cs => cs.Staff)
+                .Include(cs => cs.Room)
+                .Include(cs => cs.Semester)
+                .Include(cs => cs.TutorialGroup)
+                .Where(cs => cs.StaffId == staffId && cs.SemesterId == semesterId)
+                .OrderBy(cs => cs.Day)
+                .ThenBy(cs => cs.StartTime)
+                .ToList();
+
+            var viewModel = new StaffTimetableVM
+            {
+                Staff = staff,
+                ClassSections = classSections,
+                Semesters = semesters,
+                SelectedSemesterId = semesterId,
+                SelectedSemester = selectedSemester,
+                TotalWeeks = totalWeeks,
+                SelectedWeekNumber = weekNumber ?? 1,
+                WeekStartDate = weekStartDate,
+                WeekEndDate = weekEndDate
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public IActionResult GetStaffTimetableData(string? semesterId = null, int? weekNumber = null)
+        {
+            try
+            {
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                var staff = db.Staffs
+                    .Include(s => s.Faculty)
+                    .FirstOrDefault(s => s.Id == staffId);
+
+                if (staff == null)
+                {
+                    return PartialView("_StaffTimetableGrid", new List<ClassSection>());
+                }
+
+                // Use active semester if none specified
+                if (string.IsNullOrEmpty(semesterId))
+                {
+                    var activeSemester = db.Semesters
+                        .OrderByDescending(s => s.Id)
+                        .FirstOrDefault(s => s.IsActive);
+
+                    semesterId = activeSemester?.Id;
+                }
+
+                if (string.IsNullOrEmpty(semesterId))
+                {
+                    return PartialView("_StaffTimetableGrid", new List<ClassSection>());
+                }
+
+                // Get class sections for this semester with all necessary includes
+                var classSections = db.ClassSections
+                    .Include(cs => cs.Course)
+                    .Include(cs => cs.Staff)
+                    .Include(cs => cs.Room)
+                    .Include(cs => cs.Semester)
+                    .Include(cs => cs.TutorialGroup)
+                    .Where(cs => cs.StaffId == staffId && cs.SemesterId == semesterId)
+                    .ToList(); // Execute query first
+
+                // Then sort in memory to avoid SQL translation issues
+                classSections = classSections
+                    .OrderBy(cs => GetDayOrder(cs.Day))
+                    .ThenBy(cs => cs.StartTime)
+                    .ToList();
+
+                return PartialView("_StaffTimetableGrid", classSections);
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                Console.WriteLine($"Error in GetStaffTimetableData: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                // Return empty view instead of error
+                return PartialView("_StaffTimetableGrid", new List<ClassSection>());
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GetSemesterWeeks(string semesterId)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var semesterDuration = (semester.EndDate.ToDateTime(TimeOnly.MaxValue) -
+                                   semester.StartDate.ToDateTime(TimeOnly.MinValue)).Days;
+            var totalWeeks = (int)Math.Ceiling(semesterDuration / 7.0);
+
+            return Json(new { success = true, totalWeeks = totalWeeks });
+        }
+
+        [HttpGet]
+        public IActionResult GetWeekDateRange(string semesterId, int weekNumber)
+        {
+            var semester = db.Semesters.FirstOrDefault(s => s.Id == semesterId);
+            if (semester == null)
+                return Json(new { success = false, message = "Semester not found." });
+
+            var weekStartDate = semester.StartDate.ToDateTime(TimeOnly.MinValue)
+                .AddDays((weekNumber - 1) * 7);
+            var weekEndDate = weekStartDate.AddDays(6);
+
+            // Ensure we don't exceed semester end date
+            if (weekEndDate > semester.EndDate.ToDateTime(TimeOnly.MaxValue))
+            {
+                weekEndDate = semester.EndDate.ToDateTime(TimeOnly.MaxValue);
+            }
+
+            return Json(new
+            {
+                success = true,
+                startDate = weekStartDate.ToString("dd MMM yyyy"),
+                endDate = weekEndDate.ToString("dd MMM yyyy")
+            });
+        }
+
+        private int GetDayOrder(string day)
+        {
+            return day switch
+            {
+                "Monday" => 1,
+                "Tuesday" => 2,
+                "Wednesday" => 3,
+                "Thursday" => 4,
+                "Friday" => 5,
+                "Saturday" => 6,
+                "Sunday" => 7,
+                _ => 8
+            };
+        }
+
+        [HttpGet]
+        public IActionResult GetStaffCourseMaterialsData(string? semesterId = null)
+        {
+            try
+            {
+                var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                var staff = db.Staffs
+                    .Include(s => s.Faculty)
+                    .FirstOrDefault(s => s.Id == staffId);
+
+                if (staff == null)
+                {
+                    return PartialView("_StaffTimetableAtt", new StaffTimetableVM
+                    {
+                        ClassSections = new List<ClassSection>(),
+                        Staff = null
+                    });
+                }
+
+                // Use active semester if none specified
+                if (string.IsNullOrEmpty(semesterId))
+                {
+                    var activeSemester = db.Semesters
+                        .OrderByDescending(s => s.Id)
+                        .FirstOrDefault(s => s.IsActive);
+
+                    semesterId = activeSemester?.Id;
+                }
+
+                if (string.IsNullOrEmpty(semesterId))
+                {
+                    return PartialView("_StaffTimetableAtt", new StaffTimetableVM
+                    {
+                        ClassSections = new List<ClassSection>(),
+                        Staff = staff
+                    });
+                }
+
+                // Get class sections for this semester
+                var classSections = db.ClassSections
+                    .Include(cs => cs.Course)
+                    .Include(cs => cs.Staff)
+                    .Include(cs => cs.Room)
+                    .Include(cs => cs.Semester)
+                    .Include(cs => cs.TutorialGroup)
+                    .Where(cs => cs.StaffId == staffId && cs.SemesterId == semesterId)
+                    .ToList(); // Execute query first
+
+                // Sort in memory
+                classSections = classSections
+                    .OrderBy(cs => cs.Course?.Id ?? "")
+                    .ToList();
+
+                var viewModel = new StaffTimetableVM
+                {
+                    ClassSections = classSections,
+                    Staff = staff
+                };
+
+                return PartialView("_StaffTimetableAtt", viewModel);
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Error in GetStaffCourseMaterialsData: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                var staff = db.Staffs
+                    .Include(s => s.Faculty)
+                    .FirstOrDefault(s => s.Id == User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                return PartialView("_StaffTimetableAtt", new StaffTimetableVM
+                {
+                    ClassSections = new List<ClassSection>(),
+                    Staff = staff
+                });
+            }
+        }
     }
     }
