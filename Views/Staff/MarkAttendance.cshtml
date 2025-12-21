@@ -34,6 +34,10 @@
                     <small class="text-muted">Dynamic refresh every 120 seconds.</small>
                 </div>
                 <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary border-0 mr-2"
+                            id="refreshQrBtn" title="Refresh QR Code">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-light text-primary border-0"
                             id="qrFsOpenBtn">
                         <i class="fas fa-expand"></i>
@@ -394,6 +398,28 @@
                 }
             });
 
+            // Refresh QR button handler
+            $('#refreshQrBtn').on('click', function() {
+                var $btn = $(this);
+                var $icon = $btn.find('i');
+                
+                // Add spinning animation
+                $icon.addClass('fa-spin');
+                $btn.prop('disabled', true);
+                
+                // Call refresh function
+                refreshQr();
+                
+                // Remove spinning animation after a short delay
+                setTimeout(function() {
+                    $icon.removeClass('fa-spin');
+                    $btn.prop('disabled', false);
+                }, 1000);
+            });
+
+            $('#qrFsOpenBtn').on('click', openQrFullscreen);
+            $('#qrFsCloseBtn').on('click', closeQrFullscreen);
+            
             //end session (using sweetalrt)
             $('#stopSessionBtn').on('click', function (e) {
                 e.preventDefault();
