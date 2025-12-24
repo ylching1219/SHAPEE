@@ -11,6 +11,17 @@
 }
 else if (!Model.ProgramCourses!.Any())
 {
+    <div class="program-header p-4 mb-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="h3 mb-1">@Model.SelectedProgram.Name</h2>
+                <p class="mb-0 opacity-75">@Model.SelectedFaculty.Name</p>
+            </div>
+            <button class="btn btn-light" onclick="openAddCourseModal()">
+                <i class="bi bi-plus-lg me-1"></i> Add Course
+            </button>
+        </div>
+    </div>
     <div class="card shadow-sm">
         <div class="card-body empty-state">
             <i class="bi bi-book"></i>

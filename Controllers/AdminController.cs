@@ -1817,7 +1817,7 @@ namespace SHAPEE.Controllers
                     Name = vm.CourseName!,
                     CreditHours = vm.CreditHours ?? 0,
                     LectureHours = vm.LectureHours ?? 1,
-                    PracticalHours = vm.PracticalHours,
+                    PracticalHours = vm.PracticalHours > 0 ? vm.PracticalHours : null,
                     TutorialHours = vm.TutorialHours ?? 1
                 };
 
@@ -1852,7 +1852,7 @@ namespace SHAPEE.Controllers
             s.Name = vm.CourseName!.Trim();
             s.CreditHours = vm.CreditHours ?? 0;
             s.LectureHours = vm.LectureHours ?? 1;
-            s.PracticalHours = vm.PracticalHours;
+            s.PracticalHours = vm.PracticalHours > 0 ? vm.PracticalHours : null;
             s.TutorialHours = vm.TutorialHours ?? 1;
 
             db.SaveChanges(); // tracked entity, no Update() needed
