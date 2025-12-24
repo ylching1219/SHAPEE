@@ -1,0 +1,27 @@
+﻿
+
+INSERT INTO [dbo].[ChatMessages] ([Id], [SenderId], [ReceiverId], [Content], [SentAt], [IsRead]) VALUES (N'CM001', N'STF0002', N'2500045', N'hi', N'2025-12-22 00:24:04', 0)
+INSERT INTO [dbo].[ChatMessages] ([Id], [SenderId], [ReceiverId], [Content], [SentAt], [IsRead]) VALUES (N'CM002', N'2500045', N'STF0002', N'hi', N'2025-12-22 00:24:45', 0)
+INSERT INTO [dbo].[ChatMessages] ([Id], [SenderId], [ReceiverId], [Content], [SentAt], [IsRead]) VALUES (N'CM003', N'2500045', N'STF0002', N'ok', N'2025-12-22 00:24:50', 0)
+
+INSERT INTO [dbo].[CourseTasks] ([Id], [ClassSectionId], [Title], [Description], [DueDate]) VALUES (N'CT001', N'IT303-G2-P-724b', N'tset', N'test', N'2025-12-31 00:25:00')
+INSERT INTO [dbo].[CourseTasks] ([Id], [ClassSectionId], [Title], [Description], [DueDate]) VALUES (N'CT002', N'IT303-G2-P-724b', N'test', N'test', N'2025-12-31 00:25:00')
+
+INSERT INTO [dbo].[Materials] ([Id], [CourseId], [Title], [FileUrl], [MaterialType]) VALUES (N'M001', N'IT303', N'midterm', N'/uploads/IT303_20251222_002301_classwork1.pdf', N'pdf')
+INSERT INTO [dbo].[Materials] ([Id], [CourseId], [Title], [FileUrl], [MaterialType]) VALUES (N'M002', N'IT303', N'midterm', N'/uploads/IT303_20251222_002309_classwork1.pdf', N'pdf')
+INSERT INTO [dbo].[Materials] ([Id], [CourseId], [Title], [FileUrl], [MaterialType]) VALUES (N'M003', N'IT303', N'midterm1', N'/uploads/IT303_20251222_002319_classwork1.pdf', N'pdf')
+
+INSERT INTO [dbo].[Submissions] ([Id], [CourseTaskId], [StudentId], [FileUrl], [SubmittedAt], [Grade], [Feedback]) VALUES (N'SMS001', N'CT001', N'2500045', N'/Submissions/2500045_CT001_20251222_0026.pdf', N'2025-12-22 00:26:27', NULL, NULL)
+
+INSERT INTO [dbo].[TaskMaterials] ([Id], [MaterialId], [CourseTaskId]) VALUES (N'TMS001', N'M001', N'CT001')
+INSERT INTO [dbo].[TaskMaterials] ([Id], [MaterialId], [CourseTaskId]) VALUES (N'TMS002', N'M001', N'CT002')
+
+INSERT INTO [dbo].[SupportTickets] ([Id], [UserId], [Subject], [Description], [Priority], [CreatedAt], [Status]) 
+VALUES ('ST0001', '2500001', 'Technical Issue', 'Cannot upload my assignment', 'Medium', '2025-12-21 04:20:56', 'Closed');
+
+INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES (N'TM0001', N'ST0001', N'2500045', N'hi', N'2025-12-22 00:26:53')
+INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES (N'TM0002', N'ST0001', N'STF0002', N'hi
+', N'2025-12-22 00:27:03')
+INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES (N'TM0003', N'ST0001', N'STF0002', N'all good', N'2025-12-22 00:27:07')
+INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES (N'TM0004', N'ST0001', N'2500045', N'yes', N'2025-12-22 00:27:10')
+INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES (N'TM0005', N'ST0001', N'STF0002', N'ok i ll close the ticket', N'2025-12-22 00:27:15')

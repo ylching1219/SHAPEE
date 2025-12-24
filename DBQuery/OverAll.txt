@@ -720,35 +720,3 @@ VALUES
 ('A020','Dean''s Commendation',
  'Congratulations to the top performers of this semester''s exams.',
  '2025-12-21 10:00', NULL, 'Admin');
-
-
- -- Chat Messages
-INSERT INTO [dbo].[ChatMessages] ([Id], [SenderId], [ReceiverId], [Content], [SentAt], [IsRead]) VALUES 
-(N'CM001', N'2500001', N'STF0002', N'hi', N'2025-12-21 22:07:53', 1),
-(N'CM002', N'STF0002', N'2500001', N'hello', N'2025-12-21 22:07:59', 0),
-(N'CM003', N'2500001', N'STF0002', N'hi', N'2025-12-21 22:13:25', 1),
-(N'CM004', N'2500001', N'STF0002', N'ok', N'2025-12-21 22:13:43', 1),
-(N'CM009', N'STF0002', N'2500001', N'ok', N'2025-12-21 23:11:06', 0);
-
--- Course Tasks 
-INSERT INTO [dbo].[CourseTasks] ([Id], [ClassSectionId], [Title], [Description], [DueDate]) VALUES 
-(N'CT001', N'IT202-G1-L-0d8c', N'Exercise 1', N'Database normalization', N'2025-12-21 03:50:00'),
-(N'CT002', N'IT202-G1-L-0d8c', N'Lab 2', N'SQL Queries', N'2025-12-31 03:53:00'),
-(N'CT004', N'GS102-G15-STF', N'Assignment', N'Critical thinking task', N'2025-12-31 22:21:00');
-
--- Submissions
-INSERT INTO [dbo].[Submissions] ([Id], [CourseTaskId], [StudentId], [FileUrl], [SubmittedAt], [Grade], [Feedback]) VALUES 
-(N'SMS001', N'CT002', N'2500001', N'/Submissions/file1.pdf', N'2025-12-21 04:07:15', 100.00, N'good one'),
-(N'SMS003', N'CT004', N'2500001', N'/Submissions/file2.pdf', N'2025-12-21 22:46:59', 1.00, N'1');
-
--- Tickets and Support
-INSERT INTO [dbo].[SupportTickets] ([Id], [UserId], [Subject], [Description], [Priority], [CreatedAt], [Status]) VALUES 
-(N'ST0002', N'2500001', N'test', N'test', N'Medium', N'2025-12-21 04:20:56', N'Closed');
-
-INSERT INTO [dbo].[TicketMessages] ([Id], [SupportTicketId], [SenderId], [Content], [SentAt]) VALUES 
-(N'TM0001', N'ST0002', N'STF0002', N'ok', N'2025-12-21 22:16:43'),
-(N'TM0003', N'ST0002', N'STF0002', N'no issue i will close ticket', N'2025-12-21 22:16:56');
-
--- Junction Table
-INSERT INTO [dbo].[TaskMaterials] ([Id], [MaterialId], [CourseTaskId]) VALUES 
-(N'TMS005', N'M005', N'CT004');
